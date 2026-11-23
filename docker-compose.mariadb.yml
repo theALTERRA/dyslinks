@@ -1,48 +1,70 @@
+# dyslinks — MariaDB + Redis
+#
+# Quick start:
+#   1. Copy .example.env to .env and set JWT_SECRET, DEFAULT_DOMAIN, and DB_PASSWORD
+#   2. Run: docker compose -f docker-compose.mariadb.yml up -d
+
 services:
-  server:
+  dyslinks:
     image: ghcr.io/thealterra/dyslinks:latest
+    container_name: dyslinks
     restart: unless-stopped
     env_file:
       - path: .env
         required: false
-    volumes:
-      - custom:/dyslinks/custom
     environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (generate with: openssl rand -hex 32)}
+      SITE_NAME: ${SITE_NAME:-dyslinks}
+      DEFAULT_DOMAIN: ${DEFAULT_DOMAIN:-localhost:3000}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      ENABLE_RATE_LIMIT: ${ENABLE_RATE_LIMIT:-true}
+      DISALLOW_ANONYMOUS_LINKS: ${DISALLOW_ANONYMOUS_LINKS:-true}
+      DISALLOW_REGISTRATION: ${DISALLOW_REGISTRATION:-true}
       DB_CLIENT: mysql2
       DB_HOST: mariadb
       DB_PORT: 3306
-      REDIS_ENABLED: true
+      DB_NAME: ${DB_NAME:-dyslinks}
+      DB_USER: ${DB_USER:-dyslinks}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      REDIS_ENABLED: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
-      - 3000:3000
+      - "${HOST_PORT:-3000}:3000"
+    volumes:
+      - custom:/dyslinks/custom
     depends_on:
       mariadb:
         condition: service_healthy
       redis:
         condition: service_started
+
   mariadb:
     image: mariadb:10
+    container_name: dyslinks-mariadb
     restart: unless-stopped
     healthcheck:
-      test: ['CMD-SHELL', 'MYSQL_PWD="${DB_PASSWORD}" mariadb-admin ping -h localhost -u "${DB_USER}"']
+      test: ['CMD-SHELL', 'MYSQL_PWD="${DB_PASSWORD}" mariadb-admin ping -h localhost -u "${DB_USER:-dyslinks}"']
       interval: 3s
       retries: 5
       start_period: 30s
     volumes:
       - db_data_mariadb:/var/lib/mysql
     environment:
-      MARIADB_DATABASE: ${DB_NAME}
-      MARIADB_USER: ${DB_USER}
-      MARIADB_PASSWORD: ${DB_PASSWORD}
-      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD}
+      MARIADB_DATABASE: ${DB_NAME:-dyslinks}
+      MARIADB_USER: ${DB_USER:-dyslinks}
+      MARIADB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      MARIADB_ROOT_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
     expose:
       - 3306
+
   redis:
     image: redis:alpine
+    container_name: dyslinks-redis
     restart: unless-stopped
     expose:
       - 6379
+
 volumes:
   db_data_mariadb:
   custom:

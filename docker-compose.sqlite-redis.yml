@@ -1,28 +1,45 @@
+# dyslinks — SQLite + Redis
+#
+# Quick start:
+#   1. Copy .example.env to .env and set JWT_SECRET + DEFAULT_DOMAIN
+#   2. Run: docker compose -f docker-compose.sqlite-redis.yml up -d
+
 services:
-  server:
+  dyslinks:
     image: ghcr.io/thealterra/dyslinks:latest
+    container_name: dyslinks
     restart: unless-stopped
     env_file:
       - path: .env
         required: false
-    volumes:
-      - db_data_sqlite:/var/lib/dyslinks
-      - custom:/dyslinks/custom
     environment:
-      DB_FILENAME: "/var/lib/dyslinks/data.sqlite"
-      REDIS_ENABLED: true
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (generate with: openssl rand -hex 32)}
+      SITE_NAME: ${SITE_NAME:-dyslinks}
+      DEFAULT_DOMAIN: ${DEFAULT_DOMAIN:-localhost:3000}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      ENABLE_RATE_LIMIT: ${ENABLE_RATE_LIMIT:-true}
+      DISALLOW_ANONYMOUS_LINKS: ${DISALLOW_ANONYMOUS_LINKS:-true}
+      DISALLOW_REGISTRATION: ${DISALLOW_REGISTRATION:-true}
+      DB_FILENAME: /var/lib/dyslinks/data.sqlite
+      REDIS_ENABLED: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
-      - 3000:3000
+      - "${HOST_PORT:-3000}:3000"
+    volumes:
+      - db_data_sqlite:/var/lib/dyslinks
+      - custom:/dyslinks/custom
     depends_on:
       redis:
         condition: service_started
+
   redis:
     image: redis:alpine
+    container_name: dyslinks-redis
     restart: unless-stopped
     expose:
       - 6379
+
 volumes:
   db_data_sqlite:
   custom:

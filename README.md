@@ -33,36 +33,35 @@
 
 Pre-built multi-arch images (`linux/amd64`, `linux/arm64`) are published to GitHub Container Registry at `ghcr.io/thealterra/dyslinks:latest`.
 
-### 1. Clone and configure
+### 1. Download `docker-compose.yml` & create `.env`
 
 ```bash
-git clone https://github.com/theALTERRA/dyslinks.git
-cd dyslinks
-cp .example.env .env
-```
-
-Edit `.env` and set at minimum:
-
-```env
+curl -O https://raw.githubusercontent.com/theALTERRA/dyslinks/main/docker-compose.yml
+cat <<EOF > .env
 SITE_NAME=dyslinks
 DEFAULT_DOMAIN=links.yourdomain.com
-JWT_SECRET=<run: openssl rand -hex 32>
+JWT_SECRET=$(openssl rand -hex 32)
+EOF
 ```
 
-> **Note:** `JWT_SECRET` must be at least 32 characters in production. For PostgreSQL or MariaDB, also set `DB_NAME`, `DB_USER`, and `DB_PASSWORD`.
+> Want to customize mail, OIDC, or other options? Copy [`.example.env`](./.example.env) to `.env`. For PostgreSQL or MariaDB, also add `DB_PASSWORD=...` to `.env`.
 
-### 2. Start the container
+### 2. Start dyslinks
 
-Pick the stack you want:
+```bash
+docker compose up -d
+```
+
+Other stacks (clone the repo or download the matching compose file):
 
 | Stack | Command |
 | --- | --- |
-| **SQLite** *(simplest)* | `docker compose pull && docker compose up -d` |
-| **SQLite + Redis** | `docker compose -f docker-compose.sqlite-redis.yml pull && docker compose -f docker-compose.sqlite-redis.yml up -d` |
-| **PostgreSQL + Redis** *(recommended)* | `docker compose -f docker-compose.postgres.yml pull && docker compose -f docker-compose.postgres.yml up -d` |
-| **MariaDB + Redis** | `docker compose -f docker-compose.mariadb.yml pull && docker compose -f docker-compose.mariadb.yml up -d` |
+| **SQLite** *(default, simplest)* | `docker compose up -d` |
+| **SQLite + Redis** | `docker compose -f docker-compose.sqlite-redis.yml up -d` |
+| **PostgreSQL + Redis** *(recommended)* | `docker compose -f docker-compose.postgres.yml up -d` |
+| **MariaDB + Redis** | `docker compose -f docker-compose.mariadb.yml up -d` |
 
-Database migrations run automatically on startup.
+Database migrations run automatically on startup. Set `HOST_PORT=8080` in `.env` if port `3000` is already in use.
 
 ### 3. Serve over HTTPS & create admin
 

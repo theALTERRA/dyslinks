@@ -1,35 +1,54 @@
+# dyslinks — PostgreSQL + Redis (recommended for production)
+#
+# Quick start:
+#   1. Copy .example.env to .env and set JWT_SECRET, DEFAULT_DOMAIN, and DB_PASSWORD
+#   2. Run: docker compose -f docker-compose.postgres.yml up -d
+
 services:
-  server:
+  dyslinks:
     image: ghcr.io/thealterra/dyslinks:latest
+    container_name: dyslinks
     restart: unless-stopped
     env_file:
       - path: .env
         required: false
-    volumes:
-      - custom:/dyslinks/custom
     environment:
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (generate with: openssl rand -hex 32)}
+      SITE_NAME: ${SITE_NAME:-dyslinks}
+      DEFAULT_DOMAIN: ${DEFAULT_DOMAIN:-localhost:3000}
+      TRUST_PROXY: ${TRUST_PROXY:-true}
+      ENABLE_RATE_LIMIT: ${ENABLE_RATE_LIMIT:-true}
+      DISALLOW_ANONYMOUS_LINKS: ${DISALLOW_ANONYMOUS_LINKS:-true}
+      DISALLOW_REGISTRATION: ${DISALLOW_REGISTRATION:-true}
       DB_CLIENT: pg
       DB_HOST: postgres
       DB_PORT: 5432
-      REDIS_ENABLED: true
+      DB_NAME: ${DB_NAME:-dyslinks}
+      DB_USER: ${DB_USER:-postgres}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
+      REDIS_ENABLED: "true"
       REDIS_HOST: redis
       REDIS_PORT: 6379
     ports:
-      - 3000:3000
+      - "${HOST_PORT:-3000}:3000"
+    volumes:
+      - custom:/dyslinks/custom
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_started
+
   postgres:
     image: postgres:16-alpine
+    container_name: dyslinks-postgres
     restart: unless-stopped
     volumes:
       - db_data_pg:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_DB: ${DB_NAME:-dyslinks}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
     expose:
       - 5432
     healthcheck:
@@ -37,11 +56,14 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
   redis:
     image: redis:alpine
+    container_name: dyslinks-redis
     restart: unless-stopped
     expose:
       - 6379
+
 volumes:
   db_data_pg:
   custom:
