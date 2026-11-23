@@ -8,7 +8,7 @@ const env = require("../env");
 const CustomError = utils.CustomError;
 
 async function get(req, res) {
-  const domains = await query.domain.get({ user_id: req.user.id });
+  const domains = await query.domain.getForUser(req.user.id);
 
   const data = {
     apikey: req.user.apikey,
@@ -151,7 +151,7 @@ async function ban(req, res) {
   
   // 4. ban user domains
   if (req.body.domains) {
-    tasks.push(query.domain.update({ user_id: id }, update));
+    tasks.push(query.domain.update({ user_id: id }, { ...update, shared: false }));
   }
 
   // 5. wait for all tasks to finish

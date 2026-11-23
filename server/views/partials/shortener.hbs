@@ -77,9 +77,9 @@
               elm.textContent = event.target.value + '/';
             "
           >
-            <option value={{default_domain}}>{{default_domain}}</option>
-            {{#each domains}}
-              <option value={{address}}>{{address}}</option>
+            <option value="{{default_domain}}">{{default_domain}}</option>
+            {{#each shortener_domains}}
+              <option value="{{address}}">{{address}}</option>
             {{/each}}
           </select>
           {{#if errors.domain}}<p class="error">{{errors.domain}}</p>{{/if}}

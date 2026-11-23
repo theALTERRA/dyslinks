@@ -85,13 +85,11 @@ const createLink = [
     .withMessage("Domain should be string.")
     .customSanitizer(value => value.toLowerCase())
     .custom(async (address, { req }) => {
-      const domain = await query.domain.find({
-        address,
-        user_id: req.user.id
-      });
-      req.body.fetched_domain = domain || null;
+      const domain = await query.domain.find({ address });
+      const allowed = domain && !domain.banned && (domain.shared || domain.user_id === req.user.id);
+      req.body.fetched_domain = allowed ? domain : null;
 
-      if (!domain) return Promise.reject();
+      if (!allowed) return Promise.reject();
     })
     .withMessage("You can't use this domain.")
 ];
@@ -177,7 +175,7 @@ const addDomain = [
     .withMessage("You can't use the default domain.")
     .custom(async value => {
       const domain = await query.domain.find({ address: value });
-      if (domain?.user_id || domain?.banned) return Promise.reject();
+      if (domain?.user_id || domain?.banned || domain?.shared) return Promise.reject();
     })
     .withMessage("You can't add this domain."),
   body("homepage")
@@ -221,7 +219,20 @@ const addDomainAdmin = [
     .optional({ nullable: true })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
+  body("shared")
+    .optional({ nullable: true })
+    .customSanitizer(sanitizeCheckbox)
+    .isBoolean(),
 ]
+
+const toggleShareDomain = [
+  param("id", "ID is invalid.")
+    .exists({
+      checkFalsy: true,
+      checkNull: true
+    })
+    .isNumeric()
+];
 
 const removeDomain = [
   param("id", "ID is invalid.")
@@ -576,4 +587,5 @@ module.exports = {
   resetPassword,
   signup,
   signupEmailTaken,
+  toggleShareDomain,
 }

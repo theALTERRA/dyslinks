@@ -744,6 +744,28 @@ button.action.ban:hover svg {
   stroke: var(--action-ban-fg);
 }
 
+a.button.action.share svg,
+button.action.share svg {
+  stroke-width: 2;
+  stroke: var(--secondary-text-color);
+}
+a.button.action.share:hover,
+button.action.share:hover {
+  background: var(--table-status-green-bg-color);
+}
+a.button.action.share:hover svg,
+button.action.share:hover svg {
+  stroke: var(--table-status-green-fg-color);
+}
+a.button.action.share.is-shared,
+button.action.share.is-shared {
+  background: var(--table-status-green-bg-color);
+}
+a.button.action.share.is-shared svg,
+button.action.share.is-shared svg {
+  stroke: var(--table-status-green-fg-color);
+}
+
 a.button.action.password svg,
 button.action.password svg,
 a.button.action.banned svg,
@@ -2240,14 +2262,22 @@ main form label#advanced:hover {
 #main-table-wrapper table td.users-links-count { font-variant-numeric: tabular-nums; font-weight: 600; }
 
 #main-table-wrapper table .domains-id { flex: 2 2 0; justify-content: flex-end; }
-#main-table-wrapper table .domains-address { flex: 7 7 0; }
+#main-table-wrapper table .domains-address { flex: 6.3 6.3 0; }
 #main-table-wrapper table .domains-homepage { flex: 5 5 0; }
 #main-table-wrapper table .domains-created-at { flex: 3 3 0; }
 #main-table-wrapper table .domains-links-count { flex: 3 3 0; justify-content: flex-end; overflow: visible; }
-#main-table-wrapper table .domains-actions { flex: 2.5 2.5 0; }
+#main-table-wrapper table .domains-actions { flex: 3.2 3.2 0; }
 
 #main-table-wrapper table td.domains-id { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 13px; color: var(--secondary-text-color); }
 #main-table-wrapper table td.domains-address { font-weight: 500; }
+#main-table-wrapper table td.domains-address .domains-address-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+#main-table-wrapper table td.domains-address .domains-address-line .status {
+  margin-top: 0;
+}
 #main-table-wrapper table td.domains-homepage { color: var(--text-secondary); }
 #main-table-wrapper table td.domains-created-at { color: var(--text-secondary); font-size: 13.5px; }
 #main-table-wrapper table td.domains-links-count { font-variant-numeric: tabular-nums; font-weight: 600; }
@@ -2544,7 +2574,9 @@ input.search.admin {
 .content.admin-create .checkbox-wrapper {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+  margin-top: 0.35rem;
 }
 
 .content.admin-create .checkbox-wrapper label { margin-right: 0; }

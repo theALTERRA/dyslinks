@@ -5,6 +5,16 @@
     </button>
   {{/if}}
   {{#unless banned}}
+    <button
+      type="button"
+      class="action share {{#if shared}}is-shared{{/if}}"
+      aria-label="{{#if shared}}Stop sharing domain{{else}}Share domain with all users{{/if}}"
+      data-tooltip="{{#if shared}}Stop sharing{{else}}Share with all users{{/if}}"
+      hx-post="/api/domains/admin/share/{{id}}"
+      hx-swap="none"
+    >
+      {{> icons/globe}}
+    </button>
     <button 
       type="button"
       class="action ban" 

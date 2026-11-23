@@ -8,6 +8,10 @@ async function createDomainTable(knex) {
         .notNullable()
         .defaultTo(false);
       table
+        .boolean("shared")
+        .notNullable()
+        .defaultTo(false);
+      table
         .integer("banned_by_id")
         .unsigned()
         .references("id")

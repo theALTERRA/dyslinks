@@ -40,7 +40,17 @@ function config(req, res, next) {
 async function user(req, res, next) {
   const user = req.user;
   res.locals.user = user;
-  res.locals.domains = user && (await query.domain.get({ user_id: user.id })).map(utils.sanitize.domain);
+  if (user) {
+    const [ownDomains, availableDomains] = await Promise.all([
+      query.domain.get({ user_id: user.id }),
+      query.domain.getForUser(user.id)
+    ]);
+    res.locals.domains = ownDomains.map(utils.sanitize.domain);
+    res.locals.shortener_domains = availableDomains.map(utils.sanitize.domain);
+  } else {
+    res.locals.domains = null;
+    res.locals.shortener_domains = null;
+  }
   next();
 }
 
@@ -75,6 +85,7 @@ function adminTable(req, res, next) {
     search: req.query.search,
     user: req.query.user,
     verified: req.query.verified,
+    shared: req.query.shared,
   };
   next();
 }

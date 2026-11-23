@@ -73,4 +73,14 @@ router.post(
   asyncHandler(domains.ban)
 );
 
+router.post(
+  "/admin/share/:id",
+  asyncHandler(auth.apikey),
+  asyncHandler(auth.jwt),
+  asyncHandler(auth.admin),
+  validators.toggleShareDomain,
+  asyncHandler(helpers.verify),
+  asyncHandler(domains.toggleShare)
+);
+
 module.exports = router;

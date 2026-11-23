@@ -23,6 +23,19 @@ function get(match) {
   return knex("domains").where(match);
 }
 
+function getForUser(user_id) {
+  return knex("domains")
+    .where("banned", false)
+    .andWhere(function () {
+      this.where("shared", true);
+      if (user_id) {
+        this.orWhere("user_id", user_id);
+      }
+    })
+    .orderBy("shared", "desc")
+    .orderBy("address", "asc");
+}
+
 async function add(params) {
   params.address = params.address.toLowerCase();
 
@@ -35,7 +48,8 @@ async function add(params) {
     homepage: params.homepage,
     user_id: params.user_id,
     banned: !!params.banned,
-    banned_by_id: params.banned_by_id
+    banned_by_id: params.banned_by_id,
+    shared: !params.banned && !!params.shared
   };
 
   if (id) {
@@ -105,6 +119,11 @@ function normalizeMatch(match) {
     delete newMatch.banned;
   }
 
+  if (newMatch.shared !== undefined) {
+    newMatch["domains.shared"] = newMatch.shared;
+    delete newMatch.shared;
+  }
+
   return newMatch;
 }
 
@@ -114,6 +133,7 @@ const selectable_admin = [
   "domains.address",
   "domains.homepage",
   "domains.banned",
+  "domains.shared",
   "domains.created_at",
   "domains.updated_at",
   "domains.user_id",
@@ -225,6 +245,7 @@ module.exports = {
   find,
   get,
   getAdmin,
+  getForUser,
   remove,
   totalAdmin,
   update,

@@ -3,7 +3,12 @@
     {{id}}
   </td>
   <td class="domains-address right-fade">
-    {{address}}
+    <span class="domains-address-line">
+      {{address}}
+      {{#if shared}}
+        <span class="status green">Shared</span>
+      {{/if}}
+    </span>
     <p class="description">
       by&nbsp;
       {{~#if user_id~}}

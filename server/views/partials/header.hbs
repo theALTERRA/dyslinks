@@ -43,8 +43,8 @@
         {{#unless user}}
           {{#unless login_disabled}}
             <li>
-              <a class="button primary" href="/login" title="Log in or sign up">
-                Log in / Sign up
+              <a class="button primary" href="/login" title="{{#if disallow_registration}}Log in{{else}}Log in or sign up{{/if}}">
+                {{#if disallow_registration}}Log in{{else}}Log in / Sign up{{/if}}
               </a>
             </li>
           {{/unless}}

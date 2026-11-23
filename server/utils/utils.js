@@ -380,6 +380,7 @@ const sanitize = {
     ...parseTimestamps(domain),
     id: domain.uuid,
     banned: !!domain.banned,
+    shared: !!domain.shared,
     homepage: domain.homepage || env.DEFAULT_DOMAIN,
     uuid: undefined,
     user_id: undefined,
@@ -447,6 +448,7 @@ const sanitize = {
     return {
       ...domain,
       ...timestamps,
+      shared: !!domain.shared,
       links_count: (domain.links_count ?? 0).toLocaleString("en-US"),
       relative_created_at: getTimeAgo(timestamps.created_at),
       relative_updated_at: getTimeAgo(timestamps.updated_at),

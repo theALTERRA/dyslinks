@@ -28,12 +28,13 @@ async function add(req, res) {
 };
 
 async function addAdmin(req, res) {
-  const { address, banned, homepage } = req.body;
+  const { address, banned, homepage, shared } = req.body;
 
   const domain = await query.domain.add({
     address,
     homepage,
     banned,
+    shared: !banned && !!shared,
     ...(banned && { banned_by_id: req.user.id })
   });
 
@@ -119,9 +120,11 @@ async function getAdmin(req, res) {
   const banned = utils.parseBooleanQuery(req.query.banned);
   const owner = utils.parseBooleanQuery(req.query.owner);
   const links = utils.parseBooleanQuery(req.query.links);
+  const shared = utils.parseBooleanQuery(req.query.shared);
 
   const match = {
     ...(banned !== undefined && { banned }),
+    ...(shared !== undefined && { shared }),
     ...(owner !== undefined && { user_id: [owner ? "is not" : "is", null] }),
   };
 
@@ -156,7 +159,8 @@ async function ban(req, res) {
 
   const update = {
     banned_by_id: req.user.id,
-    banned: true
+    banned: true,
+    shared: false
   };
 
   // 1. check if domain exists
@@ -203,6 +207,33 @@ async function ban(req, res) {
   return res.status(200).send({ message: "Banned domain successfully." });
 }
 
+async function toggleShare(req, res) {
+  const { id } = req.params;
+
+  const domain = await query.domain.find({ id });
+
+  if (!domain) {
+    throw new CustomError("No domain has been found.", 400);
+  }
+
+  if (domain.banned) {
+    throw new CustomError("Cannot share a banned domain.", 400);
+  }
+
+  const nextShared = !domain.shared;
+  await query.domain.update({ id }, { shared: nextShared });
+
+  if (req.isHTML) {
+    res.setHeader("HX-Trigger", "reloadMainTable");
+    return res.status(200).send("");
+  }
+
+  return res.status(200).send({
+    shared: nextShared,
+    message: nextShared ? "Domain is now shared with all users." : "Domain is no longer shared."
+  });
+}
+
 module.exports = {
   add,
   addAdmin,
@@ -210,4 +241,5 @@ module.exports = {
   getAdmin,
   remove,
   removeAdmin,
+  toggleShare,
 }

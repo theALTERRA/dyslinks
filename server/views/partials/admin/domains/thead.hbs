@@ -53,12 +53,17 @@
         <select id="domains-select-links" name="links" class="table-input links" hx-on:change="resetTableNav()">
           <option value="" selected>Links...</option>
           <option value="true" {{#ifEquals query.links 'true'}}selected{{/ifEquals}}>With links</option>
-          <option value="false" {{#ifEquals query.links 'true'}}selected{{/ifEquals}}>No links</option>
+          <option value="false" {{#ifEquals query.links 'false'}}selected{{/ifEquals}}>No links</option>
         </select>
         <select id="domains-select-owner" name="owner" class="table-input owner" hx-on:change="resetTableNav()">
           <option value="" selected>Owner...</option>
           <option value="true" {{#ifEquals query.owner 'true'}}selected{{/ifEquals}}>With owner</option>
-          <option value="false" {{#ifEquals query.owner 'true'}}selected{{/ifEquals}}>No owner</option>
+          <option value="false" {{#ifEquals query.owner 'false'}}selected{{/ifEquals}}>No owner</option>
+        </select>
+        <select id="domains-select-shared" name="shared" class="table-input shared" hx-on:change="resetTableNav()">
+          <option value="" selected>Sharing...</option>
+          <option value="true" {{#ifEquals query.shared 'true'}}selected{{/ifEquals}}>Shared</option>
+          <option value="false" {{#ifEquals query.shared 'false'}}selected{{/ifEquals}}>Private</option>
         </select>
         <input id="total" name="total" type="hidden" value="{{total}}" />
         <input id="limit" name="limit" type="hidden" value="10" />
