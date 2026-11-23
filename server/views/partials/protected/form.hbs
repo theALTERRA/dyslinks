@@ -11,12 +11,14 @@
   {{else}}
     <div class="inputs-wrapper">
       <label>
-        Password:
+        Password
         <input 
           type="password" 
           id="protected-link-password" 
           name="password" 
-          placeholder="Password..."
+          placeholder="Enter password..."
+          autofocus="true"
+          autocomplete="current-password"
           hx-preserve="true"
           class="{{#if errors.link}}error{{/if}}"
           required 
