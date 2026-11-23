@@ -1,11 +1,11 @@
 <p align="center">
-  <img src="./static/images/logo.svg" alt="Dyslinks" width="72" height="72" />
+  <img src="./static/images/logo.svg" alt="Dyslinks" width="80" height="80" />
 </p>
 
 <h1 align="center">Dyslinks</h1>
 
 <p align="center">
-  A modern, self-hosted URL shortener with dark mode, custom domains, analytics, and production security hardening.
+  A clean, self-hosted URL shortener with refined light &amp; dark themes, self-hosted Inter typography, custom domains, analytics, and production security hardening.
 </p>
 
 <p align="center">
@@ -21,7 +21,7 @@
 
 ## Features
 
-- **Modern UI & Dark Mode** — Clean light/dark theme with automatic system preference detection, header toggle, zero-FOUC loading, and live-themed analytics charts.
+- **Modern UI & Dark Mode** — Crisp neutral light/dark themes with self-hosted Inter typography, sticky frosted topbar, automatic system preference detection, header toggle, zero-FOUC loading, and live-themed analytics charts.
 - **Link Management** — Custom slugs, password-protected links, link expiration, descriptions, QR codes, and private visit analytics (views, referrers, browsers, OS, country map).
 - **Custom Domains & Multi-User Admin** — Bind custom domains, manage users/links/domains in the admin panel, or authenticate via OIDC and REST API keys.
 - **Security Hardened** — Strict URL validation (blocks `javascript:`/`data:` XSS and private/metadata IPs), Helmet CSP headers, CSRF Origin verification, default rate limiting, strong production `JWT_SECRET` enforcement, and non-root Docker images.
