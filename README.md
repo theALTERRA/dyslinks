@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="./static/images/logo.svg" alt="dyslinks" width="72" height="72" />
+  <img src="./static/images/logo.svg" alt="Dyslinks" width="72" height="72" />
 </p>
 
-<h1 align="center">dyslinks</h1>
+<h1 align="center">Dyslinks</h1>
 
 <p align="center">
   A modern, self-hosted URL shortener with dark mode, custom domains, analytics, and production security hardening.
@@ -38,7 +38,7 @@ Pre-built multi-arch images (`linux/amd64`, `linux/arm64`) are published to GitH
 ```bash
 curl -O https://raw.githubusercontent.com/theALTERRA/dyslinks/main/docker-compose.yml
 cat <<EOF > .env
-SITE_NAME=dyslinks
+SITE_NAME=Dyslinks
 DEFAULT_DOMAIN=links.yourdomain.com
 JWT_SECRET=$(openssl rand -hex 32)
 EOF
@@ -46,7 +46,7 @@ EOF
 
 > Want to customize mail, OIDC, or other options? Copy [`.example.env`](./.example.env) to `.env`. For PostgreSQL or MariaDB, also add `DB_PASSWORD=...` to `.env`.
 
-### 2. Start dyslinks
+### 2. Start Dyslinks
 
 ```bash
 docker compose up -d
@@ -104,7 +104,7 @@ All settings are configured via environment variables (or `.env`). Any variable 
 | --- | --- | --- |
 | `JWT_SECRET` | **Required in production.** Random string (min 32 chars) used to sign tokens. | — |
 | `PORT` | Port the server listens on | `3000` |
-| `SITE_NAME` | Site name displayed in the UI and emails | `dyslinks` |
+| `SITE_NAME` | Site name displayed in the UI and emails | `Dyslinks` |
 | `DEFAULT_DOMAIN` | Public domain where the app is hosted | `localhost:3000` |
 | `TRUST_PROXY` | Read client IPs from `X-Forwarded-For`: `true` trusts proxies on loopback/private networks only, `false` disables, or set a hop count / comma-separated proxy IPs | `true` |
 | `ENABLE_RATE_LIMIT` | Enable API and auth rate limiting | `true` |

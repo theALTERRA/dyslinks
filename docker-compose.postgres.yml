@@ -1,4 +1,4 @@
-# dyslinks — PostgreSQL + Redis (recommended for production)
+# Dyslinks — PostgreSQL + Redis (recommended for production)
 #
 # Quick start:
 #   1. Copy .example.env to .env and set JWT_SECRET, DEFAULT_DOMAIN, and DB_PASSWORD
@@ -14,7 +14,7 @@ services:
         required: false
     environment:
       JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env (generate with: openssl rand -hex 32)}
-      SITE_NAME: ${SITE_NAME:-dyslinks}
+      SITE_NAME: ${SITE_NAME:-Dyslinks}
       DEFAULT_DOMAIN: ${DEFAULT_DOMAIN:-localhost:3000}
       TRUST_PROXY: ${TRUST_PROXY:-true}
       ENABLE_RATE_LIMIT: ${ENABLE_RATE_LIMIT:-true}

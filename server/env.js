@@ -28,7 +28,7 @@ if (process.argv.includes("--production")) {
 
 const spec = {
   PORT: num({ default: 3000 }),
-  SITE_NAME: str({ example: "dyslinks", default: "dyslinks" }),
+  SITE_NAME: str({ example: "Dyslinks", default: "Dyslinks" }),
   DEFAULT_DOMAIN: str({ example: "links.example.com", default: "localhost:3000" }),
   LINK_LENGTH: num({ default: 6 }),
   LINK_CUSTOM_ALPHABET: str({ default: "abcdefghkmnpqrstuvwxyzABCDEFGHKLMNPQRSTUVWXYZ23456789" }),
@@ -62,7 +62,7 @@ const spec = {
   MAIL_PORT: num({ default: 587 }),
   MAIL_SECURE: bool({ default: false }),
   MAIL_USER: str({ default: "" }),
-  MAIL_FROM: str({ default: "", example: "dyslinks <support@example.com>" }),
+  MAIL_FROM: str({ default: "", example: "Dyslinks <support@example.com>" }),
   MAIL_PASSWORD: str({ default: "" }),
   OIDC_ENABLED: bool({ default: false }),
   OIDC_ISSUER: str({ default: "" }),

@@ -4,13 +4,13 @@ const p = require("../../package.json");
 module.exports = {
   openapi: "3.0.0",
   info: {
-    title: "Kutt.to",
-    description: "API reference for [http://kutt.to](http://kutt.to).\n",
+    title: "Dyslinks",
+    description: "API reference for [Dyslinks](https://github.com/theALTERRA/dyslinks).\n",
     version: p.version
   },
   servers: [
     {
-      url: "https://kutt.to/api/v2"
+      url: "/api/v2"
     }
   ],
   tags: [
