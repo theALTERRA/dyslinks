@@ -1,10 +1,13 @@
 services:
   server:
-    build:
-      context: .
+    image: ghcr.io/thealterra/dyslinks:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
     volumes:
-       - db_data_sqlite:/var/lib/kutt
-       - custom:/kutt/custom
+      - db_data_sqlite:/var/lib/kutt
+      - custom:/kutt/custom
     environment:
       DB_FILENAME: "/var/lib/kutt/data.sqlite"
     ports:

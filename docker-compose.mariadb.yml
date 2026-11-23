@@ -1,16 +1,19 @@
 services:
   server:
-    build:
-      context: .
+    image: ghcr.io/thealterra/dyslinks:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
     volumes:
       - custom:/kutt/custom
     environment:
-        DB_CLIENT: mysql2
-        DB_HOST: mariadb
-        DB_PORT: 3306
-        REDIS_ENABLED: true
-        REDIS_HOST: redis
-        REDIS_PORT: 6379
+      DB_CLIENT: mysql2
+      DB_HOST: mariadb
+      DB_PORT: 3306
+      REDIS_ENABLED: true
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
     ports:
       - 3000:3000
     depends_on:
@@ -20,7 +23,7 @@ services:
         condition: service_started
   mariadb:
     image: mariadb:10
-    restart: always
+    restart: unless-stopped
     healthcheck:
       test: ['CMD-SHELL', 'MYSQL_PWD="${DB_PASSWORD}" mariadb-admin ping -h localhost -u "${DB_USER}"']
       interval: 3s
@@ -37,7 +40,7 @@ services:
       - 3306
   redis:
     image: redis:alpine
-    restart: always
+    restart: unless-stopped
     expose:
       - 6379
 volumes:
