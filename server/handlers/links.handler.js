@@ -614,8 +614,11 @@ async function redirectCustomDomainHomepage(req, res, next) {
     return;
   }
 
-  // Allow unlocking password-protected links hosted on custom or shared domains
-  if (req.method === "POST" && /^\/api(?:\/v2)?\/links\/[^/]+\/protected\/?$/.test(req.path)) {
+  // Allow unlocking password-protected links and footer support email on custom/shared domains
+  if (
+    (req.method === "POST" && /^\/api(?:\/v2)?\/links\/[^/]+\/protected\/?$/.test(req.path)) ||
+    (req.method === "GET" && req.path === "/get-support-email")
+  ) {
     next();
     return;
   }

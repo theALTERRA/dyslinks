@@ -26,7 +26,14 @@ function viewTemplate(template) {
 }
 
 function config(req, res, next) {
+  const defaultDomain = env.DEFAULT_DOMAIN.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  const reqHost = utils.removeWww(req.headers.host)?.toLowerCase();
+  const isCustomDomain = !!reqHost && reqHost !== utils.removeWww(defaultDomain).toLowerCase();
+  const isLocalDefault = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(defaultDomain);
+  const siteOrigin = `${env.isDev || isLocalDefault ? "http://" : "https://"}${defaultDomain}`;
+
   res.locals.default_domain = env.DEFAULT_DOMAIN;
+  res.locals.site_url = isCustomDomain ? siteOrigin : "";
   res.locals.site_name = env.SITE_NAME;
   res.locals.contact_email = env.CONTACT_EMAIL;
   res.locals.server_ip_address = env.SERVER_IP_ADDRESS;
