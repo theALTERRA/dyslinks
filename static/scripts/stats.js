@@ -1,5 +1,6 @@
 // active Chart.js instances so we can re-theme them live on dark/light switch
 let dyslinksCharts = [];
+let activeMapPath = null;
 
 const CHART_FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
 
@@ -80,16 +81,25 @@ function createViewsChartLabel(ctx) {
 function changeStatsPeriod(event) {
   const period = event.target.dataset.period;
   if (!period) return;
-  const canvases = document.querySelector("#stats").querySelectorAll("[data-period]");
-  const buttons = document.querySelector("#stats").querySelectorAll(".nav");
-  if (!buttons || !canvases) return;
-  buttons.forEach(b => b.disabled = false);
+  const periodItems = document.querySelectorAll("#stats .stats-period [data-period]");
+  const buttons = document.querySelectorAll("#stats .stats-nav .nav");
+  if (!buttons || !periodItems) return;
+  buttons.forEach(b => { b.disabled = false; });
   event.target.disabled = true;
-  canvases.forEach(canvas => {
-    if (canvas.dataset.period === period) {
-      canvas.classList.remove("hidden");
+  periodItems.forEach(el => {
+    if (el.dataset.period === period) {
+      el.classList.remove("hidden");
     } else {
-      canvas.classList.add("hidden");
+      el.classList.add("hidden");
+    }
+  });
+  dyslinksCharts.forEach(chart => {
+    try {
+      if (chart.canvas && !chart.canvas.classList.contains("hidden")) {
+        chart.resize();
+      }
+    } catch (_) {
+      // ignore resize errors
     }
   });
   feedMapData(period);
@@ -120,8 +130,8 @@ function createViewsChart() {
     const labels = createViewsChartLabel(ctx);
     const maxTicksLimitX = period === "year" ? 6 : period === "month" ? 15 : 12;
 
-    const gradient = ctx.getContext("2d").createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, `rgba(${theme.accentRgb}, 0.42)`);
+    const gradient = ctx.getContext("2d").createLinearGradient(0, 0, 0, 280);
+    gradient.addColorStop(0, `rgba(${theme.accentRgb}, 0.36)`);
     gradient.addColorStop(1, `rgba(${theme.accentRgb}, 0.02)`);
 
     const chart = new Chart(ctx, {
@@ -131,11 +141,12 @@ function createViewsChart() {
         datasets: [{
           label: "Views",
           data,
-          tension: 0.35,
+          tension: 0.3,
           elements: {
             point: {
-              pointRadius: 0,
-              pointHoverRadius: 5
+              pointRadius: 2,
+              pointHoverRadius: 5,
+              pointBackgroundColor: theme.accent
             }
           },
           fill: {
@@ -147,13 +158,14 @@ function createViewsChart() {
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: false,
           },
           tooltip: getTooltipOptions(theme)
         },
-        responsive: true,
         interaction: {
           intersect: false,
           usePointStyle: true,
@@ -165,6 +177,7 @@ function createViewsChart() {
             beginAtZero: true,
             grid: { color: theme.gridColor },
             ticks: {
+              precision: 0,
               maxTicksLimit: 5,
               color: theme.tickColor
             }
@@ -181,8 +194,6 @@ function createViewsChart() {
     });
 
     dyslinksCharts.push(chart);
-    // reset the display: block style that chart.js applies automatically
-    ctx.style.display = "";
   });
 }
 
@@ -195,13 +206,6 @@ function createBrowsersChart() {
   canvases.forEach(ctx => {
     const data = JSON.parse(ctx.dataset.data);
 
-    const gradient = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
-    const gradientHover = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
-    gradient.addColorStop(0, `rgba(${theme.accentRgb}, 0.85)`);
-    gradient.addColorStop(1, `rgba(${theme.accentRgb}, 0.2)`);
-    gradientHover.addColorStop(0, `rgba(${theme.accentRgb}, 0.95)`);
-    gradientHover.addColorStop(1, `rgba(${theme.accentRgb}, 0.45)`);
-
     const chart = new Chart(ctx, {
       type: "bar",
       data: {
@@ -209,23 +213,26 @@ function createBrowsersChart() {
         datasets: [{
           label: "Views",
           data: data.map(d => d.value),
-          backgroundColor: gradient,
+          backgroundColor: `rgba(${theme.accentRgb}, 0.72)`,
           borderColor: theme.accent,
           borderWidth: 1,
           borderRadius: 6,
-          hoverBackgroundColor: gradientHover,
+          barThickness: 18,
+          maxBarThickness: 22,
+          hoverBackgroundColor: `rgba(${theme.accentRgb}, 0.92)`,
           hoverBorderWidth: 1.5
         }]
       },
       options: {
         indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: false,
           },
           tooltip: getTooltipOptions(theme)
         },
-        responsive: true,
         interaction: {
           intersect: false,
           mode: "index",
@@ -233,25 +240,27 @@ function createBrowsersChart() {
         },
         scales: {
           x: {
-            grace: "5%",
+            grace: "10%",
             beginAtZero: true,
             grid: { color: theme.gridColor },
             ticks: {
+              precision: 0,
               maxTicksLimit: 6,
               color: theme.tickColor
             }
           },
           y: {
             grid: { display: false },
-            ticks: { color: theme.tickColor }
+            ticks: {
+              autoSkip: false,
+              color: theme.tickColor
+            }
           }
         }
       }
     });
 
     dyslinksCharts.push(chart);
-    // reset the display: block style that chart.js applies automatically
-    ctx.style.display = "";
   });
 }
 
@@ -270,7 +279,7 @@ function createReferrersChart() {
     let hoverBorderWidth = 2;
     let borderColor = `rgba(${theme.accentRgb}, 0.9)`;
     if (data.length === 0) {
-      data.push({ name: "No views.", value: 1 });
+      data.push({ name: "No views", value: 1 });
       max = { value: 1000 };
       tooltipEnabled = false;
       hoverBackgroundColor = `rgba(${theme.accentRgb}, 0.14)`;
@@ -293,24 +302,26 @@ function createReferrersChart() {
         }]
       },
       options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: "62%",
         plugins: {
           legend: {
             position: "left",
             labels: {
-              boxWidth: 18,
+              boxWidth: 14,
+              boxHeight: 14,
+              padding: 14,
               color: theme.legendColor,
-              font: { size: 12 }
+              font: { family: CHART_FONT_FAMILY, size: 12.5 }
             }
           },
           tooltip: getTooltipOptions(theme, tooltipEnabled)
-        },
-        responsive: false,
+        }
       }
     });
 
     dyslinksCharts.push(chart);
-    // reset the display: block style that chart.js applies automatically
-    ctx.style.display = "";
   });
 }
 
@@ -334,13 +345,6 @@ function createOsChart() {
   canvases.forEach(ctx => {
     const data = JSON.parse(ctx.dataset.data);
 
-    const gradient = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
-    const gradientHover = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
-    gradient.addColorStop(0, `rgba(${theme.accentRgb}, 0.85)`);
-    gradient.addColorStop(1, `rgba(${theme.accentRgb}, 0.2)`);
-    gradientHover.addColorStop(0, `rgba(${theme.accentRgb}, 0.95)`);
-    gradientHover.addColorStop(1, `rgba(${theme.accentRgb}, 0.45)`);
-
     const chart = new Chart(ctx, {
       type: "bar",
       data: {
@@ -348,23 +352,26 @@ function createOsChart() {
         datasets: [{
           label: "Views",
           data: data.map(d => d.value),
-          backgroundColor: gradient,
+          backgroundColor: `rgba(${theme.accentRgb}, 0.72)`,
           borderColor: theme.accent,
           borderWidth: 1,
           borderRadius: 6,
-          hoverBackgroundColor: gradientHover,
+          barThickness: 18,
+          maxBarThickness: 22,
+          hoverBackgroundColor: `rgba(${theme.accentRgb}, 0.92)`,
           hoverBorderWidth: 1.5
         }]
       },
       options: {
         indexAxis: "y",
+        responsive: true,
+        maintainAspectRatio: false,
         plugins: {
           legend: {
             display: false,
           },
           tooltip: getTooltipOptions(theme)
         },
-        responsive: true,
         interaction: {
           intersect: false,
           mode: "index",
@@ -372,25 +379,68 @@ function createOsChart() {
         },
         scales: {
           x: {
-            grace: "5%",
+            grace: "10%",
             beginAtZero: true,
             grid: { color: theme.gridColor },
             ticks: {
+              precision: 0,
               maxTicksLimit: 6,
               color: theme.tickColor
             }
           },
           y: {
             grid: { display: false },
-            ticks: { color: theme.tickColor }
+            ticks: {
+              autoSkip: false,
+              color: theme.tickColor
+            }
           }
         }
       }
     });
 
     dyslinksCharts.push(chart);
-    // reset the display: block style that chart.js applies automatically
-    ctx.style.display = "";
+  });
+}
+
+// render compact country breakdown below map for small/unknown regions
+function renderMapCountriesList(entries, nameById) {
+  const container = document.getElementById("map-countries-list");
+  if (!container) return;
+  container.textContent = "";
+
+  const nonZero = entries
+    .filter(item => item.value > 0)
+    .sort((a, b) => b.value - a.value);
+
+  if (!nonZero.length) {
+    const empty = document.createElement("span");
+    empty.className = "map-countries-empty";
+    empty.textContent = "No country visits recorded in this period";
+    container.appendChild(empty);
+    return;
+  }
+
+  nonZero.slice(0, 8).forEach(item => {
+    const code = String(item.name || "").toLowerCase();
+    const label = code === "unknown"
+      ? "Unknown"
+      : (nameById[code] || code.toUpperCase());
+
+    const pill = document.createElement("span");
+    pill.className = "map-country-pill";
+
+    const nameEl = document.createElement("span");
+    nameEl.className = "map-country-name";
+    nameEl.textContent = label;
+
+    const countEl = document.createElement("span");
+    countEl.className = "map-country-count";
+    countEl.textContent = String(item.value);
+
+    pill.appendChild(nameEl);
+    pill.appendChild(countEl);
+    container.appendChild(pill);
   });
 }
 
@@ -401,26 +451,49 @@ function feedMapData(period) {
   const paths = map.querySelectorAll("path");
   if (!paths || !paths.length) return;
 
-  let data = JSON.parse(map.dataset[period || "day"]);
-  if (!data) return;
+  let raw = [];
+  try {
+    raw = JSON.parse(map.dataset[period || "day"] || "[]");
+  } catch (_) {
+    raw = [];
+  }
+  if (!Array.isArray(raw)) raw = [];
 
-  let max = data.sort((a, b) => a.value > b.value ? -1 : 1)[0];
+  const nameById = Object.create(null);
+  for (let i = 0; i < paths.length; ++i) {
+    const id = String(paths[i].dataset.id || "").toLowerCase();
+    if (id) {
+      nameById[id] = paths[i].getAttribute("aria-label") || id.toUpperCase();
+    }
+  }
 
-  if (!max) max = { value: 1 };
+  const countsById = Object.create(null);
+  let maxMapped = 0;
+  for (let i = 0; i < raw.length; ++i) {
+    const key = String(raw[i].name || "").toLowerCase();
+    const val = Number(raw[i].value) || 0;
+    countsById[key] = (countsById[key] || 0) + val;
+    if (nameById[key] && countsById[key] > maxMapped) {
+      maxMapped = countsById[key];
+    }
+  }
 
-  data = data.reduce((a, c) => ({ ...a, [c.name]: c.value }), {});
+  const denom = maxMapped > 0 ? maxMapped : 1;
 
   for (let i = 0; i < paths.length; ++i) {
-    const id = paths[i].dataset.id;
-    const views = data[id] || 0;
-    paths[i].dataset.views = views;
-    const colorLevel = Math.ceil((views / max.value) * 6);
-    for (let j = 1; j < 7; j++) {
+    const id = String(paths[i].dataset.id || "").toLowerCase();
+    const views = countsById[id] || 0;
+    paths[i].dataset.views = String(views);
+    for (let j = 0; j < 7; j++) {
       paths[i].classList.remove(`color-${j}`);
     }
-    paths[i].classList.add(`color-${colorLevel}`);
-    paths[i].dataset.views = views;
+    if (views > 0) {
+      const level = Math.min(6, Math.max(1, Math.ceil((views / denom) * 6)));
+      paths[i].classList.add(`color-${level}`);
+    }
   }
+
+  renderMapCountriesList(raw, nameById);
 }
 
 // handle map tooltip hover
@@ -428,25 +501,43 @@ function mapTooltipHoverOver(evt) {
   const e = evt || window.event;
   const tooltip = document.querySelector("#map-tooltip");
   if (!tooltip || !e || !e.target) return;
-  if (!e.target.dataset.id) return mapTooltipHoverOut();
-  if (!tooltip.classList.contains("active")) {
-    tooltip.classList.add("visible");
+  const target = e.target.closest ? e.target.closest("path[data-id]") : e.target;
+  if (!target || !target.dataset || !target.dataset.id) {
+    mapTooltipHoverOut();
+    return;
   }
-  tooltip.dataset.tooltip = `${e.target.ariaLabel}: ${e.target.dataset.views || 0}`;
-  const rect = e.target.getBoundingClientRect();
-  tooltip.style.top = rect.top + (rect.height / 2) + "px";
-  tooltip.style.left = rect.left + (rect.width / 2) + "px";
-  e.target.classList.add("active");
+
+  if (activeMapPath && activeMapPath !== target) {
+    activeMapPath.classList.remove("active");
+  }
+  activeMapPath = target;
+  target.classList.add("active");
+
+  const name = target.getAttribute("aria-label") || target.dataset.id.toUpperCase();
+  const views = target.dataset.views || "0";
+  tooltip.textContent = `${name}: ${views}`;
+  tooltip.classList.add("visible");
+  tooltip.setAttribute("aria-hidden", "false");
+
+  const x = typeof e.clientX === "number" ? e.clientX : 0;
+  const y = typeof e.clientY === "number" ? e.clientY : 0;
+  const pad = 12;
+  const halfW = (tooltip.offsetWidth || 80) / 2;
+  const clampedX = Math.min(Math.max(x, halfW + pad), window.innerWidth - halfW - pad);
+  const clampedY = Math.max(y, 44);
+  tooltip.style.left = clampedX + "px";
+  tooltip.style.top = clampedY + "px";
 }
 
 function mapTooltipHoverOut() {
   const tooltip = document.querySelector("#map-tooltip");
-  const map = document.querySelector("svg.map");
-  if (!tooltip || !map) return;
-  const paths = map.querySelectorAll("path");
-  tooltip.classList.remove("visible");
-  for (let i = 0; i < paths.length; ++i) {
-    paths[i].classList.remove("active");
+  if (tooltip) {
+    tooltip.classList.remove("visible");
+    tooltip.setAttribute("aria-hidden", "true");
+  }
+  if (activeMapPath) {
+    activeMapPath.classList.remove("active");
+    activeMapPath = null;
   }
 }
 
