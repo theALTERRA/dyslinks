@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ quiet: true });
 const { cleanEnv, num, str, bool } = require("envalid");
 const { readFileSync } = require("node:fs");
 

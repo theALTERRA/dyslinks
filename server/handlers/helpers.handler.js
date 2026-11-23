@@ -1,5 +1,5 @@
 const { RedisStore: RateLimitRedisStore } = require("rate-limit-redis");
-const { rateLimit: expressRateLimit } = require("express-rate-limit");
+const { rateLimit: expressRateLimit, ipKeyGenerator } = require("express-rate-limit");
 const { validationResult } = require("express-validator");
 
 const { CustomError } = require("../utils");
@@ -152,7 +152,7 @@ function rateLimit(params) {
       return params.limit;
     },
     keyGenerator: function(req, res) {
-      return "rl:" + req.method + req.baseUrl + req.path + ":" + req.ip;
+      return "rl:" + req.method + req.baseUrl + req.path + ":" + ipKeyGenerator(req.ip || "");
     },
     requestWasSuccessful: function(req, res) {
       return !res.locals.error && res.statusCode < 400;

@@ -3,7 +3,6 @@ const { body, param, query: queryValidator } = require("express-validator");
 const promisify = require("node:util").promisify;
 const bcrypt = require("bcryptjs");
 const dns = require("node:dns");
-const URL = require("node:url");
 const ms = require("ms");
 
 const { ROLES } = require("../consts");
@@ -28,7 +27,7 @@ const createLink = [
     .customSanitizer(utils.addProtocol)
     .custom(value => utils.isSafeUrl(value, { allowCustomProtocols: true }))
     .withMessage("URL is not valid.")
-    .custom(value => (utils.removeWww(URL.parse(value).host) || "").toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
+    .custom(value => (utils.removeWww(URL.parse(value)?.host) || "").toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage(`${env.DEFAULT_DOMAIN} URLs are not allowed.`),
   body("password")
     .optional({ nullable: true, checkFalsy: true })
@@ -107,7 +106,7 @@ const editLink = [
     .customSanitizer(utils.addProtocol)
     .custom(value => utils.isSafeUrl(value, { allowCustomProtocols: true }))
     .withMessage("URL is not valid.")
-    .custom(value => (utils.removeWww(URL.parse(value).host) || "").toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
+    .custom(value => (utils.removeWww(URL.parse(value)?.host) || "").toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage(`${env.DEFAULT_DOMAIN} URLs are not allowed.`),
   body("password")
     .optional({ nullable: true, checkFalsy: true })
@@ -172,7 +171,7 @@ const addDomain = [
     .custom(value => utils.urlRegex.test(value))
     .customSanitizer(value => {
       const parsed = URL.parse(value);
-      return utils.removeWww(parsed.hostname || parsed.href);
+      return utils.removeWww(parsed?.hostname || parsed?.href || value);
     })
     .custom(value => value.toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage("You can't use the default domain.")
@@ -201,7 +200,7 @@ const addDomainAdmin = [
     .custom(value => utils.urlRegex.test(value))
     .customSanitizer(value => {
       const parsed = URL.parse(value);
-      return utils.removeWww(parsed.hostname || parsed.href);
+      return utils.removeWww(parsed?.hostname || parsed?.href || value);
     })
     .custom(value => value.toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage("You can't add the default domain.")

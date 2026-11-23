@@ -2,7 +2,6 @@ const { differenceInSeconds } = require("date-fns");
 const promisify = require("node:util").promisify;
 const bcrypt = require("bcryptjs");
 const { isbot } = require("isbot");
-const URL = require("node:url");
 const dns = require("node:dns");
 
 const validators = require("./validators.handler");
@@ -100,7 +99,7 @@ async function create(req, res) {
   const { reuse, password, customurl, description, target, fetched_domain, expire_in } = req.body;
   const domain_id = fetched_domain ? fetched_domain.id : null;
   
-  const targetDomain = utils.removeWww(URL.parse(target).hostname);
+  const targetDomain = utils.removeWww(URL.parse(target)?.hostname);
   
   const tasks = await Promise.all([
     reuse &&
@@ -207,7 +206,7 @@ async function edit(req, res) {
 
   const { address, target, description, expire_in, password } = req.body;
   
-  const targetDomain = target && utils.removeWww(URL.parse(target).hostname);
+  const targetDomain = target && utils.removeWww(URL.parse(target)?.hostname);
   const domain_id = link.domain_id || null;
 
   const tasks = await Promise.all([
@@ -300,7 +299,7 @@ async function editAdmin(req, res) {
 
   const { address, target, description, expire_in, password } = req.body;
   
-  const targetDomain = target && utils.removeWww(URL.parse(target).hostname);
+  const targetDomain = target && utils.removeWww(URL.parse(target)?.hostname);
   const domain_id = link.domain_id || null;
 
   const tasks = await Promise.all([
@@ -412,7 +411,7 @@ async function ban(req, res) {
   // 2. ban link
   tasks.push(query.link.update({ uuid: id }, update));
 
-  const domain = utils.removeWww(URL.parse(link.target).hostname);
+  const domain = utils.removeWww(URL.parse(link.target)?.hostname);
 
   // 3. ban target's domain
   if (req.body.domain) {

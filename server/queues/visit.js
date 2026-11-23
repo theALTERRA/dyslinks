@@ -1,6 +1,5 @@
 const useragent = require("express-useragent").default;
 const geoip = require("geoip-lite");
-const URL = require("node:url");
 
 const { removeWww, getUseragentBrowser, getUseragentOS } = require("../utils");
 const query = require("../queries");
@@ -16,7 +15,7 @@ module.exports = function({ data }) {
   const agent = useragent.parse(userAgent);
   const browser = getUseragentBrowser(agent);
   const os = getUseragentOS(agent);
-  const referrer = data.referrer && removeWww(URL.parse(data.referrer).hostname);
+  const referrer = data.referrer && removeWww(URL.parse(data.referrer)?.hostname);
   const country = (data.country || geoip.lookup(data.ip)?.country)?.slice(0, 2).toUpperCase() || "Unknown";
 
   tasks.push(

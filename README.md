@@ -85,7 +85,7 @@ docker compose pull && docker compose up -d
 
 ## Running Locally (Node.js)
 
-Requires Node.js 20+.
+Requires Node.js 22+ (Node 26 LTS recommended).
 
 ```bash
 npm install
