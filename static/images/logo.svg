@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" fill="none">
+  <defs>
+    <linearGradient id="dyslinks-grad" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4f46e5" />
+      <stop offset="100%" stop-color="#7c3aed" />
+    </linearGradient>
+  </defs>
+  <rect x="2" y="2" width="60" height="60" rx="16" fill="url(#dyslinks-grad)" />
+  <g stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M27.5 36.5a9.5 9.5 0 0 0 13.44 0l5.3-5.3a9.5 9.5 0 0 0-13.43-13.44l-3.04 3.04" />
+    <path d="M36.5 27.5a9.5 9.5 0 0 0-13.44 0l-5.3 5.3a9.5 9.5 0 0 0 13.43 13.44l3.04-3.04" />
+  </g>
+</svg>
