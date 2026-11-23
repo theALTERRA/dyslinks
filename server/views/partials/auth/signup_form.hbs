@@ -1,0 +1,45 @@
+<form id="login-signup" class="signup" hx-post="/api/auth/signup" hx-swap="outerHTML">
+  <h2 class="auth-form-title">Create an account</h2>
+  <label class="{{#if errors.email}}error{{/if}}">
+    Email address
+    <input
+      name="email"
+      id="email"
+      type="email"
+      autofocus="true"
+      autocomplete="email"
+      placeholder="Email address..."
+      hx-preserve="true"
+    />
+    {{#if errors.email}}<p class="error">{{errors.email}}</p>{{/if}}
+  </label>
+  <label class="{{#if errors.password}}error{{/if}}">
+    Password
+    <input
+      name="password"
+      id="password"
+      type="password"
+      autocomplete="new-password"
+      placeholder="Password..."
+      hx-preserve="true"
+    />
+    {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
+  </label>
+  <div class="buttons-wrapper">
+    <button type="submit" class="primary signup full">
+      <span>{{> icons/new_user}}</span>
+      <span>{{> icons/spinner}}</span>
+      Sign up
+    </button>
+  </div>
+  {{#unless errors}}
+    {{#if error}}
+      <p class="error">{{error}}</p>
+    {{/if}}
+  {{/unless}}
+  <div class="auth-links">
+    <p class="auth-switch">
+      Already have an account? <a href="/login" title="Log in">Log in</a>
+    </p>
+  </div>
+</form>

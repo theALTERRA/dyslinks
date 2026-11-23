@@ -1,9 +1,9 @@
 <form id="login-signup" hx-post="/api/auth/create-admin" hx-swap="outerHTML">
   <h2 class="admin-form-title">
-    Create an Admin account first:
+    Create an admin account
   </h2>
   <label class="{{#if errors.email}}error{{/if}}">
-    Email address:
+    Email address
     <input
       name="email"
       id="email"
@@ -15,7 +15,7 @@
     {{#if errors.email}}<p class="error">{{errors.email}}</p>{{/if}}
   </label>
   <label class="{{#if errors.password}}error{{/if}}">
-    Password:
+    Password
     <input
       name="password"
       id="password"

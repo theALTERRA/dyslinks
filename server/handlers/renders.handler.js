@@ -25,7 +25,22 @@ async function login(req, res) {
   }
   
   res.render("login", {
-    title: "Log in or sign up"
+    title: "Log in"
+  });
+}
+
+async function signup(req, res) {
+  if (req.user) {
+    res.redirect("/");
+    return;
+  }
+  if (env.DISALLOW_REGISTRATION) {
+    res.redirect("/login");
+    return;
+  }
+
+  res.render("signup", {
+    title: "Sign up"
   });
 }
 
@@ -330,6 +345,7 @@ module.exports = {
   resetPassword,
   resetPasswordSetNewPassword,
   settings,
+  signup,
   stats,
   terms,
   verifyChangeEmail,

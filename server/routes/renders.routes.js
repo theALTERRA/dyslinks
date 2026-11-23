@@ -26,6 +26,13 @@ router.get(
 );
 
 router.get(
+  "/signup",
+  asyncHandler(auth.jwtLoosePage),
+  asyncHandler(helpers.adminSetup),
+  asyncHandler(renders.signup)
+);
+
+router.get(
   "/login/oidc", 
   locals.viewTemplate("login"),
   auth.featureAccess([env.OIDC_ENABLED]),
