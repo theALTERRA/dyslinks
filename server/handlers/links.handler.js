@@ -463,9 +463,9 @@ async function redirect(req, res, next) {
   if (isPreservedUrl) return next();
 
   // 1. If custom domain, get domain info
-  const host = utils.removeWww(req.headers.host);
+  const host = utils.removeWww(req.headers.host)?.toLowerCase();
   const domain =
-    host !== env.DEFAULT_DOMAIN
+    host && host !== env.DEFAULT_DOMAIN.toLowerCase()
       ? await query.domain.find({ address: host })
       : null;
 
@@ -588,20 +588,34 @@ async function redirectProtected(req, res) {
   }
 
   // 5. Send target
+  let redirectTarget = link.target;
+  try {
+    redirectTarget = new URL(link.target).href;
+  } catch {}
+
   if (req.isHTML) {
-    res.setHeader("HX-Redirect", link.target);
-    res.render("partials/protected/form", {
-      id: link.uuid,
-      message: "Redirecting...",
-    });
-    return;
+    if (req.headers["hx-request"]) {
+      res.setHeader("HX-Redirect", redirectTarget);
+      res.render("partials/protected/form", {
+        id: link.uuid,
+        message: "Redirecting...",
+      });
+      return;
+    }
+    return res.redirect(redirectTarget);
   }
   return res.status(200).send({ target: link.target });
 };
 
 async function redirectCustomDomainHomepage(req, res, next) {
-  const host = utils.removeWww(req.headers.host);
-  if (host === env.DEFAULT_DOMAIN) {
+  const host = utils.removeWww(req.headers.host)?.toLowerCase();
+  if (!host || host === env.DEFAULT_DOMAIN.toLowerCase()) {
+    next();
+    return;
+  }
+
+  // Allow unlocking password-protected links hosted on custom or shared domains
+  if (req.method === "POST" && /^\/api(?:\/v2)?\/links\/[^/]+\/protected\/?$/.test(req.path)) {
     next();
     return;
   }

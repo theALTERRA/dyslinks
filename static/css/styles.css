@@ -3342,6 +3342,7 @@ a.back-to-home {
 #protected form .spinner { display: none; }
 #protected form.htmx-request svg { display: none; }
 #protected form.htmx-request .spinner { display: block; }
+#protected form.htmx-request p.error { opacity: 0; }
 
 /* TERMS */
 
@@ -3543,7 +3544,7 @@ a.back-to-home {
   .verify-page h2,
   .verify-page h3 { display: flex; flex-direction: column; }
 
-  #protected form { margin-top: 0.5rem; }
+  #protected form { margin-top: 1.25rem; }
   #protected form .inputs-wrapper { flex-direction: column; align-items: stretch; }
   #protected form label { flex-basis: auto; width: 100%; }
 }

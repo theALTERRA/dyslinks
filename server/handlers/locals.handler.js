@@ -3,6 +3,11 @@ const utils = require("../utils");
 const env = require("../env");
 
 function isHTML(req, res, next) {
+  if (req.headers["hx-request"] === "true") {
+    req.isHTML = true;
+    next();
+    return;
+  }
   const accepts = req.accepts(["json", "html"]);
   req.isHTML = accepts === "html";
   next();

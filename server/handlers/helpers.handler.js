@@ -109,10 +109,15 @@ function verifyOrigin(req, res, next) {
   if (originHeader) {
     try {
       const originHost = new URL(originHeader).host.toLowerCase();
+      const trustProxyFn = req.app.get("trust proxy fn");
+      const isTrustedProxy = typeof trustProxyFn === "function" && trustProxyFn(req.socket?.remoteAddress, 0);
+      const forwardedHost = isTrustedProxy ? req.headers["x-forwarded-host"] : null;
       const allowedHosts = new Set(
-        [req.headers.host, env.DEFAULT_DOMAIN]
+        [req.headers.host, forwardedHost, env.DEFAULT_DOMAIN]
           .filter(Boolean)
-          .map(h => h.toLowerCase())
+          .flatMap(h => String(h).split(","))
+          .map(h => h.trim().toLowerCase())
+          .filter(Boolean)
       );
       if (!allowedHosts.has(originHost)) {
         return next(new CustomError("Forbidden cross-origin request.", 403));

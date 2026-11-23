@@ -1,16 +1,16 @@
 <form
-  id="report-form"
-  hx-post="/api/links/{id}/protected"
+  id="protected-form"
+  method="post"
+  action="/api/links/{{id}}/protected"
+  hx-post="/api/links/{{id}}/protected"
   hx-sync="this:abort"
-  hx-ext="path-params"
-  hx-vals='{"id":"{{id}}"}'
   hx-swap="outerHTML"
 > 
   {{#if message}}
     <p class="success">{{message}}</p>
   {{else}}
     <div class="inputs-wrapper">
-      <label>
+      <label class="{{#if error}}error{{/if}}">
         Password
         <input 
           type="password" 
@@ -20,7 +20,6 @@
           autofocus="true"
           autocomplete="current-password"
           hx-preserve="true"
-          class="{{#if errors.link}}error{{/if}}"
           required 
         />
       </label>
