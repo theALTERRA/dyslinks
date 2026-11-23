@@ -75,15 +75,55 @@ function parseQuery(req, res, next) {
     return res.status(400).json({ error: "search query is not valid." });
   }
 
-  const limit = parseInt(req.query.limit) || 10;
+  const parsedLimit = parseInt(req.query.limit, 10);
+  const parsedSkip = parseInt(req.query.skip, 10);
+  const limit = Number.isNaN(parsedLimit) ? 10 : Math.min(Math.max(parsedLimit, 1), 50);
+  const skip = Number.isNaN(parsedSkip) ? 0 : Math.max(parsedSkip, 0);
 
   req.context = {
-    limit: limit > 50 ? 50 : limit,
-    skip: parseInt(req.query.skip) || 0,
+    limit,
+    skip,
   };
 
   next();
 };
+
+function verifyOrigin(req, res, next) {
+  const method = req.method.toUpperCase();
+  if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
+    return next();
+  }
+
+  // Only enforce same-origin check when authenticating via session cookie (not API key)
+  if (!req.cookies?.token || req.headers["x-api-key"]) {
+    return next();
+  }
+
+  const originHeader = req.headers.origin;
+  const secFetchSite = req.headers["sec-fetch-site"];
+
+  if (secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    return next(new CustomError("Forbidden cross-origin request.", 403));
+  }
+
+  if (originHeader) {
+    try {
+      const originHost = new URL(originHeader).host.toLowerCase();
+      const allowedHosts = new Set(
+        [req.headers.host, env.DEFAULT_DOMAIN]
+          .filter(Boolean)
+          .map(h => h.toLowerCase())
+      );
+      if (!allowedHosts.has(originHost)) {
+        return next(new CustomError("Forbidden cross-origin request.", 403));
+      }
+    } catch {
+      return next(new CustomError("Forbidden cross-origin request.", 403));
+    }
+  }
+
+  return next();
+}
 
 function rateLimit(params) {
   if (!env.ENABLE_RATE_LIMIT) {
@@ -140,4 +180,5 @@ module.exports = {
   parseQuery,
   rateLimit,
   verify,
+  verifyOrigin,
 }

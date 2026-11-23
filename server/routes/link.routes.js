@@ -37,6 +37,7 @@ router.post(
   locals.viewTemplate("partials/shortener"),
   asyncHandler(auth.apikey),
   asyncHandler(env.DISALLOW_ANONYMOUS_LINKS ? auth.jwt : auth.jwtLoose),
+  helpers.rateLimit({ window: 60, limit: 20, user: 60 }),
   locals.createLink,
   validators.createLink,
   asyncHandler(helpers.verify),
@@ -101,6 +102,7 @@ router.post(
   "/:id/protected",
   locals.viewTemplate("partials/protected/form"),
   locals.protected,
+  helpers.rateLimit({ window: 60, limit: 10 }),
   validators.redirectProtected,
   asyncHandler(helpers.verify),
   asyncHandler(link.redirectProtected)
@@ -110,6 +112,7 @@ router.post(
   "/report",
   locals.viewTemplate("partials/report/form"),
   auth.featureAccess([env.MAIL_ENABLED]),
+  helpers.rateLimit({ window: 60, limit: 5 }),
   validators.reportLink,
   asyncHandler(helpers.verify),
   asyncHandler(link.report)

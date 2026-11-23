@@ -10,7 +10,8 @@ const utils = require("./utils")
 
 const jwtOptions = {
   jwtFromRequest: req => req.cookies?.token,
-  secretOrKey: env.JWT_SECRET
+  secretOrKey: env.JWT_SECRET,
+  algorithms: ["HS256"],
 };
 
 passport.use(
@@ -63,6 +64,9 @@ const localAPIKeyOptions = {
 passport.use(
   new LocalAPIKeyStrategy(localAPIKeyOptions, async (apikey, done) => {
     try {
+      if (typeof apikey !== "string" || !apikey.trim()) {
+        return done(null, false);
+      }
       const user = await query.user.find({ apikey });
       if (!user) {
         return done(null, false);
@@ -116,7 +120,7 @@ if (env.OIDC_ENABLED) {
             // New user.
             // Generate a random password which is not supposed to be used directly.
             const salt = await bcrypt.genSalt(12);
-            const password = utils.generateRandomPassword();
+            const password = await bcrypt.hash(utils.generateRandomPassword(), salt);
             const newUser = await query.user.add({
               email,
               password,

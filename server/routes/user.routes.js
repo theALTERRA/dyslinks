@@ -43,6 +43,7 @@ router.post(
   locals.viewTemplate("partials/settings/delete_account"),
   asyncHandler(auth.apikey),
   asyncHandler(auth.jwt),
+  helpers.rateLimit({ window: 60, limit: 5 }),
   validators.deleteUser,
   asyncHandler(helpers.verify),
   asyncHandler(user.remove)

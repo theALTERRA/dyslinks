@@ -16,10 +16,18 @@ RUN --mount=type=bind,source=package.json,target=package.json \
 RUN mkdir -p /var/lib/kutt
 
 # copy the rest of source files into the image
-COPY . .
+COPY --chown=node:node . .
+
+RUN chown -R node:node /var/lib/kutt
+
+# run as non-root user
+USER node
 
 # expose the port that the app listens on
 EXPOSE 3000
 
-# intialize database and run the app
-CMD npm run migrate && npm start
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/api/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+
+# initialize database and run the app
+CMD ["sh", "-c", "npm run migrate && npm start"]

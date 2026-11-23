@@ -25,6 +25,89 @@ class CustomError extends Error {
 
 const urlRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?))(?::\d{2,5})?(?:[/?#]\S*)?$/i;
 
+const BLOCKED_URL_PROTOCOLS = new Set([
+  "javascript:",
+  "data:",
+  "vbscript:",
+  "file:",
+  "blob:",
+  "about:",
+  "filesystem:",
+  "jar:",
+  "livescript:",
+  "mocha:",
+  "view-source:",
+  "chrome:",
+  "edge:",
+  "moz-extension:",
+  "chrome-extension:",
+]);
+
+const UNSAFE_OBJECT_KEYS = new Set(["__proto__", "constructor", "prototype"]);
+
+function isUnsafeObjectKey(key) {
+  return typeof key !== "string" || UNSAFE_OBJECT_KEYS.has(key);
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function isPrivateHostname(hostname) {
+  if (!hostname) return true;
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
+  if (
+    host === "localhost" ||
+    host === "0.0.0.0" ||
+    host === "::" ||
+    host === "::1" ||
+    host.endsWith(".localhost") ||
+    host.startsWith("fe80:") ||
+    host.startsWith("fc") ||
+    host.startsWith("fd") ||
+    host.startsWith("::ffff:127.") ||
+    host.startsWith("::ffff:10.") ||
+    host.startsWith("::ffff:169.254.") ||
+    host.startsWith("::ffff:192.168.") ||
+    /^::ffff:172\.(1[6-9]|2\d|3[0-1])\./.test(host)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isSafeUrl(value, { allowCustomProtocols = false } = {}) {
+  if (typeof value !== "string") return false;
+  if (!value || /[\u0000-\u001F\u007F]/.test(value)) return false;
+  if (value.startsWith("//")) return false;
+
+  let parsed;
+  try {
+    parsed = new URL(value);
+  } catch {
+    return false;
+  }
+
+  const protocol = parsed.protocol.toLowerCase();
+  if (BLOCKED_URL_PROTOCOLS.has(protocol)) return false;
+
+  if (protocol === "http:" || protocol === "https:" || protocol === "ftp:") {
+    if (!allowCustomProtocols && protocol === "ftp:") return false;
+    if (isPrivateHostname(parsed.hostname)) return false;
+    return urlRegex.test(value);
+  }
+
+  if (!allowCustomProtocols) return false;
+
+  // Allow safe non-web app protocols (e.g., mailto:, tel:, tg://) without dangerous schemes
+  return /^[a-z][a-z0-9+.-]*:$/i.test(protocol);
+}
+
 const charsNeedEscapeInRegExp = ".$*+?()[]{}|^-";
 const customAlphabetEscaped = env.LINK_CUSTOM_ALPHABET
   .split("").map(c => charsNeedEscapeInRegExp.includes(c) ? "\\" + c : c).join("");
@@ -43,7 +126,8 @@ function signToken(user) {
         iat: parseInt((new Date().getTime() / 1000).toFixed(0)),
         exp: parseInt((addDays(new Date(), 7).getTime() / 1000).toFixed(0))
       },
-      env.JWT_SECRET
+      env.JWT_SECRET,
+      { algorithm: "HS256" }
     )
 }
 
@@ -57,7 +141,7 @@ function setToken(res, token) {
 }
 
 function deleteCurrentToken(res) {
-  res.clearCookie("token", { httpOnly: true, secure: env.isProd });
+  res.clearCookie("token", { httpOnly: true, secure: env.isProd, sameSite: "Lax" });
 }
 
 function generateRandomPassword() {
@@ -195,6 +279,7 @@ const preservedURLs = [
   "css",
   "fonts",
   "libs",
+  "scripts",
   "pricing"
 ];
 
@@ -205,7 +290,7 @@ function parseBooleanQuery(query) {
 }
 
 function getInitStats() {
-  return Object.create({
+  return {
     browser: {
       chrome: 0,
       edge: 0,
@@ -223,9 +308,9 @@ function getInitStats() {
       other: 0,
       windows: 0
     },
-    country: {},
-    referrer: {}
-  });
+    country: Object.create(null),
+    referrer: Object.create(null)
+  };
 }
 
 // format date to relative date
@@ -435,7 +520,9 @@ if (customCSSExists) {
       console.warn("Could not read the custom CSS folder:", error);
     } else {
       files.forEach(function(file_name) {
-        custom_css_file_names.push(file_name);
+        if (file_name.endsWith(".css")) {
+          custom_css_file_names.push(file_name);
+        }
       });
     }
   })
@@ -452,6 +539,7 @@ module.exports = {
   CustomError,
   dateToUTC,
   deleteCurrentToken,
+  escapeHtml,
   generateId,
   generateRandomPassword,
   getCustomCSSFileNames,
@@ -463,6 +551,8 @@ module.exports = {
   getUseragentBrowser,
   getUseragentOS,
   isAdmin,
+  isSafeUrl,
+  isUnsafeObjectKey,
   parseBooleanQuery,
   parseDatetime,
   parseTimestamps,

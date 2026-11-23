@@ -70,7 +70,7 @@ const spec = {
   OIDC_SCOPE: str({ default: "openid profile email" }),
   OIDC_EMAIL_CLAIM: str({ default: "email" }),
   OIDC_BUTTON_TEXT: str({ default: "Log in with OIDC" }),
-  ENABLE_RATE_LIMIT: bool({ default: false }),
+  ENABLE_RATE_LIMIT: bool({ default: true }),
   REPORT_EMAIL: str({ default: "" }),
   CONTACT_EMAIL: str({ default: "" }),
   NODE_APP_INSTANCE: num({ default: 0 }),
@@ -87,5 +87,11 @@ for (const key in spec) {
 }
 
 const env = cleanEnv(process.env, spec);
+
+if (env.isProd && (env.JWT_SECRET.length < 32 || env.JWT_SECRET === "securekey")) {
+  throw new Error(
+    "JWT_SECRET must be a strong random string of at least 32 characters in production."
+  );
+}
 
 module.exports = env;

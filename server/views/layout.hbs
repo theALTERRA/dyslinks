@@ -9,7 +9,7 @@
   <link rel="apple-touch-icon" href="/images/favicon-196x196.png" />
   <link rel="mask-icon" href="/images/icon.svg" color="blue" />
   <link rel="manifest" href="/manifest.webmanifest" />
-  <meta name="theme-color" content="#f3f3f3" />
+  <meta name="theme-color" content="#f8fafc" />
   <meta property="fb:app_id" content="123456789" />
   <meta name="htmx-config" content='{"withCredentials":true}'>
   <meta property="og:url" content="https://{{default_domain}}" />
@@ -23,6 +23,7 @@
   <meta name="twitter:image" content="https://{{default_domain}}/images/card.png" />
   <meta name="description" content="{{site_name}} is a free and open source URL shortener with custom domains and stats." />
   <title>{{site_name}} | {{title}}</title>
+  <script src="/scripts/theme.js"></script>
   <link rel="stylesheet" href="/css/styles.css">
   {{#each custom_styles}}
     <link rel="stylesheet" href="/css/{{this}}">

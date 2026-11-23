@@ -6,10 +6,12 @@ const knex = require("../knex");
 const env = require("../env");
 
 async function add(params) {
+  const rawCountry = String(params.country || "unknown").toLowerCase();
+  const rawReferrer = String(params.referrer || "direct").toLowerCase();
   const data = {
     ...params,
-    country: params.country.toLowerCase(),
-    referrer: params.referrer.toLowerCase()
+    country: utils.isUnsafeObjectKey(rawCountry) ? "unknown" : rawCountry,
+    referrer: utils.isUnsafeObjectKey(rawReferrer) ? "direct" : rawReferrer
   };
 
   const nowUTC = new Date().toISOString();
@@ -31,8 +33,10 @@ async function add(params) {
       .first();
       
     if (visit) {
-      const countries = typeof visit.countries === "string" ? JSON.parse(visit.countries) : visit.countries;
-      const referrers = typeof visit.referrers === "string" ? JSON.parse(visit.referrers) : visit.referrers;
+      const countries = typeof visit.countries === "string" ? JSON.parse(visit.countries) : (visit.countries || {});
+      const referrers = typeof visit.referrers === "string" ? JSON.parse(visit.referrers) : (visit.referrers || {});
+      const currentCountryCount = Object.prototype.hasOwnProperty.call(countries, data.country) ? countries[data.country] : 0;
+      const currentReferrerCount = Object.prototype.hasOwnProperty.call(referrers, data.referrer) ? referrers[data.referrer] : 0;
       await trx("visits")
         .where({ id: visit.id })
         .increment(`br_${data.browser}`, 1)
@@ -42,11 +46,11 @@ async function add(params) {
           updated_at: utils.dateToUTC(new Date()),
           countries: JSON.stringify({
             ...countries,
-            [data.country]: (countries[data.country] ?? 0) + 1
+            [data.country]: (currentCountryCount ?? 0) + 1
           }),
           referrers: JSON.stringify({
             ...referrers,
-             [data.referrer]: (referrers[data.referrer] ?? 0) + 1
+            [data.referrer]: (currentReferrerCount ?? 0) + 1
           })
         });
     } else {
@@ -130,26 +134,24 @@ async function find(match, total) {
           other: period.os.other + visit.os_other,
           windows: period.os.windows + visit.os_windows
         },
-        country: {
-          ...period.country,
-          ...Object.entries(countries).reduce(
-            (obj, [country, count]) => ({
-              ...obj,
-              [country]: (period.country[country] || 0) + count
-            }),
-            {}
-          )
-        },
-        referrer: {
-          ...period.referrer,
-          ...Object.entries(referrers).reduce(
-            (obj, [referrer, count]) => ({
-              ...obj,
-              [referrer]: (period.referrer[referrer] || 0) + count
-            }),
-            {}
-          )
-        }
+        country: Object.entries(countries || {}).reduce(
+          (obj, [country, count]) => {
+            if (!utils.isUnsafeObjectKey(country)) {
+              obj[country] = (obj[country] || 0) + count;
+            }
+            return obj;
+          },
+          Object.assign(Object.create(null), period.country)
+        ),
+        referrer: Object.entries(referrers || {}).reduce(
+          (obj, [referrer, count]) => {
+            if (!utils.isUnsafeObjectKey(referrer)) {
+              obj[referrer] = (obj[referrer] || 0) + count;
+            }
+            return obj;
+          },
+          Object.assign(Object.create(null), period.referrer)
+        )
       };
       stats[type].views[index] += visit.total;
       stats[type].total += visit.total;

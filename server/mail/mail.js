@@ -3,7 +3,7 @@ const path = require("node:path");
 const fs = require("node:fs");
 
 const { resetMailText, verifyMailText, changeEmailText } = require("./text");
-const { CustomError } = require("../utils");
+const { CustomError, escapeHtml } = require("../utils");
 const env = require("../env");
 
 const mailConfig = {
@@ -123,12 +123,13 @@ async function sendReportEmail(link) {
     throw new Error("Attempting to send report email but email is not enabled.");
   };
 
+  const safeLink = escapeHtml(link);
   const mail = await transporter.sendMail({
     from: env.MAIL_FROM || env.MAIL_USER,
     to: env.REPORT_EMAIL,
     subject: "[REPORT]",
-    text: link,
-    html: link
+    text: `Reported link: ${link}`,
+    html: `<p>Reported link: <code>${safeLink}</code></p>`
   });
 
   if (!mail.accepted.length) {

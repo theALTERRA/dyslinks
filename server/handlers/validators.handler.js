@@ -26,9 +26,9 @@ const createLink = [
     .isLength({ min: 1, max: 2040 })
     .withMessage("Maximum URL length is 2040.")
     .customSanitizer(utils.addProtocol)
-    .custom(value => utils.urlRegex.test(value) || /^(?!https?|ftp)(\w+:|\/\/)/.test(value))
+    .custom(value => utils.isSafeUrl(value, { allowCustomProtocols: true }))
     .withMessage("URL is not valid.")
-    .custom(value => utils.removeWww(URL.parse(value).host) !== env.DEFAULT_DOMAIN)
+    .custom(value => (utils.removeWww(URL.parse(value).host) || "").toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage(`${env.DEFAULT_DOMAIN} URLs are not allowed.`),
   body("password")
     .optional({ nullable: true, checkFalsy: true })
@@ -47,7 +47,7 @@ const createLink = [
     .withMessage("Custom URL length must be between 1 and 64.")
     .custom(value => utils.customAddressRegex.test(value) || utils.customAlphabetRegex.test(value))
     .withMessage("Custom URL is not valid.")
-    .custom(value => !utils.preservedURLs.some(url => url.toLowerCase() === value))
+    .custom(value => !utils.preservedURLs.some(url => url.toLowerCase() === value.toLowerCase()))
     .withMessage("You can't use this custom URL."),
   body("reuse")
     .optional({ nullable: true })
@@ -105,9 +105,9 @@ const editLink = [
     .isLength({ min: 1, max: 2040 })
     .withMessage("Maximum URL length is 2040.")
     .customSanitizer(utils.addProtocol)
-    .custom(value => utils.urlRegex.test(value) || /^(?!https?|ftp)(\w+:|\/\/)/.test(value))
+    .custom(value => utils.isSafeUrl(value, { allowCustomProtocols: true }))
     .withMessage("URL is not valid.")
-    .custom(value => utils.removeWww(URL.parse(value).host) !== env.DEFAULT_DOMAIN)
+    .custom(value => (utils.removeWww(URL.parse(value).host) || "").toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage(`${env.DEFAULT_DOMAIN} URLs are not allowed.`),
   body("password")
     .optional({ nullable: true, checkFalsy: true })
@@ -122,7 +122,7 @@ const editLink = [
     .withMessage("Custom URL length must be between 1 and 64.")
     .custom(value => utils.customAddressRegex.test(value) || utils.customAlphabetRegex.test(value))
     .withMessage("Custom URL is not valid")
-    .custom(value => !utils.preservedURLs.some(url => url.toLowerCase() === value))
+    .custom(value => !utils.preservedURLs.some(url => url.toLowerCase() === value.toLowerCase()))
     .withMessage("You can't use this custom URL."),
   body("expire_in")
     .optional({ nullable: true, checkFalsy: true })
@@ -174,7 +174,7 @@ const addDomain = [
       const parsed = URL.parse(value);
       return utils.removeWww(parsed.hostname || parsed.href);
     })
-    .custom(value => value !== env.DEFAULT_DOMAIN)
+    .custom(value => value.toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage("You can't use the default domain.")
     .custom(async value => {
       const domain = await query.domain.find({ address: value });
@@ -183,8 +183,11 @@ const addDomain = [
     .withMessage("You can't add this domain."),
   body("homepage")
     .optional({ checkFalsy: true, nullable: true })
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 2040 })
     .customSanitizer(utils.addProtocol)
-    .custom(value => utils.urlRegex.test(value) || /^(?!https?|ftp)(\w+:|\/\/)/.test(value))
+    .custom(value => utils.isSafeUrl(value, { allowCustomProtocols: false }))
     .withMessage("Homepage is not valid.")
 ];
 
@@ -200,7 +203,7 @@ const addDomainAdmin = [
       const parsed = URL.parse(value);
       return utils.removeWww(parsed.hostname || parsed.href);
     })
-    .custom(value => value !== env.DEFAULT_DOMAIN)
+    .custom(value => value.toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage("You can't add the default domain.")
     .custom(async value => {
       const domain = await query.domain.find({ address: value });
@@ -209,8 +212,11 @@ const addDomainAdmin = [
     .withMessage("Domain already exists."),
   body("homepage")
     .optional({ checkFalsy: true, nullable: true })
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 2040 })
     .customSanitizer(utils.addProtocol)
-    .custom(value => utils.urlRegex.test(value) || /^(?!https?|ftp)(\w+:|\/\/)/.test(value))
+    .custom(value => utils.isSafeUrl(value, { allowCustomProtocols: false }))
     .withMessage("Homepage is not valid."),
   body("banned")
     .optional({ nullable: true })
@@ -255,10 +261,20 @@ const reportLink = [
       checkFalsy: true,
       checkNull: true
     })
+    .isString()
+    .trim()
+    .isLength({ min: 1, max: 2040 })
     .customSanitizer(utils.addProtocol)
-    .custom(
-      value => utils.removeWww(URL.parse(value).host) === env.DEFAULT_DOMAIN
-    )
+    .custom(value => {
+      if (/[\u0000-\u001F\u007F]/.test(value)) return false;
+      try {
+        const parsed = new URL(value);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return false;
+        return (utils.removeWww(parsed.host) || "").toLowerCase() === env.DEFAULT_DOMAIN.toLowerCase();
+      } catch {
+        return false;
+      }
+    })
     .withMessage(`You can only report a ${env.DEFAULT_DOMAIN} link.`)
 ];
 

@@ -21,6 +21,18 @@
   </div>
   <nav>
     <ul>
+      <li class="theme-toggle-item">
+        <button
+          type="button"
+          id="theme-toggle"
+          class="theme-toggle"
+          aria-label="Toggle dark mode"
+          title="Toggle dark mode"
+        >
+          {{> icons/sun}}
+          {{> icons/moon}}
+        </button>
+      </li>
       {{#unless user}}
         {{#unless login_disabled}}
           <li>

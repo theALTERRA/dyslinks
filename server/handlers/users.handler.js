@@ -5,6 +5,8 @@ const utils = require("../utils");
 const mail = require("../mail");
 const env = require("../env");
 
+const CustomError = utils.CustomError;
+
 async function get(req, res) {
   const domains = await query.domain.get({ user_id: req.user.id });
 
@@ -47,6 +49,18 @@ async function removeByAdmin(req, res) {
     }
   }
   
+  if (user.id === req.user.id) {
+    const message = "You cannot delete your own account from the admin panel.";
+    if (req.isHTML) {
+      return res.render("partials/admin/dialog/message", {
+        layout: false,
+        message
+      });
+    } else {
+      return res.status(400).send({ message });
+    }
+  }
+
   await query.user.remove(user);
 
   if (req.isHTML) {
@@ -115,6 +129,10 @@ async function ban(req, res) {
 
   if (!user) {
     throw new CustomError("No user has been found.", 400);
+  }
+
+  if (user.id === req.user.id) {
+    throw new utils.CustomError("You cannot ban your own account.", 400);
   }
 
   if (user.banned) {

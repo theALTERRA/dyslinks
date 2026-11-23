@@ -477,15 +477,22 @@ async function redirect(req, res, next) {
     domain_id: domain ? domain.id : null
   });
 
-  // 3. When no link, if has domain redirect to domain's homepage
+  // 3. When no link, or link is expired, if has domain redirect to domain's homepage
   // otherwise redirect to 404
-  if (!link) {
-    return res.redirect(domain?.homepage || "/404");
+  const isExpired = link?.expire_in && utils.parseDatetime(link.expire_in) < new Date();
+  if (!link || isExpired) {
+    const fallbackUrl = domain?.homepage && utils.isSafeUrl(domain.homepage) ? domain.homepage : "/404";
+    return res.redirect(fallbackUrl);
   }
 
   // 4. If link is banned, redirect to banned page.
   if (link.banned) {
     return res.redirect("/banned");
+  }
+
+  // Defense-in-depth: ensure target URL is safe before redirecting
+  if (!utils.isSafeUrl(link.target, { allowCustomProtocols: true })) {
+    return res.redirect("/404");
   }
 
   // 5. If wants to see link info, then redirect
@@ -549,9 +556,18 @@ async function redirectProtected(req, res) {
   const uuid = req.params.id;
   const link = await query.link.find({ uuid });
 
-  // 2. Throw error if no link
-  if (!link || !link.password) {
+  // 2. Throw error if no link or expired
+  const isExpired = link?.expire_in && utils.parseDatetime(link.expire_in) < new Date();
+  if (!link || !link.password || isExpired) {
     throw new CustomError("Couldn't find the link.", 400);
+  }
+
+  if (link.banned) {
+    throw new CustomError("This link has been banned.", 403);
+  }
+
+  if (!utils.isSafeUrl(link.target, { allowCustomProtocols: true })) {
+    throw new CustomError("Target URL is not valid.", 400);
   }
 
   // 3. Check if password matches
@@ -598,7 +614,7 @@ async function redirectCustomDomainHomepage(req, res, next) {
     utils.preservedURLs.includes(pathName)
   ) {
     const domain = await query.domain.find({ address: host });
-    if (domain?.homepage) {
+    if (domain?.homepage && utils.isSafeUrl(domain.homepage)) {
       res.redirect(302, domain.homepage);
       return;
     }

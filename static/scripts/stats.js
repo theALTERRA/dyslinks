@@ -1,3 +1,38 @@
+// active Chart.js instances so we can re-theme them live on dark/light switch
+let kuttCharts = [];
+
+function getChartTheme() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  return {
+    isDark,
+    accent: isDark ? "rgb(129, 140, 248)" : "rgb(99, 102, 241)",
+    accentRgb: isDark ? "129, 140, 248" : "99, 102, 241",
+    tooltipBg: isDark ? "rgba(15, 23, 42, 0.96)" : "rgba(255, 255, 255, 0.96)",
+    tooltipTitle: isDark ? "#f1f5f9" : "#0f172a",
+    tooltipBody: isDark ? "#a5b4fc" : "#4f46e5",
+    tooltipBorder: isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(15, 23, 42, 0.08)",
+    tickColor: isDark ? "#94a3b8" : "#64748b",
+    gridColor: isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(15, 23, 42, 0.06)",
+    legendColor: isDark ? "#cbd5e1" : "#334155",
+  };
+}
+
+function getTooltipOptions(theme, enabled = true) {
+  return {
+    enabled,
+    backgroundColor: theme.tooltipBg,
+    titleColor: theme.tooltipTitle,
+    titleFont: { weight: "600", size: 13 },
+    bodyFont: { weight: "600", size: 14 },
+    bodyColor: theme.tooltipBody,
+    padding: 12,
+    cornerRadius: 8,
+    borderColor: theme.tooltipBorder,
+    borderWidth: 1,
+    displayColors: false,
+  };
+}
+
 // create views chart label
 function createViewsChartLabel(ctx) {
   const period = ctx.dataset.period;
@@ -8,7 +43,7 @@ function createViewsChartLabel(ctx) {
     for (let i = 23; i >= 0; --i) {
       let h = nowHour - i;
       if (h < 0) h = 24 + h;
-      labels.push(`${Math.floor(h)}:00`);
+      labels.push(`${String(Math.floor(h)).padStart(2, "0")}:00`);
     }
   }
 
@@ -16,23 +51,23 @@ function createViewsChartLabel(ctx) {
     const nowDay = new Date().getDate();
     for (let i = 6; i >= 0; --i) {
       const date = new Date(new Date().setDate(nowDay - i));
-      labels.push(`${date.getDate()} ${date.toLocaleString("default",{month:"short"})}`);
+      labels.push(`${date.getDate()} ${date.toLocaleString("default", { month: "short" })}`);
     }
   }
 
   if (period === "month") {
-    const nowDay = new Date().getDate();  
+    const nowDay = new Date().getDate();
     for (let i = 29; i >= 0; --i) {
       const date = new Date(new Date().setDate(nowDay - i));
-      labels.push(`${date.getDate()} ${date.toLocaleString("default",{month:"short"})}`);
+      labels.push(`${date.getDate()} ${date.toLocaleString("default", { month: "short" })}`);
     }
   }
 
   if (period === "year") {
-    const nowMonth = new Date().getMonth();  
+    const nowMonth = new Date().getMonth();
     for (let i = 11; i >= 0; --i) {
       const date = new Date(new Date().setMonth(nowMonth - i));
-      labels.push(`${date.toLocaleString("default",{month:"short"})} ${date.toLocaleString("default",{year:"numeric"})}`);
+      labels.push(`${date.toLocaleString("default", { month: "short" })} ${date.toLocaleString("default", { year: "numeric" })}`);
     }
   }
 
@@ -58,7 +93,7 @@ function changeStatsPeriod(event) {
   feedMapData(period);
 }
 
-// beautify browser lables
+// beautify browser labels
 function beautifyBrowserName(name) {
   if (name === "firefox") return "Firefox";
   if (name === "chrome") return "Chrome";
@@ -70,44 +105,43 @@ function beautifyBrowserName(name) {
   return name;
 }
 
-
 // create views chart
 function createViewsChart() {
   const canvases = document.querySelectorAll("canvas.visits");
   if (!canvases || !canvases.length) return;
+  const theme = getChartTheme();
 
   canvases.forEach(ctx => {
     const data = JSON.parse(ctx.dataset.data);
     const period = ctx.dataset.period;
-  
+
     const labels = createViewsChartLabel(ctx);
     const maxTicksLimitX = period === "year" ? 6 : period === "month" ? 15 : 12;
-  
+
     const gradient = ctx.getContext("2d").createLinearGradient(0, 0, 0, 300);
-    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");   
-    gradient.addColorStop(1, "rgba(179, 157, 219, 0.05)");
-    
-    new Chart(ctx, {
+    gradient.addColorStop(0, `rgba(${theme.accentRgb}, 0.42)`);
+    gradient.addColorStop(1, `rgba(${theme.accentRgb}, 0.02)`);
+
+    const chart = new Chart(ctx, {
       type: "line",
       data: {
         labels: labels,
         datasets: [{
           label: "Views",
           data,
-          tension: 0.3,
-  
+          tension: 0.35,
           elements: {
             point: {
               pointRadius: 0,
-              pointHoverRadius: 4
+              pointHoverRadius: 5
             }
           },
           fill: {
             target: "start",
           },
           backgroundColor: gradient,
-          borderColor: "rgb(179, 157, 219)",
-          borderWidth: 1,
+          borderColor: theme.accent,
+          borderWidth: 2,
         }]
       },
       options: {
@@ -115,18 +149,7 @@ function createViewsChart() {
           legend: {
             display: false,
           },
-          tooltip: {
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            titleColor: "#333",
-            titleFont: { weight: "normal", size: 15 },
-            bodyFont: { weight: "normal", size: 16 },
-            bodyColor: "rgb(179, 157, 219)",
-            padding: 12,
-            cornerRadius: 2,
-            borderColor: "rgba(0, 0, 0, 0.1)",
-            borderWidth: 1,
-            displayColors: false,
-          }
+          tooltip: getTooltipOptions(theme)
         },
         responsive: true,
         interaction: {
@@ -138,19 +161,24 @@ function createViewsChart() {
           y: {
             grace: "10%",
             beginAtZero: true,
+            grid: { color: theme.gridColor },
             ticks: {
-              maxTicksLimit: 5
+              maxTicksLimit: 5,
+              color: theme.tickColor
             }
           },
           x: {
+            grid: { color: theme.gridColor },
             ticks: {
               maxTicksLimit: maxTicksLimitX,
+              color: theme.tickColor
             }
           }
-        }  
+        }
       }
     });
 
+    kuttCharts.push(chart);
     // reset the display: block style that chart.js applies automatically
     ctx.style.display = "";
   });
@@ -160,19 +188,19 @@ function createViewsChart() {
 function createBrowsersChart() {
   const canvases = document.querySelectorAll("canvas.browsers");
   if (!canvases || !canvases.length) return;
+  const theme = getChartTheme();
 
   canvases.forEach(ctx => {
     const data = JSON.parse(ctx.dataset.data);
-    const period = ctx.dataset.period;
 
     const gradient = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
     const gradientHover = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
-    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");   
-    gradient.addColorStop(1, "rgba(179, 157, 219, 0.05)");
-    gradientHover.addColorStop(0, "rgba(179, 157, 219, 0.9)");   
-    gradientHover.addColorStop(1, "rgba(179, 157, 219, 0.4)");
+    gradient.addColorStop(0, `rgba(${theme.accentRgb}, 0.85)`);
+    gradient.addColorStop(1, `rgba(${theme.accentRgb}, 0.2)`);
+    gradientHover.addColorStop(0, `rgba(${theme.accentRgb}, 0.95)`);
+    gradientHover.addColorStop(1, `rgba(${theme.accentRgb}, 0.45)`);
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
       type: "bar",
       data: {
         labels: data.map(d => beautifyBrowserName(d.name)),
@@ -180,10 +208,11 @@ function createBrowsersChart() {
           label: "Views",
           data: data.map(d => d.value),
           backgroundColor: gradient,
-          borderColor: "rgba(179, 157, 219, 1)",
+          borderColor: theme.accent,
           borderWidth: 1,
+          borderRadius: 6,
           hoverBackgroundColor: gradientHover,
-          hoverBorderWidth: 2
+          hoverBorderWidth: 1.5
         }]
       },
       options: {
@@ -192,18 +221,7 @@ function createBrowsersChart() {
           legend: {
             display: false,
           },
-          tooltip: {
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            titleColor: "#333",
-            titleFont: { weight: "normal", size: 15 },
-            bodyFont: { weight: "normal", size: 16 },
-            bodyColor: "rgb(179, 157, 219)",
-            padding: 12,
-            cornerRadius: 2,
-            borderColor: "rgba(0, 0, 0, 0.1)",
-            borderWidth: 1,
-            displayColors: false,
-          }
+          tooltip: getTooltipOptions(theme)
         },
         responsive: true,
         interaction: {
@@ -215,14 +233,21 @@ function createBrowsersChart() {
           x: {
             grace: "5%",
             beginAtZero: true,
+            grid: { color: theme.gridColor },
             ticks: {
               maxTicksLimit: 6,
+              color: theme.tickColor
             }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: theme.tickColor }
           }
-        }  
+        }
       }
     });
 
+    kuttCharts.push(chart);
     // reset the display: block style that chart.js applies automatically
     ctx.style.display = "";
   });
@@ -232,33 +257,33 @@ function createBrowsersChart() {
 function createReferrersChart() {
   const canvases = document.querySelectorAll("canvas.referrers");
   if (!canvases || !canvases.length) return;
+  const theme = getChartTheme();
 
   canvases.forEach(ctx => {
     const data = JSON.parse(ctx.dataset.data);
-    const period = ctx.dataset.period;
     let max = Array.from(data).sort((a, b) => a.value > b.value ? -1 : 1)[0];
 
     let tooltipEnabled = true;
-    let hoverBackgroundColor = "rgba(179, 157, 219, 1)";
+    let hoverBackgroundColor = `rgba(${theme.accentRgb}, 0.95)`;
     let hoverBorderWidth = 2;
-    let borderColor = "rgba(179, 157, 219, 1)";
+    let borderColor = `rgba(${theme.accentRgb}, 0.9)`;
     if (data.length === 0) {
       data.push({ name: "No views.", value: 1 });
       max = { value: 1000 };
       tooltipEnabled = false;
-      hoverBackgroundColor = "rgba(179, 157, 219, 0.1)";
+      hoverBackgroundColor = `rgba(${theme.accentRgb}, 0.14)`;
       hoverBorderWidth = 1;
-      borderColor = "rgba(179, 157, 219, 0.2)";
+      borderColor = `rgba(${theme.accentRgb}, 0.25)`;
     }
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
       type: "doughnut",
       data: {
         labels: data.map(d => d.name.replace(/\[dot\]/g, ".")),
         datasets: [{
           label: "Views",
           data: data.map(d => d.value),
-          backgroundColor: data.map(d => `rgba(179, 157, 219, ${Math.max((d.value / max.value) - 0.2, 0.1).toFixed(2)})`),
+          backgroundColor: data.map(d => `rgba(${theme.accentRgb}, ${Math.max((d.value / max.value) - 0.15, 0.14).toFixed(2)})`),
           borderWidth: 1,
           borderColor,
           hoverBackgroundColor,
@@ -270,35 +295,24 @@ function createReferrersChart() {
           legend: {
             position: "left",
             labels: {
-              boxWidth: 25,
-              font: { size: 11 }
+              boxWidth: 18,
+              color: theme.legendColor,
+              font: { size: 12 }
             }
           },
-          tooltip: {
-            enabled: tooltipEnabled,
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            titleColor: "#333",
-            titleFont: { weight: "normal", size: 15 },
-            bodyFont: { weight: "normal", size: 16 },
-            bodyColor: "rgb(179, 157, 219)",
-            padding: 12,
-            cornerRadius: 2,
-            borderColor: "rgba(0, 0, 0, 0.1)",
-            borderWidth: 1,
-            displayColors: false,
-          }
+          tooltip: getTooltipOptions(theme, tooltipEnabled)
         },
         responsive: false,
       }
     });
 
+    kuttCharts.push(chart);
     // reset the display: block style that chart.js applies automatically
     ctx.style.display = "";
   });
 }
 
-
-// beautify browser lables
+// beautify OS labels
 function beautifyOsName(name) {
   if (name === "android") return "Android";
   if (name === "ios") return "iOS";
@@ -309,24 +323,23 @@ function beautifyOsName(name) {
   return name;
 }
 
-
 // create operating systems chart
 function createOsChart() {
   const canvases = document.querySelectorAll("canvas.os");
   if (!canvases || !canvases.length) return;
+  const theme = getChartTheme();
 
   canvases.forEach(ctx => {
     const data = JSON.parse(ctx.dataset.data);
-    const period = ctx.dataset.period;
 
     const gradient = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
     const gradientHover = ctx.getContext("2d").createLinearGradient(500, 0, 0, 0);
-    gradient.addColorStop(0, "rgba(179, 157, 219, 0.95)");   
-    gradient.addColorStop(1, "rgba(179, 157, 219, 0.05)");
-    gradientHover.addColorStop(0, "rgba(179, 157, 219, 0.9)");   
-    gradientHover.addColorStop(1, "rgba(179, 157, 219, 0.4)");
+    gradient.addColorStop(0, `rgba(${theme.accentRgb}, 0.85)`);
+    gradient.addColorStop(1, `rgba(${theme.accentRgb}, 0.2)`);
+    gradientHover.addColorStop(0, `rgba(${theme.accentRgb}, 0.95)`);
+    gradientHover.addColorStop(1, `rgba(${theme.accentRgb}, 0.45)`);
 
-    new Chart(ctx, {
+    const chart = new Chart(ctx, {
       type: "bar",
       data: {
         labels: data.map(d => beautifyOsName(d.name)),
@@ -334,10 +347,11 @@ function createOsChart() {
           label: "Views",
           data: data.map(d => d.value),
           backgroundColor: gradient,
-          borderColor: "rgba(179, 157, 219, 1)",
+          borderColor: theme.accent,
           borderWidth: 1,
+          borderRadius: 6,
           hoverBackgroundColor: gradientHover,
-          hoverBorderWidth: 2
+          hoverBorderWidth: 1.5
         }]
       },
       options: {
@@ -346,18 +360,7 @@ function createOsChart() {
           legend: {
             display: false,
           },
-          tooltip: {
-            backgroundColor: "rgba(255, 255, 255, 0.95)",
-            titleColor: "#333",
-            titleFont: { weight: "normal", size: 15 },
-            bodyFont: { weight: "normal", size: 16 },
-            bodyColor: "rgb(179, 157, 219)",
-            padding: 12,
-            cornerRadius: 2,
-            borderColor: "rgba(0, 0, 0, 0.1)",
-            borderWidth: 1,
-            displayColors: false,
-          }
+          tooltip: getTooltipOptions(theme)
         },
         responsive: true,
         interaction: {
@@ -367,16 +370,23 @@ function createOsChart() {
         },
         scales: {
           x: {
-            grace:"5%",
+            grace: "5%",
             beginAtZero: true,
+            grid: { color: theme.gridColor },
             ticks: {
               maxTicksLimit: 6,
+              color: theme.tickColor
             }
+          },
+          y: {
+            grid: { display: false },
+            ticks: { color: theme.tickColor }
           }
-        }  
+        }
       }
     });
 
+    kuttCharts.push(chart);
     // reset the display: block style that chart.js applies automatically
     ctx.style.display = "";
   });
@@ -385,66 +395,88 @@ function createOsChart() {
 // add data to the map
 function feedMapData(period) {
   const map = document.querySelector("svg.map");
+  if (!map) return;
   const paths = map.querySelectorAll("path");
-  if (!map || !paths || !paths.length) return;
+  if (!paths || !paths.length) return;
 
   let data = JSON.parse(map.dataset[period || "day"]);
   if (!data) return;
 
   let max = data.sort((a, b) => a.value > b.value ? -1 : 1)[0];
 
-  if (!max) max = { value: 1 }
-  
+  if (!max) max = { value: 1 };
+
   data = data.reduce((a, c) => ({ ...a, [c.name]: c.value }), {});
-  
+
   for (let i = 0; i < paths.length; ++i) {
     const id = paths[i].dataset.id;
     const views = data[id] || 0;
     paths[i].dataset.views = views;
-    const colorLevel = Math.ceil((views / max.value) * 6);  
-    const classList = paths[i].classList;
+    const colorLevel = Math.ceil((views / max.value) * 6);
     for (let j = 1; j < 7; j++) {
       paths[i].classList.remove(`color-${j}`);
     }
-    paths[i].classList.add(`color-${colorLevel}`)
+    paths[i].classList.add(`color-${colorLevel}`);
     paths[i].dataset.views = views;
   }
 }
 
 // handle map tooltip hover
-function mapTooltipHoverOver() {
+function mapTooltipHoverOver(evt) {
+  const e = evt || window.event;
   const tooltip = document.querySelector("#map-tooltip");
-  if (!tooltip) return;
-  if (!event.target.dataset.id) return mapTooltipHoverOut();
+  if (!tooltip || !e || !e.target) return;
+  if (!e.target.dataset.id) return mapTooltipHoverOut();
   if (!tooltip.classList.contains("active")) {
     tooltip.classList.add("visible");
   }
-  tooltip.dataset.tooltip = `${event.target.ariaLabel}: ${event.target.dataset.views || 0}`;
-  const rect = event.target.getBoundingClientRect();
+  tooltip.dataset.tooltip = `${e.target.ariaLabel}: ${e.target.dataset.views || 0}`;
+  const rect = e.target.getBoundingClientRect();
   tooltip.style.top = rect.top + (rect.height / 2) + "px";
   tooltip.style.left = rect.left + (rect.width / 2) + "px";
-  event.target.classList.add("active");
+  e.target.classList.add("active");
 }
+
 function mapTooltipHoverOut() {
   const tooltip = document.querySelector("#map-tooltip");
   const map = document.querySelector("svg.map");
-  const paths = map.querySelectorAll("path");
   if (!tooltip || !map) return;
+  const paths = map.querySelectorAll("path");
   tooltip.classList.remove("visible");
   for (let i = 0; i < paths.length; ++i) {
     paths[i].classList.remove("active");
   }
 }
 
+function destroyCharts() {
+  kuttCharts.forEach(chart => {
+    try {
+      chart.destroy();
+    } catch (_) {
+      // ignore destroy errors
+    }
+  });
+  kuttCharts = [];
+}
+
 // create stats charts
 function createCharts() {
-  if (Chart === undefined) {
-    setTimeout(function() { createCharts() }, 100);
+  if (typeof Chart === "undefined") {
+    setTimeout(function () { createCharts(); }, 100);
     return;
   }
+  destroyCharts();
   createViewsChart();
   createBrowsersChart();
   createReferrersChart();
   createOsChart();
-  feedMapData();
+  const activeBtn = document.querySelector("#stats .stats-nav button[disabled]");
+  feedMapData(activeBtn ? activeBtn.dataset.period : "day");
 }
+
+// re-theme charts automatically when user toggles dark/light mode
+window.addEventListener("kutt:themechange", function () {
+  if (document.querySelector("#stats canvas")) {
+    createCharts();
+  }
+});

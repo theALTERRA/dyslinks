@@ -8,6 +8,7 @@ const { ROLES } = require("../consts");
 const query = require("../queries");
 const utils = require("../utils");
 const redis = require("../redis");
+const knex = require("../knex");
 const mail = require("../mail");
 const env = require("../env");
 
@@ -53,7 +54,7 @@ function authenticate(type, error, isStrict, redirect) {
         throw new CustomError("You're banned from using this website.", 403);
       }
 
-      if (user && isStrict && !user.verified) {
+      if (user && (isStrict || type === "localapikey") && !user.verified) {
         throw new CustomError("Your email address is not verified. " +
           "Sign up to get the verification link again.", 400);
       }
@@ -122,12 +123,28 @@ async function createAdminUser(req, res) {
   const salt = await bcrypt.genSalt(12);
   const password = await bcrypt.hash(req.body.password, salt);
 
-  const user = await query.user.add({
-    email: req.body.email, 
-    password, 
-    role: ROLES.ADMIN, 
-    verified: true 
+  const user = await knex.transaction(async (trx) => {
+    const existing = await trx("users").select("id").first();
+    if (existing) {
+      throw new CustomError("Can not create the admin user because a user already exists.", 400);
+    }
+
+    const [inserted] = await trx("users").insert({
+      email: req.body.email,
+      password,
+      role: ROLES.ADMIN,
+      verified: true,
+    }, "*");
+
+    if (typeof inserted === "number") {
+      return trx("users").where("id", inserted).first();
+    }
+    return inserted;
   });
+
+  if (env.REDIS_ENABLED) {
+    redis.client.del("any-user").catch(() => {});
+  }
 
   const token = utils.signToken(user);
 

@@ -81,7 +81,9 @@ function formatDateHour(selector) {
   const dateString = element.dataset.date;
   if (!dateString) return;
   const date = new Date(dateString);
-  element.textContent = date.getHours() + ":" + date.getMinutes();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  element.textContent = hours + ":" + minutes;
 }
 
 // show QR code
@@ -91,19 +93,26 @@ function handleQRCode(element, id) {
   if (!dialogContent) return;
   openDialog(id, "qrcode");
   dialogContent.textContent = "";
-  const qrcode = new QRCode(dialogContent, {
+  const qrFrame = document.createElement("div");
+  qrFrame.className = "qr-frame";
+  dialogContent.appendChild(qrFrame);
+  new QRCode(qrFrame, {
     text: element.dataset.url,
     width: 200,
     height: 200,
-    colorDark : "#000000",
+    colorDark : "#0f172a",
     colorLight : "#ffffff",
     correctLevel : QRCode.CorrectLevel.H
-  });   
+  });
 }
 
 // copy the link to clipboard
 function handleCopyLink(element) {
-  navigator.clipboard.writeText(element.dataset.url);
+  const url = element.dataset.url;
+  if (!url) return;
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(url).catch(() => {});
+  }
 }
 
 // copy the link and toggle copy button style
@@ -140,6 +149,13 @@ window.addEventListener("click", function(event) {
   const dialog = document.querySelector(".dialog");
   if (dialog && event.target === dialog) {
     closeDialog();
+  }
+});
+
+window.addEventListener("keydown", function(event) {
+  if (event.key === "Escape") {
+    const dialog = document.querySelector(".dialog.open");
+    if (dialog) closeDialog();
   }
 });
 
