@@ -8,10 +8,12 @@ ENV NODE_ENV=production
 WORKDIR /dyslinks
 
 # download dependencies while using Docker's caching
+# --ignore-scripts prevents npm ci from invoking node-gyp on better-sqlite3's
+# bundled N-API prebuilds (linuxmusl-x64/arm64) and hardens the build
 RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=bind,source=package-lock.json,target=package-lock.json \
     --mount=type=cache,target=/root/.npm \
-    npm ci --omit=dev
+    npm ci --omit=dev --ignore-scripts
 
 RUN mkdir -p /var/lib/dyslinks
 
