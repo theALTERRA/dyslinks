@@ -5,7 +5,7 @@ FROM node:22-alpine
 ENV NODE_ENV=production
 
 # set working directory.
-WORKDIR /kutt
+WORKDIR /dyslinks
 
 # download dependencies while using Docker's caching
 RUN --mount=type=bind,source=package.json,target=package.json \
@@ -13,12 +13,12 @@ RUN --mount=type=bind,source=package.json,target=package.json \
     --mount=type=cache,target=/root/.npm \
     npm ci --omit=dev
 
-RUN mkdir -p /var/lib/kutt
+RUN mkdir -p /var/lib/dyslinks
 
 # copy the rest of source files into the image
 COPY --chown=node:node . .
 
-RUN chown -R node:node /var/lib/kutt
+RUN chown -R node:node /var/lib/dyslinks
 
 # run as non-root user
 USER node

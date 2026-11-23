@@ -1,5 +1,5 @@
 // active Chart.js instances so we can re-theme them live on dark/light switch
-let kuttCharts = [];
+let dyslinksCharts = [];
 
 function getChartTheme() {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
@@ -178,7 +178,7 @@ function createViewsChart() {
       }
     });
 
-    kuttCharts.push(chart);
+    dyslinksCharts.push(chart);
     // reset the display: block style that chart.js applies automatically
     ctx.style.display = "";
   });
@@ -247,7 +247,7 @@ function createBrowsersChart() {
       }
     });
 
-    kuttCharts.push(chart);
+    dyslinksCharts.push(chart);
     // reset the display: block style that chart.js applies automatically
     ctx.style.display = "";
   });
@@ -306,7 +306,7 @@ function createReferrersChart() {
       }
     });
 
-    kuttCharts.push(chart);
+    dyslinksCharts.push(chart);
     // reset the display: block style that chart.js applies automatically
     ctx.style.display = "";
   });
@@ -386,7 +386,7 @@ function createOsChart() {
       }
     });
 
-    kuttCharts.push(chart);
+    dyslinksCharts.push(chart);
     // reset the display: block style that chart.js applies automatically
     ctx.style.display = "";
   });
@@ -449,14 +449,14 @@ function mapTooltipHoverOut() {
 }
 
 function destroyCharts() {
-  kuttCharts.forEach(chart => {
+  dyslinksCharts.forEach(chart => {
     try {
       chart.destroy();
     } catch (_) {
       // ignore destroy errors
     }
   });
-  kuttCharts = [];
+  dyslinksCharts = [];
 }
 
 // create stats charts
@@ -475,7 +475,7 @@ function createCharts() {
 }
 
 // re-theme charts automatically when user toggles dark/light mode
-window.addEventListener("kutt:themechange", function () {
+window.addEventListener("dyslinks:themechange", function () {
   if (document.querySelector("#stats canvas")) {
     createCharts();
   }

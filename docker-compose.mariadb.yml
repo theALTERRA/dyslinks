@@ -6,7 +6,7 @@ services:
       - path: .env
         required: false
     volumes:
-      - custom:/kutt/custom
+      - custom:/dyslinks/custom
     environment:
       DB_CLIENT: mysql2
       DB_HOST: mariadb

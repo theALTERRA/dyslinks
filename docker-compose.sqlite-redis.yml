@@ -6,10 +6,10 @@ services:
       - path: .env
         required: false
     volumes:
-      - db_data_sqlite:/var/lib/kutt
-      - custom:/kutt/custom
+      - db_data_sqlite:/var/lib/dyslinks
+      - custom:/dyslinks/custom
     environment:
-      DB_FILENAME: "/var/lib/kutt/data.sqlite"
+      DB_FILENAME: "/var/lib/dyslinks/data.sqlite"
       REDIS_ENABLED: true
       REDIS_HOST: redis
       REDIS_PORT: 6379

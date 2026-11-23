@@ -1,5 +1,5 @@
 (function () {
-  var STORAGE_KEY = "kutt-theme";
+  var STORAGE_KEY = "dyslinks-theme";
   var LIGHT_THEME_COLOR = "#f8fafc";
   var DARK_THEME_COLOR = "#0b0f19";
 
@@ -51,7 +51,7 @@
     updateToggleButtons(resolved);
 
     try {
-      window.dispatchEvent(new CustomEvent("kutt:themechange", { detail: { theme: resolved } }));
+      window.dispatchEvent(new CustomEvent("dyslinks:themechange", { detail: { theme: resolved } }));
     } catch (_) {
       // ignore if CustomEvent unavailable
     }
@@ -93,7 +93,7 @@
     }
   }
 
-  window.kuttTheme = {
+  window.dyslinksTheme = {
     get: function () {
       return document.documentElement.getAttribute("data-theme") || getSystemTheme();
     },

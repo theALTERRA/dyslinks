@@ -12,11 +12,6 @@
       "src": "/images/logo.svg",
       "sizes": "any",
       "type": "image/svg+xml"
-    },
-    {
-      "src": "/images/favicon-196x196.png",
-      "sizes": "196x196",
-      "type": "image/png"
     }
   ]
 }
