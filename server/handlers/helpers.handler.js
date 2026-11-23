@@ -141,7 +141,6 @@ function rateLimit(params) {
   
   return expressRateLimit({
     windowMs: params.window * 1000,
-    validate: { trustProxy: false },
     skipSuccessfulRequests: !!params.skipSuccess,
     skipFailedRequests: !!params.skipFailed,
     ...(store && { store }),

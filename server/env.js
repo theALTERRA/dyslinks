@@ -32,7 +32,9 @@ const spec = {
   DEFAULT_DOMAIN: str({ example: "links.example.com", default: "localhost:3000" }),
   LINK_LENGTH: num({ default: 6 }),
   LINK_CUSTOM_ALPHABET: str({ default: "abcdefghkmnpqrstuvwxyzABCDEFGHKLMNPQRSTUVWXYZ23456789" }),
-  TRUST_PROXY: bool({ default: true }),
+  // true = trust proxies on loopback/private networks only (Docker, local Caddy/Nginx, cloudflared)
+  // false = ignore X-Forwarded-* headers; a number = hop count; or a comma-separated list of IPs/CIDRs
+  TRUST_PROXY: str({ default: "true" }),
   DB_CLIENT: str({ choices: supportedDBClients, default: "better-sqlite3" }),
   DB_FILENAME: str({ default: "db/data" }),
   DB_HOST: str({ default: "localhost" }),
@@ -88,9 +90,18 @@ for (const key in spec) {
 
 const env = cleanEnv(process.env, spec);
 
-if (env.isProd && (env.JWT_SECRET.length < 32 || env.JWT_SECRET === "securekey")) {
+const PLACEHOLDER_SECRET_REGEX = /replace|change[-_ ]?me|your[-_ ]?secret|secret[-_ ]?here|example|placeholder|securekey/i;
+
+if (
+  env.isProd && (
+    env.JWT_SECRET.length < 32 ||
+    PLACEHOLDER_SECRET_REGEX.test(env.JWT_SECRET) ||
+    new Set(env.JWT_SECRET).size < 10
+  )
+) {
   throw new Error(
-    "JWT_SECRET must be a strong random string of at least 32 characters in production."
+    "JWT_SECRET must be a strong random string of at least 32 characters in production " +
+    "(placeholder values are rejected). Generate one with: openssl rand -hex 32"
   );
 }
 

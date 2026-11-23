@@ -106,7 +106,7 @@ All settings are configured via environment variables (or `.env`). Any variable 
 | `PORT` | Port the server listens on | `3000` |
 | `SITE_NAME` | Site name displayed in the UI and emails | `dyslinks` |
 | `DEFAULT_DOMAIN` | Public domain where the app is hosted | `localhost:3000` |
-| `TRUST_PROXY` | Trust `X-Forwarded-*` headers from a reverse proxy | `true` |
+| `TRUST_PROXY` | Read client IPs from `X-Forwarded-For`: `true` trusts proxies on loopback/private networks only, `false` disables, or set a hop count / comma-separated proxy IPs | `true` |
 | `ENABLE_RATE_LIMIT` | Enable API and auth rate limiting | `true` |
 | `DISALLOW_ANONYMOUS_LINKS` | Require login to shorten links | `true` |
 | `DISALLOW_REGISTRATION` | Disable public signups (requires `MAIL_ENABLED=true` if `false`) | `true` |

@@ -33,8 +33,15 @@ app.disable("x-powered-by");
 
 // this tells the express app that it's running behind a proxy server
 // and thus it should get the IP address from the proxy server
-if (env.TRUST_PROXY) {
-  app.set("trust proxy", true);
+// never use `true` (trust every hop): that lets any client spoof X-Forwarded-For
+// and bypass rate limits when the container port is reachable directly
+const trustProxy = String(env.TRUST_PROXY).trim().toLowerCase();
+if (["true", "t", "yes", "y", "on", "1"].includes(trustProxy)) {
+  app.set("trust proxy", "loopback, linklocal, uniquelocal");
+} else if (/^\d+$/.test(trustProxy) && trustProxy !== "0") {
+  app.set("trust proxy", Number(trustProxy));
+} else if (!["false", "f", "no", "n", "off", "0", ""].includes(trustProxy)) {
+  app.set("trust proxy", env.TRUST_PROXY);
 }
 
 app.use(helmet({

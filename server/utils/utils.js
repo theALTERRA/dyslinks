@@ -2,6 +2,7 @@ const { differenceInDays, differenceInHours, differenceInMonths, differenceInMil
 const { customAlphabet } = require("nanoid");
 const crypto = require("node:crypto");
 const JWT = require("jsonwebtoken");
+const net = require("node:net");
 const path = require("node:path");
 const fs = require("node:fs");
 const hbs = require("hbs");
@@ -41,6 +42,13 @@ const BLOCKED_URL_PROTOCOLS = new Set([
   "edge:",
   "moz-extension:",
   "chrome-extension:",
+  // OS protocol handlers abused for drive-by code execution / phishing
+  "ms-msdt:",
+  "search-ms:",
+  "search:",
+  "ms-officecmd:",
+  "ms-cxh:",
+  "ms-cxh-full:",
 ]);
 
 const UNSAFE_OBJECT_KEYS = new Set(["__proto__", "constructor", "prototype"]);
@@ -58,26 +66,42 @@ function escapeHtml(str) {
     .replace(/'/g, "&#39;");
 }
 
+function isPrivateIPv4(host) {
+  const [a, b] = host.split(".").map(Number);
+  return (
+    a === 0 ||
+    a === 10 ||
+    a === 127 ||
+    (a === 169 && b === 254) ||
+    (a === 172 && b >= 16 && b <= 31) ||
+    (a === 192 && b === 168)
+  );
+}
+
+// expects a WHATWG-normalized hostname (e.g. new URL(...).hostname)
 function isPrivateHostname(hostname) {
   if (!hostname) return true;
-  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "");
-  if (
-    host === "localhost" ||
-    host === "0.0.0.0" ||
-    host === "::" ||
-    host === "::1" ||
-    host.endsWith(".localhost") ||
-    host.startsWith("fe80:") ||
-    host.startsWith("fc") ||
-    host.startsWith("fd") ||
-    host.startsWith("::ffff:127.") ||
-    host.startsWith("::ffff:10.") ||
-    host.startsWith("::ffff:169.254.") ||
-    host.startsWith("::ffff:192.168.") ||
-    /^::ffff:172\.(1[6-9]|2\d|3[0-1])\./.test(host)
-  ) {
-    return true;
+  const host = hostname.toLowerCase().replace(/^\[|\]$/g, "").replace(/\.$/, "");
+  if (host === "localhost" || host.endsWith(".localhost")) return true;
+
+  if (net.isIPv4(host)) return isPrivateIPv4(host);
+
+  // only treat the value as IPv6 when it actually is one; plain domain names
+  // such as "fcbarcelona.com" or "fdroid.org" must not match the fc00::/7 checks
+  if (net.isIPv6(host)) {
+    if (host === "::" || host === "::1") return true;
+    if (/^f[cd][0-9a-f]{0,2}:/.test(host)) return true; // fc00::/7 unique local
+    if (/^fe[89ab][0-9a-f]?:/.test(host)) return true;  // fe80::/10 link local
+    const mapped = host.match(/^::ffff:(?:(\d+\.\d+\.\d+\.\d+)|([0-9a-f]{1,4}):([0-9a-f]{1,4}))$/);
+    if (mapped) {
+      const v4 = mapped[1] || [
+        parseInt(mapped[2], 16) >> 8, parseInt(mapped[2], 16) & 255,
+        parseInt(mapped[3], 16) >> 8, parseInt(mapped[3], 16) & 255,
+      ].join(".");
+      return isPrivateIPv4(v4);
+    }
   }
+
   return false;
 }
 
