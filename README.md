@@ -109,7 +109,7 @@ All settings are configured via environment variables (or `.env`). Any variable 
 | `TRUST_PROXY` | Read client IPs from `X-Forwarded-For`: `true` trusts proxies on loopback/private networks only, `false` disables, or set a hop count / comma-separated proxy IPs | `true` |
 | `ENABLE_RATE_LIMIT` | Enable API and auth rate limiting | `true` |
 | `DISALLOW_ANONYMOUS_LINKS` | Require login to shorten links | `true` |
-| `DISALLOW_REGISTRATION` | Disable public signups (requires `MAIL_ENABLED=true` if `false`) | `true` |
+| `DISALLOW_REGISTRATION` | Disable public signups (uses email verification when `MAIL_ENABLED=true`) | `true` |
 | `DISALLOW_LOGIN_FORM` | Hide email/password login (use with `OIDC_ENABLED=true`) | `false` |
 | `LINK_LENGTH` | Length of randomly generated short slugs | `6` |
 | `DB_CLIENT` | `better-sqlite3`, `pg`, or `mysql2` | `better-sqlite3` |

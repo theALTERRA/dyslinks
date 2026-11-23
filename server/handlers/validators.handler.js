@@ -418,7 +418,7 @@ const signupEmailTaken = [
         req.user = user;
       }
 
-      if (user?.verified) {
+      if (user && (user.verified || user.banned || !env.MAIL_ENABLED)) {
         return Promise.reject();
       }
     })

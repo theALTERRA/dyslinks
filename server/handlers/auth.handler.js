@@ -98,7 +98,25 @@ function admin(req, res, next) {
 async function signup(req, res) {
   const salt = await bcrypt.genSalt(12);
   const password = await bcrypt.hash(req.body.password, salt);
-  
+
+  if (!env.MAIL_ENABLED) {
+    const user = await query.user.create({
+      email: req.body.email,
+      password,
+      verified: true,
+    });
+
+    const token = utils.signToken(user);
+
+    if (req.isHTML) {
+      utils.setToken(res, token);
+      res.render("partials/auth/welcome");
+      return;
+    }
+
+    return res.status(201).send({ token });
+  }
+
   const user = await query.user.add(
     { email: req.body.email, password },
     req.user
