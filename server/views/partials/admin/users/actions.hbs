@@ -6,7 +6,10 @@
   {{/if}}
   {{#unless banned}}
     <button 
+      type="button"
       class="action ban" 
+      aria-label="Ban user"
+      data-tooltip="Ban"
       hx-on:click='openDialog("admin-table-dialog")' 
       hx-get="/confirm-user-ban" 
       hx-target="#admin-table-dialog .content-wrapper" 
@@ -17,7 +20,10 @@
     </button>
   {{/unless}}
   <button 
+    type="button"
     class="action delete" 
+    aria-label="Delete user"
+    data-tooltip="Delete"
     hx-on:click='openDialog("admin-table-dialog")' 
     hx-get="/confirm-user-delete" 
     hx-target="#admin-table-dialog .content-wrapper" 

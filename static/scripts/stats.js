@@ -1,19 +1,21 @@
 // active Chart.js instances so we can re-theme them live on dark/light switch
 let dyslinksCharts = [];
 
+const CHART_FONT_FAMILY = "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+
 function getChartTheme() {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   return {
     isDark,
-    accent: isDark ? "rgb(129, 140, 248)" : "rgb(99, 102, 241)",
-    accentRgb: isDark ? "129, 140, 248" : "99, 102, 241",
-    tooltipBg: isDark ? "rgba(15, 23, 42, 0.96)" : "rgba(255, 255, 255, 0.96)",
-    tooltipTitle: isDark ? "#f1f5f9" : "#0f172a",
+    accent: isDark ? "rgb(129, 140, 248)" : "rgb(79, 70, 229)",
+    accentRgb: isDark ? "129, 140, 248" : "79, 70, 229",
+    tooltipBg: isDark ? "rgba(24, 24, 27, 0.96)" : "rgba(255, 255, 255, 0.96)",
+    tooltipTitle: isDark ? "#fafafa" : "#09090b",
     tooltipBody: isDark ? "#a5b4fc" : "#4f46e5",
-    tooltipBorder: isDark ? "rgba(148, 163, 184, 0.2)" : "rgba(15, 23, 42, 0.08)",
-    tickColor: isDark ? "#94a3b8" : "#64748b",
-    gridColor: isDark ? "rgba(148, 163, 184, 0.12)" : "rgba(15, 23, 42, 0.06)",
-    legendColor: isDark ? "#cbd5e1" : "#334155",
+    tooltipBorder: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(9, 9, 11, 0.08)",
+    tickColor: isDark ? "#a1a1aa" : "#71717a",
+    gridColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(9, 9, 11, 0.06)",
+    legendColor: isDark ? "#d4d4d8" : "#3f3f46",
   };
 }
 
@@ -22,10 +24,10 @@ function getTooltipOptions(theme, enabled = true) {
     enabled,
     backgroundColor: theme.tooltipBg,
     titleColor: theme.tooltipTitle,
-    titleFont: { weight: "600", size: 13 },
-    bodyFont: { weight: "600", size: 14 },
+    titleFont: { family: CHART_FONT_FAMILY, weight: "600", size: 12 },
+    bodyFont: { family: CHART_FONT_FAMILY, weight: "600", size: 13 },
     bodyColor: theme.tooltipBody,
-    padding: 12,
+    padding: 10,
     cornerRadius: 8,
     borderColor: theme.tooltipBorder,
     borderWidth: 1,
@@ -464,6 +466,9 @@ function createCharts() {
   if (typeof Chart === "undefined") {
     setTimeout(function () { createCharts(); }, 100);
     return;
+  }
+  if (Chart.defaults && Chart.defaults.font) {
+    Chart.defaults.font.family = CHART_FONT_FAMILY;
   }
   destroyCharts();
   createViewsChart();

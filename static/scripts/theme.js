@@ -1,7 +1,7 @@
 (function () {
   var STORAGE_KEY = "dyslinks-theme";
-  var LIGHT_THEME_COLOR = "#f8fafc";
-  var DARK_THEME_COLOR = "#0b0f19";
+  var LIGHT_THEME_COLOR = "#fafafa";
+  var DARK_THEME_COLOR = "#09090b";
 
   function getStoredTheme() {
     try {

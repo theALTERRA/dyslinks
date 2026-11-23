@@ -12,20 +12,26 @@
   <a
     class="button action stats"
     href="/stats?id={{id}}"
-    title="Stats"
-    class="action stats"
+    aria-label="Stats"
+    data-tooltip="Stats"
   >
     {{> icons/chart}}
   </a>
   <button
+    type="button"
     class="action qrcode"
+    aria-label="QR Code"
+    data-tooltip="QR Code"
     hx-on:click="handleQRCode(this, 'admin-table-dialog')"
     data-url="{{link.url}}"
   >
     {{> icons/qrcode}}
   </button>
   <button 
+    type="button"
     class="action edit"
+    aria-label="Edit"
+    data-tooltip="Edit"
     hx-trigger="click queue:none"
     hx-ext="path-params"
     hx-get="/admin/link/edit/{id}" 
@@ -48,7 +54,10 @@
   </button>
   {{#unless banned}}
     <button 
+      type="button"
       class="action ban" 
+      aria-label="Ban"
+      data-tooltip="Ban"
       hx-on:click='openDialog("admin-table-dialog")' 
       hx-get="/confirm-link-ban" 
       hx-target="#admin-table-dialog .content-wrapper" 
@@ -59,7 +68,10 @@
     </button>
   {{/unless}}
   <button 
+    type="button"
     class="action delete" 
+    aria-label="Delete"
+    data-tooltip="Delete"
     hx-on:click='openDialog("admin-table-dialog")' 
     hx-get="/confirm-link-delete" 
     hx-target="#admin-table-dialog .content-wrapper" 

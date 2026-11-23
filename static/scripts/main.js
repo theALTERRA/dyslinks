@@ -242,7 +242,7 @@ function setTab(event, targetId) {
 function onSearchChange(event) {
   const clearButton = event.target.parentElement.querySelector("button.clear");
   if (!clearButton) return;
-  clearButton.style.display = event.target.value.length > 0 ? "block" : "none";
+  clearButton.style.display = event.target.value.length > 0 ? "flex" : "none";
 }
 
 function clearSeachInput(event) {
@@ -257,20 +257,13 @@ function clearSeachInput(event) {
 
 // detect if search inputs have value on load to show clear button
 function onSearchInputLoad() {
-  const linkSearchInput = document.getElementById("search");
-  if (!linkSearchInput) return;
-  const linkClearButton = linkSearchInput.parentElement.querySelector("button.clear")
-  linkClearButton.style.display = linkSearchInput.value.length > 0 ? "block" : "none";
-
-  const userSearchInput = document.getElementById("search_user");
-  if (!userSearchInput) return;
-  const userClearButton = userSearchInput.parentElement.querySelector("button.clear")
-  userClearButton.style.display = userSearchInput.value.length > 0 ? "block" : "none";
-
-  const domainSearchInput = document.getElementById("search_domain");
-  if (!domainSearchInput) return;
-  const domainClearButton = domainSearchInput.parentElement.querySelector("button.clear")
-  domainClearButton.style.display = domainSearchInput.value.length > 0 ? "block" : "none";
+  ["search", "search_user", "search_domain"].forEach(function (id) {
+    const input = document.getElementById(id);
+    if (!input || !input.parentElement) return;
+    const clearButton = input.parentElement.querySelector("button.clear");
+    if (!clearButton) return;
+    clearButton.style.display = input.value.length > 0 ? "flex" : "none";
+  });
 }
 
 onSearchInputLoad();

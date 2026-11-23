@@ -1,8 +1,8 @@
 {
   "name": "dyslinks",
   "short_name": "dyslinks",
-  "theme_color": "#f8fafc",
-  "background_color": "#f8fafc",
+  "theme_color": "#fafafa",
+  "background_color": "#fafafa",
   "display": "standalone",
   "description": "Modern self-hosted URL shortener with custom domains, dark mode, and stats.",
   "scope": "/",

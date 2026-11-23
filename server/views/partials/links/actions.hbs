@@ -12,20 +12,26 @@
   <a
     class="button action stats"
     href="/stats?id={{id}}"
-    title="Stats"
-    class="action stats"
+    aria-label="Stats"
+    data-tooltip="Stats"
   >
     {{> icons/chart}}
   </a>
   <button
+    type="button"
     class="action qrcode"
+    aria-label="QR Code"
+    data-tooltip="QR Code"
     hx-on:click="handleQRCode(this, 'link-dialog')"
     data-url="{{link.url}}"
   >
     {{> icons/qrcode}}
   </button>
   <button 
+    type="button"
     class="action edit"
+    aria-label="Edit"
+    data-tooltip="Edit"
     hx-trigger="click queue:none"
     hx-ext="path-params"
     hx-get="/link/edit/{id}" 
@@ -47,7 +53,10 @@
     {{> icons/pencil}}
   </button>
   <button 
+    type="button"
     class="action delete" 
+    aria-label="Delete"
+    data-tooltip="Delete"
     hx-on:click='openDialog("link-dialog")' 
     hx-get="/confirm-link-delete" 
     hx-target="#link-dialog .content-wrapper" 
