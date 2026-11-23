@@ -1711,10 +1711,24 @@ header a.logo:hover {
   opacity: 0.88;
 }
 
-header .logo img {
+header .logo img,
+header .logo svg.logo-mark {
   margin: 0;
   padding: 0;
-  border-radius: 6px;
+  display: block;
+  flex-shrink: 0;
+}
+
+header .logo svg.logo-mark .logo-d {
+  fill: var(--text-color);
+}
+
+header .logo svg.logo-mark .logo-dot {
+  fill: #7c3aed;
+}
+
+:root[data-theme="dark"] header .logo svg.logo-mark .logo-dot {
+  fill: #8b5cf6;
 }
 
 header ul.logo-links {
