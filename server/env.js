@@ -88,6 +88,11 @@ for (const key in spec) {
   }
 }
 
+// normalize legacy lowercase default brand name from older compose/.env files
+if (process.env.SITE_NAME === "dyslinks") {
+  process.env.SITE_NAME = "Dyslinks";
+}
+
 const env = cleanEnv(process.env, spec);
 
 const PLACEHOLDER_SECRET_REGEX = /replace|change[-_ ]?me|your[-_ ]?secret|secret[-_ ]?here|example|placeholder|securekey/i;

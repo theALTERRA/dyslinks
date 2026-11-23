@@ -2098,13 +2098,16 @@ main form label#advanced:hover {
 }
 
 #main-table-wrapper table .original-url { flex: 7 7 0; }
-#main-table-wrapper table .created-at { flex: 2.5 2.5 0; color: var(--text-secondary); font-size: 13.5px; }
+#main-table-wrapper table .created-at { flex: 2.5 2.5 0; }
 #main-table-wrapper table .short-link { flex: 3.2 3.2 0; }
 #main-table-wrapper.admin-table-wrapper table .short-link { overflow: visible; }
-#main-table-wrapper table .views { flex: 1 1 0; justify-content: flex-end; font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13.5px; color: var(--text-secondary); }
+#main-table-wrapper table .views { flex: 1 1 0; justify-content: flex-end; }
 #main-table-wrapper table .actions { flex: 3 3 0; justify-content: flex-end; overflow: visible; gap: 0.25rem; }
 #main-table-wrapper table .actions a.button,
 #main-table-wrapper table .actions button { margin-right: 0; }
+
+#main-table-wrapper table td.created-at { color: var(--text-secondary); font-size: 13.5px; }
+#main-table-wrapper table td.views { font-variant-numeric: tabular-nums; font-weight: 600; font-size: 13.5px; color: var(--text-secondary); }
 
 #main-table-wrapper table td.short-link a {
   font-family: var(--font-mono);
@@ -2112,21 +2115,32 @@ main form label#advanced:hover {
   font-weight: 500;
 }
 
-#main-table-wrapper table .users-id { flex: 2.5 2.5 0; justify-content: flex-end; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 13px; color: var(--secondary-text-color); }
+#main-table-wrapper table .users-id { flex: 2.5 2.5 0; justify-content: flex-end; }
 #main-table-wrapper table .users-email { flex: 9 9 0; }
-#main-table-wrapper table .users-created-at { flex: 4 4 0; color: var(--text-secondary); font-size: 13.5px; }
-#main-table-wrapper table .users-updated-at { flex: 4 4 0; color: var(--text-secondary); font-size: 13.5px; }
+#main-table-wrapper table .users-created-at { flex: 4 4 0; }
+#main-table-wrapper table .users-updated-at { flex: 4 4 0; }
 #main-table-wrapper table .users-verified { flex: 3 3 0; overflow: visible; }
 #main-table-wrapper table .users-role { flex: 2 2 0; overflow: visible; }
-#main-table-wrapper table .users-links-count { flex: 3 3 0; justify-content: flex-end; overflow: visible; font-variant-numeric: tabular-nums; font-weight: 600; }
+#main-table-wrapper table .users-links-count { flex: 3 3 0; justify-content: flex-end; overflow: visible; }
 #main-table-wrapper table .users-actions { flex: 2.5 2.5 0; }
 
-#main-table-wrapper table .domains-id { flex: 2 2 0; justify-content: flex-end; font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 13px; color: var(--secondary-text-color); }
-#main-table-wrapper table .domains-address { flex: 7 7 0; font-weight: 500; }
-#main-table-wrapper table .domains-homepage { flex: 5 5 0; color: var(--text-secondary); }
-#main-table-wrapper table .domains-created-at { flex: 3 3 0; color: var(--text-secondary); font-size: 13.5px; }
-#main-table-wrapper table .domains-links-count { flex: 3 3 0; justify-content: flex-end; overflow: visible; font-variant-numeric: tabular-nums; font-weight: 600; }
+#main-table-wrapper table td.users-id { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 13px; color: var(--secondary-text-color); }
+#main-table-wrapper table td.users-created-at,
+#main-table-wrapper table td.users-updated-at { color: var(--text-secondary); font-size: 13.5px; }
+#main-table-wrapper table td.users-links-count { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+#main-table-wrapper table .domains-id { flex: 2 2 0; justify-content: flex-end; }
+#main-table-wrapper table .domains-address { flex: 7 7 0; }
+#main-table-wrapper table .domains-homepage { flex: 5 5 0; }
+#main-table-wrapper table .domains-created-at { flex: 3 3 0; }
+#main-table-wrapper table .domains-links-count { flex: 3 3 0; justify-content: flex-end; overflow: visible; }
 #main-table-wrapper table .domains-actions { flex: 2.5 2.5 0; }
+
+#main-table-wrapper table td.domains-id { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 13px; color: var(--secondary-text-color); }
+#main-table-wrapper table td.domains-address { font-weight: 500; }
+#main-table-wrapper table td.domains-homepage { color: var(--text-secondary); }
+#main-table-wrapper table td.domains-created-at { color: var(--text-secondary); font-size: 13.5px; }
+#main-table-wrapper table td.domains-links-count { font-variant-numeric: tabular-nums; font-weight: 600; }
 
 #main-table-wrapper table td.original-url,
 #main-table-wrapper table td.created-at,
