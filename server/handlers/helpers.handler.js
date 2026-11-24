@@ -24,7 +24,7 @@ function error(error, req, res, _next) {
   }
 
   if (req.isHTML) {
-    res.render("error", {
+    res.status(statusCode).render("error", {
       message: "An error occurred. Please try again later."
     });
     return;
@@ -156,7 +156,18 @@ function rateLimit(params) {
       return params.limit;
     },
     keyGenerator: function(req, res) {
-      return "rl:" + req.method + req.baseUrl + req.path + ":" + ipKeyGenerator(req.ip || "");
+      let routeKey = params.key;
+      if (!routeKey) {
+        const normalizedBase = (req.baseUrl || "")
+          .toLowerCase()
+          .replace(/^\/api\/v2(?=\/|$)/, "/api")
+          .replace(/\/+$/, "");
+        const routePath = (req.route?.path ? String(req.route.path) : (req.path || ""))
+          .toLowerCase()
+          .replace(/\/+$/, "");
+        routeKey = req.method.toUpperCase() + ":" + normalizedBase + routePath;
+      }
+      return "rl:" + routeKey + ":" + ipKeyGenerator(req.ip || "");
     },
     requestWasSuccessful: function(req, res) {
       return !res.locals.error && res.statusCode < 400;

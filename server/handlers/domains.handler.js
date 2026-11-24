@@ -116,7 +116,9 @@ async function removeAdmin(req, res) {
   }
 
   if (links) {
-    await query.link.batchRemove({ domain_id: id });
+    await query.link.batchRemove({ domain_id: domain.id });
+  } else {
+    await query.link.update({ domain_id: domain.id }, { domain_id: null });
   }
   
   await query.user.clearDefaultDomain(domain.id);

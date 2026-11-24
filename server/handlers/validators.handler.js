@@ -21,6 +21,11 @@ const sanitizeCheckbox = value => {
 };
 
 const createLink = [
+  (req, res, next) => {
+    req.validatedDomain = null;
+    req.domainExplicit = false;
+    next();
+  },
   body("target")
     .exists({ checkNull: true, checkFalsy: true })
     .withMessage("Target is missing.")
@@ -83,7 +88,7 @@ const createLink = [
   body("domain")
     .optional({ nullable: true, checkFalsy: true })
     .customSanitizer((value, { req }) => {
-      req.body._domain_explicit = true;
+      req.domainExplicit = true;
       return String(value).trim().toLowerCase() === env.DEFAULT_DOMAIN.toLowerCase() ? null : value;
     })
     .custom(checkUser)
@@ -94,7 +99,7 @@ const createLink = [
     .custom(async (address, { req }) => {
       const domain = await query.domain.find({ address });
       const allowed = domain && !domain.banned && (domain.shared || domain.user_id === req.user.id);
-      req.body.fetched_domain = allowed ? domain : null;
+      req.validatedDomain = allowed ? domain : null;
 
       if (!allowed) return Promise.reject();
     })
@@ -428,17 +433,28 @@ const signup = [
 ];
 
 const signupEmailTaken = [
+  (req, res, next) => {
+    req.existingUnverifiedUser = null;
+    next();
+  },
   body("email", "Email is not valid.")
     .custom(async (value, { req }) => {
       const user = await query.user.find({ email: value });
 
-      if (user) {
-        req.user = user;
-      }
+      if (!user) return;
 
-      if (user && (user.verified || user.banned || !env.MAIL_ENABLED)) {
+      if (user.verified || user.banned || user.role === ROLES.ADMIN || !env.MAIL_ENABLED) {
         return Promise.reject();
       }
+
+      // Only allow resending verification if the caller knows the existing password
+      const passwordMatches = typeof req.body.password === "string" &&
+        await bcrypt.compare(req.body.password, user.password);
+      if (!passwordMatches) {
+        return Promise.reject();
+      }
+
+      req.existingUnverifiedUser = user;
     })
     .withMessage("You can't use this email address.")
 ];
@@ -567,6 +583,10 @@ async function bannedHost(domain) {
 };
 
 const setDefaultDomain = [
+  (req, res, next) => {
+    req.validatedDomain = null;
+    next();
+  },
   body("domain")
     .optional({ nullable: true, checkFalsy: true })
     .isString()
@@ -577,12 +597,12 @@ const setDefaultDomain = [
     })
     .custom(async (address, { req }) => {
       if (!address) {
-        req.body.fetched_domain = null;
+        req.validatedDomain = null;
         return;
       }
       const domain = await query.domain.find({ address });
       const allowed = domain && !domain.banned && (domain.shared || domain.user_id === req.user.id);
-      req.body.fetched_domain = allowed ? domain : null;
+      req.validatedDomain = allowed ? domain : null;
 
       if (!allowed) return Promise.reject();
     })

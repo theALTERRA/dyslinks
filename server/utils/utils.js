@@ -147,6 +147,7 @@ function signToken(user) {
       {
         iss: "ApiAuth",
         sub: user.id,
+        ver: user.token_version ?? 0,
         iat: parseInt((new Date().getTime() / 1000).toFixed(0)),
         exp: parseInt((addDays(new Date(), 7).getTime() / 1000).toFixed(0))
       },
@@ -471,7 +472,7 @@ function sleep(ms) {
 }
 
 function removeWww(host) {
-  return host?.replace("www.", "");
+  return host?.replace(/^www\./i, "");
 };
 
 /**

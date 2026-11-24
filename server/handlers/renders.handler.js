@@ -1,3 +1,5 @@
+const JWT = require("jsonwebtoken");
+
 const query = require("../queries");
 const utils = require("../utils");
 const env = require("../env");
@@ -44,7 +46,22 @@ async function signup(req, res) {
   });
 }
 
-function logout(req, res) {
+async function logout(req, res) {
+  const token = req.cookies?.token;
+  if (token) {
+    try {
+      const payload = JWT.verify(token, env.JWT_SECRET, { algorithms: ["HS256"] });
+      if (typeof payload?.sub === "number") {
+        await query.user.update(
+          { id: payload.sub, token_version: payload.ver ?? 0 },
+          {},
+          { increments: ["token_version"] }
+        );
+      }
+    } catch {
+      // ignore invalid/expired token on logout
+    }
+  }
   utils.deleteCurrentToken(res);
   res.render("logout", {
     title: "Logging out..."

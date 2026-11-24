@@ -35,6 +35,10 @@ async function createUserTable(knex) {
         .boolean("verified")
         .notNullable()
         .defaultTo(false);
+      table
+        .integer("token_version")
+        .notNullable()
+        .defaultTo(0);
       table.timestamps(false, true);
     });
   }

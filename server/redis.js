@@ -36,10 +36,14 @@ const remove = {
   },
   user: (user) => {
     if (!user) return;
-    return Promise.all([
-      client.del(key.user(user.id)),
-      client.del(key.user(user.apikey)),
-    ]);
+    const tasks = [];
+    if (user.id !== undefined && user.id !== null) {
+      tasks.push(client.del(key.user(user.id)));
+    }
+    if (user.apikey) {
+      tasks.push(client.del(key.user(user.apikey)));
+    }
+    return Promise.all(tasks);
   }
 };
 

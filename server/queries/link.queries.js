@@ -271,11 +271,11 @@ async function update(match, update) {
     update.password = await bcrypt.hash(update.password, salt);
   }
 
-  // if the links' adddress or domain is changed,
+  // if the links' address or domain is changed,
   // make sure to delete the original links from cache 
   let links = []
-  if (env.REDIS_ENABLED && (update.address || update.domain_id)) {
-    links = await knex("links").select('*').where(match);
+  if (env.REDIS_ENABLED && (update.address !== undefined || update.domain_id !== undefined)) {
+    links = await knex("links").select("*").where(match);
   }
   
   await knex("links")

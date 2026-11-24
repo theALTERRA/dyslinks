@@ -71,7 +71,7 @@ async function update(match, update, methods) {
       query.andWhere(key, ...(Array.isArray(value) ? value : [value]));
     });
 
-    const user = await query.select("id").first();
+    const user = await query.select("id", "apikey").first();
     if (!user) return {};
     
     const updateQuery = trx("users").where("id", user.id);
@@ -96,10 +96,21 @@ async function update(match, update, methods) {
 }
 
 async function remove(user) {
+  let userLinks = [];
+  let userDomains = [];
+  if (env.REDIS_ENABLED) {
+    [userLinks, userDomains] = await Promise.all([
+      knex("links").select("address", "domain_id").where("user_id", user.id),
+      knex("domains").select("address").where("user_id", user.id),
+    ]);
+  }
+
   const deletedUser = await knex("users").where("id", user.id).delete();
   
   if (env.REDIS_ENABLED) {
     redis.remove.user(user);
+    userLinks.forEach(redis.remove.link);
+    userDomains.forEach(redis.remove.domain);
   }
   
   return !!deletedUser;

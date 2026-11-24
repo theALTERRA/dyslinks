@@ -97,9 +97,9 @@ async function getAdmin(req, res) {
 
 async function create(req, res) {
   const { reuse, password, customurl, description, target, expire_in } = req.body;
-  let fetched_domain = req.body.fetched_domain;
+  let fetched_domain = req.validatedDomain || null;
 
-  if (!fetched_domain && !req.body._domain_explicit && req.user?.default_domain_id) {
+  if (!fetched_domain && !req.domainExplicit && req.user?.default_domain_id) {
     const defaultDomain = await query.domain.find({ id: req.user.default_domain_id });
     if (defaultDomain && !defaultDomain.banned && (defaultDomain.shared || defaultDomain.user_id === req.user.id)) {
       fetched_domain = defaultDomain;
@@ -511,11 +511,22 @@ async function redirect(req, res, next) {
   if (isPreservedUrl) return next();
 
   // 1. If custom domain, get domain info
+  const defaultHost = utils.removeWww(env.DEFAULT_DOMAIN.replace(/^https?:\/\//i, "").replace(/\/+$/, "")).toLowerCase();
   const host = utils.removeWww(req.headers.host)?.toLowerCase();
-  const domain =
-    host && host !== env.DEFAULT_DOMAIN.toLowerCase()
-      ? await query.domain.find({ address: host })
-      : null;
+  const isCustomHost = !!host && host !== defaultHost;
+  const domain = isCustomHost
+    ? await query.domain.find({ address: host })
+    : null;
+
+  // Do not fall back to default domain links when accessed via an unknown custom domain
+  if (isCustomHost && !domain) {
+    return res.redirect("/404");
+  }
+
+  // If custom domain itself is banned, redirect to banned page
+  if (domain?.banned) {
+    return res.redirect("/banned");
+  }
 
   // 2. Get link
   const address = req.params.id.replace("+", "");
@@ -564,13 +575,29 @@ async function redirect(req, res, next) {
       if (firstSpace !== -1) {
         const method = auth.slice(0, firstSpace);
         const payload = auth.slice(firstSpace + 1);
-        if (method === "Basic") {
+        if (method.toLowerCase() === "basic") {
           const decoded = Buffer.from(payload, "base64").toString("utf8");
           const colon = decoded.indexOf(":");
           if (colon !== -1) {
             const password = decoded.slice(colon + 1);
             const matches = await bcrypt.compare(password, link.password);
-            if (matches) return res.redirect(link.target);
+            if (matches) {
+              const isBot = isbot(req.headers["user-agent"]);
+              if (link.user_id && !isBot) {
+                queue.visit.add({
+                  userAgent: req.headers["user-agent"],
+                  ip: req.ip,
+                  country: req.get("cf-ipcountry"),
+                  referrer: req.get("Referrer"),
+                  link
+                });
+              }
+              let redirectTarget = link.target;
+              try {
+                redirectTarget = new URL(link.target).href;
+              } catch {}
+              return res.redirect(redirectTarget);
+            }
           }
         }
       }
@@ -611,6 +638,13 @@ async function redirectProtected(req, res) {
 
   if (link.banned) {
     throw new CustomError("This link has been banned.", 403);
+  }
+
+  if (link.domain_id) {
+    const domain = await query.domain.find({ id: link.domain_id });
+    if (domain?.banned) {
+      throw new CustomError("This link has been banned.", 403);
+    }
   }
 
   if (!utils.isSafeUrl(link.target, { allowCustomProtocols: true })) {
@@ -656,8 +690,9 @@ async function redirectProtected(req, res) {
 };
 
 async function redirectCustomDomainHomepage(req, res, next) {
+  const defaultHost = utils.removeWww(env.DEFAULT_DOMAIN.replace(/^https?:\/\//i, "").replace(/\/+$/, "")).toLowerCase();
   const host = utils.removeWww(req.headers.host)?.toLowerCase();
-  if (!host || host === env.DEFAULT_DOMAIN.toLowerCase()) {
+  if (!host || host === defaultHost) {
     next();
     return;
   }
@@ -678,7 +713,12 @@ async function redirectCustomDomainHomepage(req, res, next) {
     utils.preservedURLs.includes(pathName)
   ) {
     const domain = await query.domain.find({ address: host });
-    if (domain?.homepage && utils.isSafeUrl(domain.homepage)) {
+    if (domain?.banned) {
+      if (path !== "/banned") {
+        res.redirect(302, "/banned");
+        return;
+      }
+    } else if (domain?.homepage && utils.isSafeUrl(domain.homepage)) {
       res.redirect(302, domain.homepage);
       return;
     }

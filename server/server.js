@@ -107,7 +107,18 @@ app.use("/api/v2", helpers.verifyOrigin, routes.api);
 app.use("/api", helpers.verifyOrigin, routes.api);
 
 // finally, redirect the short link to the target
-app.get("/:id", asyncHandler(links.redirect));
+const redirectBasicAuthRateLimit = helpers.rateLimit({
+  window: 60,
+  limit: 10,
+  key: "redirect-protected-basic",
+});
+function rateLimitBasicAuthRedirect(req, res, next) {
+  if (typeof req.headers.authorization === "string" && /^basic\s+/i.test(req.headers.authorization)) {
+    return redirectBasicAuthRateLimit(req, res, next);
+  }
+  return next();
+}
+app.get("/:id", rateLimitBasicAuthRedirect, asyncHandler(links.redirect));
 
 // 404 pages that don't exist
 app.get("*", renders.notFound);

@@ -8,18 +8,35 @@ const isMySQL = env.DB_CLIENT === "mysql" || env.DB_CLIENT === "mysql2";
 
 const db = knex({
   client: env.DB_CLIENT,
-  connection: {
-    ...(isSQLite && { filename: env.DB_FILENAME }),
-    host: env.DB_HOST,
-    port: env.DB_PORT,
-    database: env.DB_NAME,
-    user: env.DB_USER,
-    password: env.DB_PASSWORD,
-    ssl: env.DB_SSL,
-    pool: {
-      min: env.DB_POOL_MIN,
-      max: env.DB_POOL_MAX
-    }
+  connection: isSQLite
+    ? { filename: env.DB_FILENAME }
+    : {
+        host: env.DB_HOST,
+        port: env.DB_PORT,
+        database: env.DB_NAME,
+        user: env.DB_USER,
+        password: env.DB_PASSWORD,
+        ssl: env.DB_SSL,
+      },
+  pool: {
+    min: env.DB_POOL_MIN,
+    max: env.DB_POOL_MAX,
+    ...(isSQLite && {
+      afterCreate(conn, done) {
+        try {
+          if (typeof conn.pragma === "function") {
+            conn.pragma("foreign_keys = ON");
+            done(null, conn);
+          } else if (typeof conn.run === "function") {
+            conn.run("PRAGMA foreign_keys = ON", err => done(err, conn));
+          } else {
+            done(null, conn);
+          }
+        } catch (err) {
+          done(err, conn);
+        }
+      }
+    }),
   },
   useNullAsDefault: true,
 });

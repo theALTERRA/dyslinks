@@ -22,7 +22,7 @@ async function get(req, res) {
 };
 
 async function setDefaultDomain(req, res) {
-  const domain = req.body.fetched_domain || null;
+  const domain = req.validatedDomain || null;
 
   const updatedUser = await query.user.update(
     { id: req.user.id },

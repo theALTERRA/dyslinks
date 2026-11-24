@@ -5,6 +5,7 @@ const { randomUUID } = require("node:crypto");
 const bcrypt = require("bcryptjs");
 
 const { ROLES } = require("../consts");
+const passportConfig = require("../passport");
 const query = require("../queries");
 const utils = require("../utils");
 const redis = require("../redis");
@@ -15,8 +16,15 @@ const env = require("../env");
 const CustomError = utils.CustomError;
 
 function authenticate(type, error, isStrict, redirect) {
-  return function auth(req, res, next) {
+  return async function auth(req, res, next) {
     if (req.user) return next();
+
+    if (type === "oidc") {
+      const ready = await passportConfig.oidcReady;
+      if (!ready) {
+        return next(new CustomError("OIDC authentication is unavailable.", 503));
+      }
+    }
 
     passport.authenticate(type, (err, user, info) => {
       if (
@@ -47,16 +55,16 @@ function authenticate(type, error, isStrict, redirect) {
       }
       
       if (!user && isStrict) {
-        throw new CustomError(error, 401);
+        return next(new CustomError(error, 401));
       }
 
       if (user && user.banned) {
-        throw new CustomError("You're banned from using this website.", 403);
+        return next(new CustomError("You're banned from using this website.", 403));
       }
 
       if (user && (isStrict || type === "localapikey") && !user.verified) {
-        throw new CustomError("Your email address is not verified. " +
-          "Sign up to get the verification link again.", 400);
+        return next(new CustomError("Your email address is not verified. " +
+          "Sign up to get the verification link again.", 400));
       }
 
       if (user) {
@@ -96,10 +104,9 @@ function admin(req, res, next) {
 }
 
 async function signup(req, res) {
-  const salt = await bcrypt.genSalt(12);
-  const password = await bcrypt.hash(req.body.password, salt);
-
   if (!env.MAIL_ENABLED) {
+    const salt = await bcrypt.genSalt(12);
+    const password = await bcrypt.hash(req.body.password, salt);
     const user = await query.user.create({
       email: req.body.email,
       password,
@@ -118,10 +125,21 @@ async function signup(req, res) {
     return res.status(201).send({ token });
   }
 
-  const user = await query.user.add(
-    { email: req.body.email, password },
-    req.user
-  );
+  let user;
+  if (req.existingUnverifiedUser) {
+    // Never overwrite password for an existing unverified account; only rotate verification token
+    user = await query.user.update(
+      { id: req.existingUnverifiedUser.id },
+      {
+        verification_token: randomUUID(),
+        verification_expires: utils.dateToUTC(addMinutes(new Date(), 60)),
+      }
+    );
+  } else {
+    const salt = await bcrypt.genSalt(12);
+    const password = await bcrypt.hash(req.body.password, salt);
+    user = await query.user.add({ email: req.body.email, password });
+  }
   
   await mail.verification(user);
 
@@ -227,13 +245,21 @@ async function changePassword(req, res) {
   const salt = await bcrypt.genSalt(12);
   const newpassword = await bcrypt.hash(req.body.newpassword, salt);
   
-  const user = await query.user.update({ id: req.user.id }, { password: newpassword });
+  const user = await query.user.update(
+    { id: req.user.id },
+    { password: newpassword },
+    { increments: ["token_version"] }
+  );
   
   if (!user) {
     throw new CustomError("Couldn't change the password. Try again later.");
   }
 
+  const token = utils.signToken(user);
+
   if (req.isHTML) {
+    utils.deleteCurrentToken(res);
+    utils.setToken(res, token);
     res.setHeader("HX-Trigger-After-Swap", "resetChangePasswordForm");
     res.render("partials/settings/change_password", {
       success: "Password has been changed."
@@ -311,7 +337,8 @@ async function newPassword(req, res) {
       reset_password_expires: null, 
       reset_password_token: null,
       password,
-    }
+    },
+    { increments: ["token_version"] }
   );
 
   if (!user) {
@@ -384,7 +411,8 @@ async function changeEmail(req, res, next) {
         change_email_expires: null,
         change_email_address: null,
         email: foundUser.change_email_address
-      }
+      },
+      { increments: ["token_version"] }
     );
   
     if (user) {
