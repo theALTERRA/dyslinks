@@ -25,6 +25,7 @@ router.post(
   locals.viewTemplate("partials/settings/domain/add_form"),
   asyncHandler(auth.apikey),
   asyncHandler(auth.jwt),
+  auth.customDomainAccess,
   validators.addDomain,
   asyncHandler(helpers.verify),
   asyncHandler(domains.add)
@@ -46,6 +47,7 @@ router.delete(
   locals.viewTemplate("partials/settings/domain/delete"),
   asyncHandler(auth.apikey),
   asyncHandler(auth.jwt),
+  auth.customDomainAccess,
   validators.removeDomain,
   asyncHandler(helpers.verify),
   asyncHandler(domains.remove)

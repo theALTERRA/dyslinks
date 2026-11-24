@@ -103,6 +103,13 @@ function admin(req, res, next) {
   throw new CustomError("Unauthorized", 401);
 }
 
+function customDomainAccess(req, res, next) {
+  if (!env.DISALLOW_CUSTOM_DOMAINS || req.user?.admin) {
+    return next();
+  }
+  return next(new CustomError("Custom domains are disabled for non-admin users.", 403));
+}
+
 async function signup(req, res) {
   if (!env.MAIL_ENABLED) {
     const salt = await bcrypt.genSalt(12);
@@ -452,6 +459,7 @@ module.exports = {
   changeEmailRequest,
   changePassword,
   createAdminUser,
+  customDomainAccess,
   featureAccess,
   featureAccessPage,
   generateApiKey,

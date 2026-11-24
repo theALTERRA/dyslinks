@@ -220,6 +220,7 @@ router.get(
   "/add-domain-form", 
   locals.noLayout,
   asyncHandler(auth.jwt),
+  auth.customDomainAccess,
   asyncHandler(renders.addDomainForm)
 );
 
@@ -228,6 +229,7 @@ router.get(
   locals.noLayout,
   locals.viewTemplate("partials/settings/domain/delete"),
   asyncHandler(auth.jwt),
+  auth.customDomainAccess,
   asyncHandler(renders.confirmDomainDelete)
 );
 

@@ -9,7 +9,8 @@ const env = require("../env");
 const CustomError = utils.CustomError;
 
 async function get(req, res) {
-  const domains = await query.domain.getForUser(req.user.id);
+  const canUseOwn = !env.DISALLOW_CUSTOM_DOMAINS || req.user.admin;
+  const domains = await query.domain.getForUser(req.user.id, { includeOwn: canUseOwn });
 
   const data = {
     apikey: req.user.apikey,
@@ -35,9 +36,10 @@ async function setDefaultDomain(req, res) {
 
   req.user.default_domain_id = updatedUser.default_domain_id;
 
+  const canUseOwn = !env.DISALLOW_CUSTOM_DOMAINS || req.user.admin;
   const [ownDomains, availableDomains] = await Promise.all([
-    query.domain.get({ user_id: req.user.id }),
-    query.domain.getForUser(req.user.id)
+    canUseOwn ? query.domain.get({ user_id: req.user.id }) : Promise.resolve([]),
+    query.domain.getForUser(req.user.id, { includeOwn: canUseOwn })
   ]);
 
   const user_default_domain = locals.resolveUserDefaultDomain(updatedUser, availableDomains);
@@ -47,7 +49,7 @@ async function setDefaultDomain(req, res) {
       domains: ownDomains.map(utils.sanitize.domain),
       shortener_domains: availableDomains.map(utils.sanitize.domain),
       user_default_domain,
-      swap_oob_table: true,
+      swap_oob_table: canUseOwn,
       success: "Default domain has been updated."
     });
     return;

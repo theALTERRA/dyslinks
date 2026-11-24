@@ -111,6 +111,7 @@ All settings are configured via environment variables (or `.env`). Any variable 
 | `DISALLOW_ANONYMOUS_LINKS` | Require login to shorten links | `true` |
 | `DISALLOW_REGISTRATION` | Disable public signups (uses email verification when `MAIL_ENABLED=true`) | `true` |
 | `DISALLOW_LOGIN_FORM` | Hide email/password login (use with `OIDC_ENABLED=true`) | `false` |
+| `DISALLOW_CUSTOM_DOMAINS` | Disable adding/using personal custom domains for non-admin users | `false` |
 | `LINK_LENGTH` | Length of randomly generated short slugs | `6` |
 | `DB_CLIENT` | `better-sqlite3`, `pg`, or `mysql2` | `better-sqlite3` |
 | `DB_FILENAME` | SQLite database file path | `db/data` |

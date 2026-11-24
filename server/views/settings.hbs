@@ -4,10 +4,17 @@
     Welcome, <span>{{user.email}}</span>
   </h1>
   <hr />
-  {{> settings/domain/index}}
-  <hr />
-  {{> settings/domain/default_domain}}
-  <hr />
+  {{#if can_use_custom_domains}}
+    {{> settings/domain/index}}
+    <hr />
+  {{/if}}
+  {{#if can_use_custom_domains}}
+    {{> settings/domain/default_domain}}
+    <hr />
+  {{else if shortener_domains.length}}
+    {{> settings/domain/default_domain}}
+    <hr />
+  {{/if}}
   {{> settings/apikey}}
   <hr />
   {{> settings/change_password}}

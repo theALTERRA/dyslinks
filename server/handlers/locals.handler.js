@@ -41,6 +41,7 @@ function config(req, res, next) {
   res.locals.server_cname_address = env.SERVER_CNAME_ADDRESS;
   res.locals.disallow_registration = env.DISALLOW_REGISTRATION;
   res.locals.disallow_login_form = env.DISALLOW_LOGIN_FORM;
+  res.locals.disallow_custom_domains = env.DISALLOW_CUSTOM_DOMAINS;
   res.locals.login_disabled = env.DISALLOW_LOGIN_FORM && !env.OIDC_ENABLED;
   res.locals.oidc_enabled = env.OIDC_ENABLED;
   res.locals.oidc_button_text = env.OIDC_BUTTON_TEXT;
@@ -63,14 +64,17 @@ async function user(req, res, next) {
   const user = req.user;
   res.locals.user = user;
   if (user) {
+    const canUseCustomDomains = !env.DISALLOW_CUSTOM_DOMAINS || utils.isAdmin(user);
     const [ownDomains, availableDomains] = await Promise.all([
-      query.domain.get({ user_id: user.id }),
-      query.domain.getForUser(user.id)
+      canUseCustomDomains ? query.domain.get({ user_id: user.id }) : Promise.resolve([]),
+      query.domain.getForUser(user.id, { includeOwn: canUseCustomDomains })
     ]);
+    res.locals.can_use_custom_domains = canUseCustomDomains;
     res.locals.domains = ownDomains.map(utils.sanitize.domain);
     res.locals.shortener_domains = availableDomains.map(utils.sanitize.domain);
     res.locals.user_default_domain = resolveUserDefaultDomain(user, availableDomains);
   } else {
+    res.locals.can_use_custom_domains = false;
     res.locals.domains = null;
     res.locals.shortener_domains = null;
     res.locals.user_default_domain = env.DEFAULT_DOMAIN;

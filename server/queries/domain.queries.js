@@ -29,12 +29,12 @@ function get(match) {
   return knex("domains").where(match);
 }
 
-function getForUser(user_id) {
+function getForUser(user_id, { includeOwn = true } = {}) {
   return knex("domains")
     .where("banned", false)
     .andWhere(function () {
       this.where("shared", true);
-      if (user_id) {
+      if (includeOwn && user_id) {
         this.orWhere("user_id", user_id);
       }
     })

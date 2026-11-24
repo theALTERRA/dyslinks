@@ -101,7 +101,8 @@ async function create(req, res) {
 
   if (!fetched_domain && !req.domainExplicit && req.user?.default_domain_id) {
     const defaultDomain = await query.domain.find({ id: req.user.default_domain_id });
-    if (defaultDomain && !defaultDomain.banned && (defaultDomain.shared || defaultDomain.user_id === req.user.id)) {
+    const canUseOwn = !env.DISALLOW_CUSTOM_DOMAINS || req.user.admin;
+    if (defaultDomain && !defaultDomain.banned && (defaultDomain.shared || (canUseOwn && defaultDomain.user_id === req.user.id))) {
       fetched_domain = defaultDomain;
     }
   }

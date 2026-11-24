@@ -98,7 +98,8 @@ const createLink = [
     .customSanitizer(value => value.trim().toLowerCase())
     .custom(async (address, { req }) => {
       const domain = await query.domain.find({ address });
-      const allowed = domain && !domain.banned && (domain.shared || domain.user_id === req.user.id);
+      const canUseOwn = !env.DISALLOW_CUSTOM_DOMAINS || req.user.admin;
+      const allowed = domain && !domain.banned && (domain.shared || (canUseOwn && domain.user_id === req.user.id));
       req.validatedDomain = allowed ? domain : null;
 
       if (!allowed) return Promise.reject();
@@ -601,7 +602,8 @@ const setDefaultDomain = [
         return;
       }
       const domain = await query.domain.find({ address });
-      const allowed = domain && !domain.banned && (domain.shared || domain.user_id === req.user.id);
+      const canUseOwn = !env.DISALLOW_CUSTOM_DOMAINS || req.user.admin;
+      const allowed = domain && !domain.banned && (domain.shared || (canUseOwn && domain.user_id === req.user.id));
       req.validatedDomain = allowed ? domain : null;
 
       if (!allowed) return Promise.reject();
