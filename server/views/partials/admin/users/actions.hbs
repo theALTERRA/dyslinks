@@ -1,35 +1,37 @@
-<td class="actions users-actions">
-  {{#if banned}}
-    <span class="action banned" role="img" aria-label="Banned" data-tooltip="Banned">
-      {{> icons/stop}}
-    </span>
-  {{/if}}
-  {{#unless banned}}
-    <button 
+<td class="actions users-actions" data-label="Actions">
+  <div class="actions-group">
+    {{#if banned}}
+      <span class="action banned" role="img" aria-label="Banned" data-tooltip="Banned" tabindex="0">
+        {{> icons/stop}}
+      </span>
+    {{/if}}
+    {{#unless banned}}
+      <button
+        type="button"
+        class="action ban"
+        aria-label="Ban {{email}}"
+        data-tooltip="Ban"
+        data-action="open-dialog" data-dialog="admin-table-dialog"
+        hx-get="/confirm-user-ban"
+        hx-target="#admin-table-dialog .content-wrapper"
+        hx-indicator="#admin-table-dialog"
+        hx-vals='{"id":"{{id}}"}'
+      >
+        {{> icons/stop}}
+      </button>
+    {{/unless}}
+    <button
       type="button"
-      class="action ban" 
-      aria-label="Ban user"
-      data-tooltip="Ban"
-      data-action="open-dialog" data-dialog="admin-table-dialog" 
-      hx-get="/confirm-user-ban" 
-      hx-target="#admin-table-dialog .content-wrapper" 
-      hx-indicator="#admin-table-dialog" 
+      class="action delete"
+      aria-label="Delete {{email}}"
+      data-tooltip="Delete"
+      data-action="open-dialog" data-dialog="admin-table-dialog"
+      hx-get="/confirm-user-delete"
+      hx-target="#admin-table-dialog .content-wrapper"
+      hx-indicator="#admin-table-dialog"
       hx-vals='{"id":"{{id}}"}'
     >
-      {{> icons/stop}}
+      {{> icons/trash}}
     </button>
-  {{/unless}}
-  <button 
-    type="button"
-    class="action delete" 
-    aria-label="Delete user"
-    data-tooltip="Delete"
-    data-action="open-dialog" data-dialog="admin-table-dialog" 
-    hx-get="/confirm-user-delete" 
-    hx-target="#admin-table-dialog .content-wrapper" 
-    hx-indicator="#admin-table-dialog" 
-    hx-vals='{"id":"{{id}}"}'
-  >
-    {{> icons/trash}}
-  </button>
+  </div>
 </td>

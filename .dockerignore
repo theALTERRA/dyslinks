@@ -15,3 +15,5 @@ README.md
 *.db
 .DS_Store
 npm-debug.log*
+.agents/
+skills-lock.json

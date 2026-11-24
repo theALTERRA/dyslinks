@@ -13,9 +13,9 @@ function getChartTheme() {
     tooltipBg: isDark ? "rgba(24, 24, 27, 0.96)" : "rgba(255, 255, 255, 0.96)",
     tooltipTitle: isDark ? "#fafafa" : "#09090b",
     tooltipBody: isDark ? "#a5b4fc" : "#4f46e5",
-    tooltipBorder: isDark ? "rgba(255, 255, 255, 0.1)" : "rgba(9, 9, 11, 0.08)",
-    tickColor: isDark ? "#a1a1aa" : "#71717a",
-    gridColor: isDark ? "rgba(255, 255, 255, 0.06)" : "rgba(9, 9, 11, 0.06)",
+    tooltipBorder: isDark ? "rgba(255, 255, 255, 0.14)" : "rgba(9, 9, 11, 0.12)",
+    tickColor: isDark ? "#a1a1aa" : "#52525b",
+    gridColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(9, 9, 11, 0.07)",
     legendColor: isDark ? "#d4d4d8" : "#3f3f46",
   };
 }
@@ -40,7 +40,7 @@ function getTooltipOptions(theme, enabled = true) {
 function createViewsChartLabel(ctx) {
   const period = ctx.dataset.period;
   const now = new Date();
-  let labels = [];
+  const labels = [];
 
   if (period === "day") {
     const nowHour = now.getHours();
@@ -84,16 +84,15 @@ function changeStatsPeriod(event) {
   const buttons = document.querySelectorAll("#stats .stats-nav .nav");
   if (!buttons || !periodItems) return;
   mapTooltipHoverOut();
-  buttons.forEach(b => { b.disabled = false; });
-  btn.disabled = true;
-  periodItems.forEach(el => {
-    if (el.dataset.period === period) {
-      el.classList.remove("hidden");
-    } else {
-      el.classList.add("hidden");
-    }
+  buttons.forEach(function (b) {
+    const isActive = b === btn;
+    b.classList.toggle("active", isActive);
+    b.setAttribute("aria-pressed", isActive ? "true" : "false");
   });
-  dyslinksCharts.forEach(chart => {
+  periodItems.forEach(function (el) {
+    el.classList.toggle("hidden", el.dataset.period !== period);
+  });
+  dyslinksCharts.forEach(function (chart) {
     try {
       if (chart.canvas && !chart.canvas.classList.contains("hidden")) {
         chart.resize();
@@ -107,14 +106,16 @@ function changeStatsPeriod(event) {
 
 // beautify browser labels
 function beautifyBrowserName(name) {
-  if (name === "firefox") return "Firefox";
-  if (name === "chrome") return "Chrome";
-  if (name === "edge") return "Edge";
-  if (name === "opera") return "Opera";
-  if (name === "safari") return "Safari";
-  if (name === "other") return "Other";
-  if (name === "ie") return "IE";
-  return name;
+  const map = {
+    firefox: "Firefox",
+    chrome: "Chrome",
+    edge: "Edge",
+    opera: "Opera",
+    safari: "Safari",
+    other: "Other",
+    ie: "IE",
+  };
+  return map[name] || name;
 }
 
 // create views chart
@@ -123,7 +124,7 @@ function createViewsChart() {
   if (!canvases || !canvases.length) return;
   const theme = getChartTheme();
 
-  canvases.forEach(ctx => {
+  canvases.forEach(function (ctx) {
     const data = JSON.parse(ctx.dataset.data);
     const period = ctx.dataset.period;
 
@@ -203,16 +204,16 @@ function createBrowsersChart() {
   if (!canvases || !canvases.length) return;
   const theme = getChartTheme();
 
-  canvases.forEach(ctx => {
+  canvases.forEach(function (ctx) {
     const data = JSON.parse(ctx.dataset.data);
 
     const chart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: data.map(d => beautifyBrowserName(d.name)),
+        labels: data.map(function (d) { return beautifyBrowserName(d.name); }),
         datasets: [{
           label: "Views",
-          data: data.map(d => d.value),
+          data: data.map(function (d) { return d.value; }),
           backgroundColor: `rgba(${theme.accentRgb}, 0.72)`,
           borderColor: theme.accent,
           borderWidth: 1,
@@ -270,9 +271,9 @@ function createReferrersChart() {
   if (!canvases || !canvases.length) return;
   const theme = getChartTheme();
 
-  canvases.forEach(ctx => {
+  canvases.forEach(function (ctx) {
     const data = JSON.parse(ctx.dataset.data);
-    let max = Array.from(data).sort((a, b) => b.value - a.value)[0];
+    let max = data.toSorted(function (a, b) { return b.value - a.value; })[0];
 
     let tooltipEnabled = true;
     let hoverBackgroundColor = `rgba(${theme.accentRgb}, 0.95)`;
@@ -292,11 +293,11 @@ function createReferrersChart() {
     const chart = new Chart(ctx, {
       type: "doughnut",
       data: {
-        labels: data.map(d => d.name.replace(/\[dot\]/g, ".")),
+        labels: data.map(function (d) { return d.name.replace(/\[dot\]/g, "."); }),
         datasets: [{
           label: "Views",
-          data: data.map(d => d.value),
-          backgroundColor: data.map(d => `rgba(${theme.accentRgb}, ${Math.max((d.value / maxVal) - 0.15, 0.14).toFixed(2)})`),
+          data: data.map(function (d) { return d.value; }),
+          backgroundColor: data.map(function (d) { return `rgba(${theme.accentRgb}, ${Math.max((d.value / maxVal) - 0.15, 0.14).toFixed(2)})`; }),
           borderWidth: 1,
           borderColor,
           hoverBackgroundColor,
@@ -329,13 +330,15 @@ function createReferrersChart() {
 
 // beautify OS labels
 function beautifyOsName(name) {
-  if (name === "android") return "Android";
-  if (name === "ios") return "iOS";
-  if (name === "linux") return "Linux";
-  if (name === "macos") return "macOS";
-  if (name === "windows") return "Windows";
-  if (name === "other") return "Other";
-  return name;
+  const map = {
+    android: "Android",
+    ios: "iOS",
+    linux: "Linux",
+    macos: "macOS",
+    windows: "Windows",
+    other: "Other",
+  };
+  return map[name] || name;
 }
 
 // create operating systems chart
@@ -344,16 +347,16 @@ function createOsChart() {
   if (!canvases || !canvases.length) return;
   const theme = getChartTheme();
 
-  canvases.forEach(ctx => {
+  canvases.forEach(function (ctx) {
     const data = JSON.parse(ctx.dataset.data);
 
     const chart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: data.map(d => beautifyOsName(d.name)),
+        labels: data.map(function (d) { return beautifyOsName(d.name); }),
         datasets: [{
           label: "Views",
-          data: data.map(d => d.value),
+          data: data.map(function (d) { return d.value; }),
           backgroundColor: `rgba(${theme.accentRgb}, 0.72)`,
           borderColor: theme.accent,
           borderWidth: 1,
@@ -409,21 +412,20 @@ function createOsChart() {
 function renderMapCountriesList(entries, nameById) {
   const container = document.getElementById("map-countries-list");
   if (!container) return;
-  container.textContent = "";
 
   const nonZero = entries
-    .filter(item => item.value > 0)
-    .sort((a, b) => b.value - a.value);
+    .filter(function (item) { return item.value > 0; })
+    .toSorted(function (a, b) { return b.value - a.value; });
 
   if (!nonZero.length) {
     const empty = document.createElement("span");
     empty.className = "map-countries-empty";
     empty.textContent = "No country visits recorded in this period";
-    container.appendChild(empty);
+    container.replaceChildren(empty);
     return;
   }
 
-  nonZero.slice(0, 8).forEach(item => {
+  const pills = nonZero.slice(0, 8).map(function (item) {
     const code = String(item.name || "").toLowerCase();
     const label = code === "unknown"
       ? "Unknown"
@@ -440,10 +442,11 @@ function renderMapCountriesList(entries, nameById) {
     countEl.className = "map-country-count";
     countEl.textContent = String(item.value);
 
-    pill.appendChild(nameEl);
-    pill.appendChild(countEl);
-    container.appendChild(pill);
+    pill.append(nameEl, countEl);
+    return pill;
   });
+
+  container.replaceChildren(...pills);
 }
 
 // add data to the map
@@ -495,11 +498,11 @@ function feedMapData(period) {
     }
   }
 
-  const aggregatedEntries = Object.entries(countsById).map(([name, value]) => ({ name, value }));
+  const aggregatedEntries = Object.entries(countsById).map(function ([name, value]) { return { name, value }; });
   renderMapCountriesList(aggregatedEntries, nameById);
 }
 
-// handle map tooltip hover
+// handle map tooltip hover (uses top-layer popover="manual" when supported)
 function mapTooltipHoverOver(evt) {
   const e = evt || window.event;
   const tooltip = document.querySelector("#map-tooltip");
@@ -519,8 +522,18 @@ function mapTooltipHoverOver(evt) {
   const name = target.getAttribute("aria-label") || target.dataset.id.toUpperCase();
   const views = target.dataset.views || "0";
   tooltip.textContent = `${name}: ${views}`;
-  tooltip.classList.add("visible");
-  tooltip.setAttribute("aria-hidden", "false");
+
+  if (typeof tooltip.showPopover === "function") {
+    try {
+      if (!tooltip.matches(":popover-open")) {
+        tooltip.showPopover();
+      }
+    } catch (_) {
+      tooltip.classList.add("visible");
+    }
+  } else {
+    tooltip.classList.add("visible");
+  }
 
   const x = typeof e.clientX === "number" ? e.clientX : 0;
   const y = typeof e.clientY === "number" ? e.clientY : 0;
@@ -535,8 +548,16 @@ function mapTooltipHoverOver(evt) {
 function mapTooltipHoverOut() {
   const tooltip = document.querySelector("#map-tooltip");
   if (tooltip) {
+    if (typeof tooltip.hidePopover === "function") {
+      try {
+        if (tooltip.matches(":popover-open")) {
+          tooltip.hidePopover();
+        }
+      } catch (_) {
+        // ignore
+      }
+    }
     tooltip.classList.remove("visible");
-    tooltip.setAttribute("aria-hidden", "true");
   }
   if (activeMapPath) {
     activeMapPath.classList.remove("active");
@@ -545,6 +566,11 @@ function mapTooltipHoverOut() {
 }
 
 window.addEventListener("scroll", mapTooltipHoverOut, { passive: true });
+document.addEventListener("keydown", function (evt) {
+  if (evt.key === "Escape" && activeMapPath) {
+    mapTooltipHoverOut();
+  }
+});
 document.addEventListener("pointerdown", function (evt) {
   if (activeMapPath && (!evt.target || !evt.target.closest || !evt.target.closest("svg.map"))) {
     mapTooltipHoverOut();
@@ -552,7 +578,7 @@ document.addEventListener("pointerdown", function (evt) {
 });
 
 function destroyCharts() {
-  dyslinksCharts.forEach(chart => {
+  dyslinksCharts.forEach(function (chart) {
     try {
       chart.destroy();
     } catch (_) {
@@ -576,7 +602,8 @@ function createCharts() {
   createBrowsersChart();
   createReferrersChart();
   createOsChart();
-  const activeBtn = document.querySelector("#stats .stats-nav button[disabled]");
+  const activeBtn = document.querySelector("#stats .stats-nav button[aria-pressed='true']")
+    || document.querySelector("#stats .stats-nav button.active");
   feedMapData(activeBtn ? activeBtn.dataset.period : "day");
 }
 

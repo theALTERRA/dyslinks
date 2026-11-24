@@ -1,16 +1,17 @@
-<table id="domains-table" hx-swap-oob="true">
+<table id="domains-table" class="data-table data-table--domains" hx-swap-oob="true">
+  <caption class="visually-hidden">Custom domains</caption>
   <thead>
     <tr>
-      <th class="domain">Domain</th>
-      <th class="homepage">Homepage</th>
-      <th class="actions"></th>
+      <th scope="col" class="domain">Domain</th>
+      <th scope="col" class="homepage">Homepage</th>
+      <th scope="col" class="actions"><span class="visually-hidden">Actions</span></th>
     </tr>
   </thead>
   <tbody>
     {{#if domains}}
       {{#each domains}}
         <tr>
-          <td class="domain right-fade">
+          <td class="domain right-fade" data-label="Domain">
             <span class="domain-address-line">
               {{address}}
               {{#ifEquals address ../user_default_domain}}
@@ -18,17 +19,19 @@
               {{/ifEquals}}
             </span>
           </td>
-          <td class="homepage right-fade">
+          <td class="homepage right-fade" data-label="Homepage">
             {{homepage}}
           </td>
-          <td class="actions">
-            <button 
+          <td class="actions" data-label="Actions">
+            <button
               type="button"
-              class="action delete" 
-              data-action="open-dialog" data-dialog="domain-dialog" 
-              hx-get="/confirm-domain-delete" 
-              hx-target="#domain-dialog .content-wrapper" 
-              hx-indicator="#domain-dialog" 
+              class="action delete"
+              aria-label="Delete {{address}}"
+              data-tooltip="Delete"
+              data-action="open-dialog" data-dialog="domain-dialog"
+              hx-get="/confirm-domain-delete"
+              hx-target="#domain-dialog .content-wrapper"
+              hx-indicator="#domain-dialog"
               hx-vals='{"id":"{{id}}"}'
             >
               {{> icons/trash}}
@@ -37,8 +40,8 @@
         </tr>
       {{/each}}
     {{else}}
-      <tr>
-        <td class="no-entry">
+      <tr class="no-data">
+        <td class="no-entry" colspan="3">
           No domains yet.
         </td>
       </tr>

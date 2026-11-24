@@ -29,13 +29,30 @@ function createClassList(initial = []) {
       else set.delete(name);
       return force;
     },
+    [Symbol.iterator]() {
+      return set[Symbol.iterator]();
+    },
     get length() {
       return set.size;
     },
   };
 }
 
-function createElement({ tagName, id = "", textContent = "", dataset = {}, classes = [], value = "", disabled = false, checked = false, indeterminate = false, parentNode = null, children = [] }) {
+function createElement({
+  tagName,
+  id = "",
+  textContent = "",
+  dataset = {},
+  classes = [],
+  attrs = {},
+  value = "",
+  disabled = false,
+  checked = false,
+  indeterminate = false,
+  parentNode = null,
+  children = [],
+}) {
+  const attributes = new Map(Object.entries(attrs));
   const el = {
     nodeType: 1,
     tagName: tagName.toUpperCase(),
@@ -47,14 +64,40 @@ function createElement({ tagName, id = "", textContent = "", dataset = {}, class
     disabled,
     checked,
     indeterminate,
+    open: false,
     parentNode,
     children,
+    setAttribute(name, val) {
+      attributes.set(name, String(val));
+    },
+    getAttribute(name) {
+      return attributes.has(name) ? attributes.get(name) : null;
+    },
+    hasAttribute(name) {
+      return attributes.has(name);
+    },
+    removeAttribute(name) {
+      attributes.delete(name);
+    },
+    replaceChildren(...nodes) {
+      this.children = [...nodes];
+      this.textContent = nodes.map((n) => (typeof n === "string" ? n : n.textContent || "")).join("");
+    },
+    showModal() {
+      this.open = true;
+    },
+    close() {
+      this.open = false;
+    },
     matches(selector) {
       if (selector === "[data-action]") return Boolean(this.dataset && this.dataset.action);
       if (selector === "button") return this.tagName === "BUTTON";
       if (selector === "a") return this.tagName === "A";
       if (selector === "nav") return this.tagName === "NAV";
       if (selector === "tr") return this.tagName === "TR";
+      if (selector === "[role='tab'], a, button") {
+        return this.getAttribute("role") === "tab" || this.tagName === "A" || this.tagName === "BUTTON";
+      }
       if (selector === ".bulk-delete-label") return this.classList.contains("bulk-delete-label");
       return false;
     },
@@ -90,11 +133,11 @@ function loadMainScript(options = {}) {
   const limitInput = createElement({ tagName: "input", id: "limit", value: "10" });
   const skipInput = createElement({ tagName: "input", id: "skip", value: "10" });
 
-  // Two sets of limit + pagination buttons (thead and tfoot)
+  // Two sets of limit + pagination buttons (top toolbar and bottom footer)
   const makeNav = () => ({
-    btn10: createElement({ tagName: "button", textContent: "10", dataset: { action: "set-limit" }, disabled: true }),
-    btn20: createElement({ tagName: "button", textContent: "20", dataset: { action: "set-limit" }, disabled: false }),
-    btn50: createElement({ tagName: "button", textContent: "50", dataset: { action: "set-limit" }, disabled: false }),
+    btn10: createElement({ tagName: "button", textContent: "10", classes: ["active"], attrs: { "aria-pressed": "true" }, dataset: { action: "set-limit" } }),
+    btn20: createElement({ tagName: "button", textContent: "20", attrs: { "aria-pressed": "false" }, dataset: { action: "set-limit" } }),
+    btn50: createElement({ tagName: "button", textContent: "50", attrs: { "aria-pressed": "false" }, dataset: { action: "set-limit" } }),
     prev: createElement({ tagName: "button", dataset: { action: "set-skip", direction: "prev" }, disabled: false }),
     next: createElement({ tagName: "button", dataset: { action: "set-skip", direction: "next" }, disabled: false }),
   });
@@ -105,9 +148,9 @@ function loadMainScript(options = {}) {
   const prevButtons = [headNav.prev, footNav.prev];
   const nextButtons = [headNav.next, footNav.next];
 
-  const tabLinks = createElement({ tagName: "a", id: "tab-links", dataset: { action: "set-tab" }, classes: ["active"] });
-  const tabUsers = createElement({ tagName: "a", id: "tab-users", dataset: { action: "set-tab" } });
-  const tabDomains = createElement({ tagName: "a", id: "tab-domains", dataset: { action: "set-tab" } });
+  const tabLinks = createElement({ tagName: "button", id: "tab-links", attrs: { role: "tab", "aria-selected": "true" }, dataset: { action: "set-tab" }, classes: ["active"] });
+  const tabUsers = createElement({ tagName: "button", id: "tab-users", attrs: { role: "tab", "aria-selected": "false" }, dataset: { action: "set-tab" } });
+  const tabDomains = createElement({ tagName: "button", id: "tab-domains", attrs: { role: "tab", "aria-selected": "false" }, dataset: { action: "set-tab" } });
   const tabNav = createElement({ tagName: "nav", children: [tabLinks, tabUsers, tabDomains] });
 
   const searchInput = createElement({ tagName: "input", id: "search", value: "" });
@@ -118,8 +161,8 @@ function loadMainScript(options = {}) {
   const bulkDeleteBtn = createElement({ tagName: "button", id: "bulk-delete-links-btn", classes: ["hidden"], dataset: { action: "open-bulk-delete" }, children: [bulkDeleteLabel] });
   const bannerText = createElement({ tagName: "span", id: "bulk-select-banner-text" });
   const bannerAction = createElement({ tagName: "button", id: "bulk-select-banner-action", dataset: { action: "select-all-matching" } });
-  const banner = createElement({ tagName: "tr", id: "bulk-select-banner", classes: ["hidden"], children: [bannerText, bannerAction] });
-  const linkDialog = createElement({ tagName: "div", id: "link-dialog", classes: ["dialog"] });
+  const banner = createElement({ tagName: "div", id: "bulk-select-banner", classes: ["hidden"], children: [bannerText, bannerAction] });
+  const linkDialog = createElement({ tagName: "dialog", id: "link-dialog", classes: ["dialog"], attrs: { closedby: "any" } });
 
   let linkCheckboxes = [];
   function setVisibleLinkIds(ids) {
@@ -169,10 +212,11 @@ function loadMainScript(options = {}) {
       if (selector === "#total") return totalInput;
       if (selector === "#limit") return limitInput;
       if (selector === "#skip") return skipInput;
+      if (selector === "dialog.dialog[open]") return linkDialog.open ? linkDialog : null;
       return null;
     },
     querySelectorAll(selector) {
-      if (selector === "table .nav .limit button") return limitButtons;
+      if (selector === ".table-card .nav .limit button" || selector === "table .nav .limit button") return limitButtons;
       if (selector === ".pagination .prev") return prevButtons;
       if (selector === ".pagination .next") return nextButtons;
       if (selector === "input.link-select-checkbox") return linkCheckboxes;
@@ -184,12 +228,13 @@ function loadMainScript(options = {}) {
     addEventListener(type, fn) {
       (listeners.window[type] ||= []).push(fn);
     },
-    location: { search: "", replace() {} },
+    location: { search: options.search || "", replace() {} },
   };
 
   const context = vm.createContext({
     document: doc,
     window: win,
+    URLSearchParams,
     htmx: {
       defineExtension() {},
       trigger(target, eventName) {
@@ -236,11 +281,11 @@ function loadMainScript(options = {}) {
   };
 }
 
-test("delegated set-limit click updates #limit, resets #skip, and toggles 10/20/50 buttons", () => {
+test("delegated set-limit click updates #limit, resets #skip, and toggles aria-pressed on 10/20/50 buttons", () => {
   const env = loadMainScript();
 
   const dispatchDocumentClick = (target) => {
-    const evt = { target, currentTarget: env.doc, preventDefault() {} };
+    const evt = { target, currentTarget: env.doc, preventDefault() {}, stopPropagation() {} };
     for (const fn of env.listeners.document.click) {
       fn(evt);
     }
@@ -250,21 +295,22 @@ test("delegated set-limit click updates #limit, resets #skip, and toggles 10/20/
   dispatchDocumentClick(env.headNav.btn20);
   assert.equal(env.limitInput.value, "20");
   assert.equal(env.skipInput.value, 0);
-  assert.equal(env.headNav.btn10.disabled, false);
-  assert.equal(env.headNav.btn20.disabled, true);
-  assert.equal(env.headNav.btn50.disabled, false);
-  assert.equal(env.footNav.btn20.disabled, true);
+  assert.equal(env.headNav.btn10.getAttribute("aria-pressed"), "false");
+  assert.equal(env.headNav.btn20.getAttribute("aria-pressed"), "true");
+  assert.equal(env.headNav.btn20.classList.contains("active"), true);
+  assert.equal(env.headNav.btn50.getAttribute("aria-pressed"), "false");
+  assert.equal(env.footNav.btn20.getAttribute("aria-pressed"), "true");
   assert.equal(env.headNav.prev.disabled, true);
   assert.equal(env.headNav.next.disabled, false);
 
-  // Click "50" from tfoot (total=23 <= 50 -> next becomes disabled)
+  // Click "50" from footer (total=23 <= 50 -> next becomes disabled)
   dispatchDocumentClick(env.footNav.btn50);
   assert.equal(env.limitInput.value, "50");
   assert.equal(env.skipInput.value, 0);
-  assert.equal(env.headNav.btn10.disabled, false);
-  assert.equal(env.headNav.btn20.disabled, false);
-  assert.equal(env.headNav.btn50.disabled, true);
-  assert.equal(env.footNav.btn50.disabled, true);
+  assert.equal(env.headNav.btn10.getAttribute("aria-pressed"), "false");
+  assert.equal(env.headNav.btn20.getAttribute("aria-pressed"), "false");
+  assert.equal(env.headNav.btn50.getAttribute("aria-pressed"), "true");
+  assert.equal(env.footNav.btn50.getAttribute("aria-pressed"), "true");
   assert.equal(env.headNav.prev.disabled, true);
   assert.equal(env.headNav.next.disabled, true);
 
@@ -272,31 +318,40 @@ test("delegated set-limit click updates #limit, resets #skip, and toggles 10/20/
   dispatchDocumentClick(env.headNav.btn10);
   assert.equal(env.limitInput.value, "10");
   assert.equal(env.skipInput.value, 0);
-  assert.equal(env.headNav.btn10.disabled, true);
-  assert.equal(env.headNav.btn50.disabled, false);
+  assert.equal(env.headNav.btn10.getAttribute("aria-pressed"), "true");
+  assert.equal(env.headNav.btn50.getAttribute("aria-pressed"), "false");
   assert.equal(env.headNav.next.disabled, false);
 });
 
-test("delegated set-tab click switches active tab when event.currentTarget is document", () => {
+test("delegated set-tab click switches active tab and aria-selected when event.currentTarget is document", () => {
   const env = loadMainScript();
 
-  const evt = { target: env.tabDomains, currentTarget: env.doc, preventDefault() {} };
+  const evt = { target: env.tabDomains, currentTarget: env.doc, preventDefault() {}, stopPropagation() {} };
   for (const fn of env.listeners.document.click) {
     fn(evt);
   }
 
   assert.equal(env.tabLinks.classList.contains("active"), false);
+  assert.equal(env.tabLinks.getAttribute("aria-selected"), "false");
   assert.equal(env.tabDomains.classList.contains("active"), true);
+  assert.equal(env.tabDomains.getAttribute("aria-selected"), "true");
 });
 
-test("bulk link selection, select all, domain filter reset, and select-all-matching banner work", () => {
+test("getQueryParams uses URLSearchParams and preserves '=' inside parameter values", () => {
+  const env = loadMainScript({ search: "?id=abc-123&token=aGVsbG8==" });
+  const params = env.context.getQueryParams();
+  assert.equal(params.id, "abc-123");
+  assert.equal(params.token, "aGVsbG8==");
+});
+
+test("bulk link selection, select all, domain filter reset, and native dialog open work", () => {
   const env = loadMainScript({
     total: 5,
     visibleLinkIds: ["id-1", "id-2", "id-3"],
   });
 
   const dispatchClick = (target) => {
-    const evt = { target, currentTarget: env.doc, preventDefault() {} };
+    const evt = { target, currentTarget: env.doc, preventDefault() {}, stopPropagation() {} };
     for (const fn of env.listeners.document.click) fn(evt);
   };
   const dispatchChange = (target) => {
@@ -354,10 +409,11 @@ test("bulk link selection, select all, domain filter reset, and select-all-match
   assert.equal(env.banner.classList.contains("hidden"), false);
   assert.equal(env.bannerAction.textContent, "Select all 4 links in dysto.cc");
 
-  // Click "Select all 4 links in dysto.cc" -> opens bulk delete with all=true + domain=dysto.cc
+  // Click "Select all 4 links in dysto.cc" -> opens bulk delete via native <dialog>.showModal()
   dispatchClick(env.bannerAction);
   assert.equal(env.bulkDeleteLabel.textContent, "Delete (4)");
   dispatchClick(env.bulkDeleteBtn);
+  assert.equal(env.linkDialog.open, true);
   assert.equal(env.htmxAjaxCalls.length, 1);
   assert.equal(env.htmxAjaxCalls[0].url, "/confirm-links-delete");
   assert.deepEqual(JSON.parse(JSON.stringify(env.htmxAjaxCalls[0].opts.values)), {

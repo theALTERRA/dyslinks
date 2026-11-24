@@ -1,19 +1,21 @@
 {{> header}}
-<section id="verify-change-email" class="section-container verify-page">
-  {{#if token_verified}}
-    <h2 data-redirect="/">
-      Email address is verified. Redirecting to homepage...
-    </h2>
-  {{else}}
-    <h2>
-      {{> icons/x}}
-      Couldn't verify the email address. Please try again.
-    </h2>
-    {{#if user}}
-      <a href="/settings" title="Settings">Settings →</a>
+<main id="main-content" class="page-main" tabindex="-1">
+  <section id="verify-change-email" class="section-container verify-page">
+    {{#if token_verified}}
+      <h1 data-redirect="/">
+        Email address is verified. Redirecting to homepage...
+      </h1>
     {{else}}
-      <a href="/login" title="Log in or sign up">Log in / sign up →</a>
+      <h1>
+        {{> icons/x}}
+        Couldn't verify the email address. Please try again.
+      </h1>
+      {{#if user}}
+        <a href="/settings">Settings →</a>
+      {{else}}
+        <a href="/login">Log in / sign up →</a>
+      {{/if}}
     {{/if}}
-  {{/if}}
-</section>
+  </section>
+</main>
 {{> footer}}

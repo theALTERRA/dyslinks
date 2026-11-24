@@ -1,26 +1,26 @@
 <div class="content">
-  <h2>Delete domain?</h2>
+  <h1 id="dialog-title">Delete domain?</h1>
   <p>
-    Are you sure you want to delete the domain &quot;<b>{{address}}</b>&quot;?<br/>
+    Are you sure you want to delete the domain &quot;<b>{{address}}</b>&quot;?
   </p>
   {{#if hasLink}}
     <div class="delete-domain-checklist">
-      <label class="checkbox">
+      <label class="checkbox" for="delete-domain-links">
         <input id="delete-domain-links" name="links" type="checkbox" />
         Delete all links too
       </label>
     </div>
-  {{/if }}
+  {{/if}}
   <div class="buttons">
-    <button type="button" data-action="close-dialog">Cancel</button>
-    <button 
+    <button type="button" data-action="close-dialog" autofocus>Cancel</button>
+    <button
       type="button"
-      class="danger confirm" 
-      hx-delete="/api/domains/admin/{id}" 
-      hx-ext="path-params" 
-      hx-vals='{"id":"{{id}}"}' 
-      hx-target="closest .content" 
-      hx-swap="none" 
+      class="danger confirm"
+      hx-delete="/api/domains/admin/{id}"
+      hx-ext="path-params"
+      hx-vals='{"id":"{{id}}"}'
+      hx-target="closest .content"
+      hx-swap="none"
       {{#if hasLink}}
         hx-include=".delete-domain-checklist"
       {{/if}}
@@ -32,7 +32,7 @@
     </button>
     {{> icons/spinner}}
   </div>
-  <div id="dialog-error">
+  <div id="dialog-error" role="alert">
     {{#if error}}
       <p class="error">{{error}}</p>
     {{/if}}

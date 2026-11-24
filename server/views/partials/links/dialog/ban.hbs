@@ -1,36 +1,36 @@
 <div class="content">
-  <h2>Ban link?</h2>
+  <h1 id="dialog-title">Ban link?</h1>
   <p>
     Are you sure you want to ban the link &quot;<b>{{link}}</b>&quot;?
   </p>
   <div class="ban-checklist">
-    <label class="checkbox">
-      <input id="user" name="user" type="checkbox" />
+    <label class="checkbox" for="ban-link-user">
+      <input id="ban-link-user" name="user" type="checkbox" />
       User
     </label>
-    <label class="checkbox">
-      <input id="userLinks" name="userLinks" type="checkbox" />
+    <label class="checkbox" for="ban-link-userLinks">
+      <input id="ban-link-userLinks" name="userLinks" type="checkbox" />
       User links
     </label>
-    <label class="checkbox">
-      <input id="host" name="host" type="checkbox" />
+    <label class="checkbox" for="ban-link-host">
+      <input id="ban-link-host" name="host" type="checkbox" />
       Host
     </label>
-    <label class="checkbox">
-      <input id="domain" name="domain" type="checkbox" />
+    <label class="checkbox" for="ban-link-domain">
+      <input id="ban-link-domain" name="domain" type="checkbox" />
       Domain
     </label>
   </div>
   <div class="buttons">
-    <button type="button" data-action="close-dialog">Cancel</button>
-    <button 
+    <button type="button" data-action="close-dialog" autofocus>Cancel</button>
+    <button
       type="button"
-      class="danger confirm" 
-      hx-post="/api/links/admin/ban/{id}" 
-      hx-ext="path-params" 
-      hx-vals='{"id":"{{id}}"}' 
-      hx-target="closest .content" 
-      hx-swap="none" 
+      class="danger confirm"
+      hx-post="/api/links/admin/ban/{id}"
+      hx-ext="path-params"
+      hx-vals='{"id":"{{id}}"}'
+      hx-target="closest .content"
+      hx-swap="none"
       hx-include=".ban-checklist"
       hx-indicator="closest .content"
       hx-select-oob="#dialog-error"
@@ -42,7 +42,7 @@
     </button>
     {{> icons/spinner}}
   </div>
-  <div id="dialog-error">
+  <div id="dialog-error" role="alert">
     {{#if error}}
       <p class="error">{{error}}</p>
     {{/if}}

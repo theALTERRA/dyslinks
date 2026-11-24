@@ -1,47 +1,52 @@
 <div class="content admin-create">
-  <h2>Add domain</h2>
+  <h1 id="dialog-title">Add domain</h1>
   <form
     id="add-domain-form"
-    hx-post="/api/domains/admin" 
-    hx-target="closest .content" 
-    hx-swap="outerHTML" 
+    hx-post="/api/domains/admin"
+    hx-target="closest .content"
+    hx-swap="outerHTML"
     hx-indicator="closest .content"
   >
-    <label class="{{#if errors.address}}error{{/if}}">
-      Address
+    <div class="field {{#if errors.address}}error{{/if}}">
+      <label for="add-domain-address">Address</label>
       <input
         name="address"
         id="add-domain-address"
         type="text"
         placeholder="links.example.com"
+        autofocus
+        required
         hx-preserve="true"
+        {{#if errors.address}}aria-invalid="true" aria-describedby="add-domain-address-error"{{/if}}
       />
-      {{#if errors.address}}<p class="error">{{errors.address}}</p>{{/if}}
-    </label>
-    <label class="{{#if errors.homepage}}error{{/if}}">
-      Homepage (optional)
+      {{#if errors.address}}<p id="add-domain-address-error" class="error" role="alert">{{errors.address}}</p>{{/if}}
+    </div>
+    <div class="field {{#if errors.homepage}}error{{/if}}">
+      <label for="add-domain-homepage">Homepage (optional)</label>
       <input
         name="homepage"
         id="add-domain-homepage"
-        type="text"
+        type="url"
+        inputmode="url"
         placeholder="https://example.com"
         hx-preserve="true"
+        {{#if errors.homepage}}aria-invalid="true" aria-describedby="add-domain-homepage-error"{{/if}}
       />
-      {{#if errors.homepage}}<p class="error">{{errors.homepage}}</p>{{/if}}
-    </label>
+      {{#if errors.homepage}}<p id="add-domain-homepage-error" class="error" role="alert">{{errors.homepage}}</p>{{/if}}
+    </div>
     <div class="checkbox-wrapper">
-      <label class="checkbox">
-        <input 
-          id="add-domain-shared" 
+      <label class="checkbox" for="add-domain-shared">
+        <input
+          id="add-domain-shared"
           name="shared"
           type="checkbox"
           hx-preserve="true"
         />
         Share with all users
       </label>
-      <label class="checkbox">
-        <input 
-          id="add-domain-banned" 
+      <label class="checkbox" for="add-domain-banned">
+        <input
+          id="add-domain-banned"
           name="banned"
           type="checkbox"
           hx-preserve="true"
@@ -58,7 +63,7 @@
       {{> icons/spinner}}
     </div>
   </form>
-  <div id="dialog-error">
+  <div id="dialog-error" role="alert">
     {{#if error}}
       <p class="error">{{error}}</p>
     {{/if}}

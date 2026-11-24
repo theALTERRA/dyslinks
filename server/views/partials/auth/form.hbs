@@ -1,30 +1,48 @@
 <form id="login-signup" hx-post="/api/auth/login" hx-swap="outerHTML">
+  <h1 class="auth-form-title">Log in</h1>
   {{#unless disallow_login_form}}
-    <label class="{{#if errors.email}}error{{/if}}">
-      Email address
+    <div class="field {{#if errors.email}}error{{/if}}">
+      <label for="email">Email address</label>
       <input
         name="email"
         id="email"
         type="email"
-        autofocus="true"
+        inputmode="email"
+        autofocus
+        required
         autocomplete="email"
         placeholder="Email address..."
         hx-preserve="true"
+        {{#if errors.email}}aria-invalid="true" aria-describedby="email-error"{{/if}}
       />
-      {{#if errors.email}}<p class="error">{{errors.email}}</p>{{/if}}
-    </label>
-    <label class="{{#if errors.password}}error{{/if}}">
-      Password
-      <input
-        name="password"
-        id="password"
-        type="password"
-        autocomplete="current-password"
-        placeholder="Password..."
-        hx-preserve="true"
-      />
-      {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
-    </label>
+      {{#if errors.email}}<p id="email-error" class="error" role="alert">{{errors.email}}</p>{{/if}}
+    </div>
+    <div class="field {{#if errors.password}}error{{/if}}">
+      <label for="password">Password</label>
+      <div class="password-input-wrapper">
+        <input
+          name="password"
+          id="password"
+          type="password"
+          required
+          autocomplete="current-password"
+          placeholder="Password..."
+          hx-preserve="true"
+          {{#if errors.password}}aria-invalid="true" aria-describedby="password-error"{{/if}}
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          data-action="toggle-password"
+          aria-label="Show password"
+          aria-pressed="false"
+        >
+          <span class="icon-show">{{> icons/eye}}</span>
+          <span class="icon-hide">{{> icons/eye_off}}</span>
+        </button>
+      </div>
+      {{#if errors.password}}<p id="password-error" class="error" role="alert">{{errors.password}}</p>{{/if}}
+    </div>
     <div class="buttons-wrapper">
       <button type="submit" class="primary login full">
         <span>{{> icons/login}}</span>
@@ -35,7 +53,7 @@
   {{/unless}}
   {{#if oidc_enabled}}
     <div class="buttons-wrapper">
-      <a class="button secondary full" href="/login/oidc" title="Login with OIDC">
+      <a class="button secondary full" href="/login/oidc">
         <span>{{> icons/key}}</span>
         {{oidc_button_text}}
       </a>
@@ -43,17 +61,17 @@
   {{/if}}
   {{#unless errors}}
     {{#if error}}
-      <p class="error">{{error}}</p>
+      <p class="error" role="alert">{{error}}</p>
     {{/if}}
   {{/unless}}
   {{#unless disallow_login_form}}
     <div class="auth-links">
       {{#if mail_enabled}}
-        <a class="forgot-password" href="/reset-password" title="Reset password">Forgot your password?</a>
+        <a class="forgot-password" href="/reset-password">Forgot your password?</a>
       {{/if}}
       {{#unless disallow_registration}}
         <p class="auth-switch">
-          Don't have an account? <a href="/signup" title="Sign up">Sign up</a>
+          Don't have an account? <a href="/signup">Sign up</a>
         </p>
       {{/unless}}
     </div>

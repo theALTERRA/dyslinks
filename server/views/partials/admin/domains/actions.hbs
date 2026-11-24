@@ -1,45 +1,48 @@
-<td class="actions domains-actions">
-  {{#if banned}}
-    <span class="action banned" role="img" aria-label="Banned" data-tooltip="Banned">
-      {{> icons/stop}}
-    </span>
-  {{/if}}
-  {{#unless banned}}
+<td class="actions domains-actions" data-label="Actions">
+  <div class="actions-group">
+    {{#if banned}}
+      <span class="action banned" role="img" aria-label="Banned" data-tooltip="Banned" tabindex="0">
+        {{> icons/stop}}
+      </span>
+    {{/if}}
+    {{#unless banned}}
+      <button
+        type="button"
+        class="action share {{#if shared}}is-shared{{/if}}"
+        aria-label="{{#if shared}}Stop sharing {{address}}{{else}}Share {{address}} with all users{{/if}}"
+        aria-pressed="{{#if shared}}true{{else}}false{{/if}}"
+        data-tooltip="{{#if shared}}Stop sharing{{else}}Share with all users{{/if}}"
+        hx-post="/api/domains/admin/share/{{id}}"
+        hx-swap="none"
+      >
+        {{> icons/globe}}
+      </button>
+      <button
+        type="button"
+        class="action ban"
+        aria-label="Ban {{address}}"
+        data-tooltip="Ban"
+        data-action="open-dialog" data-dialog="admin-table-dialog"
+        hx-get="/confirm-domain-ban"
+        hx-target="#admin-table-dialog .content-wrapper"
+        hx-indicator="#admin-table-dialog"
+        hx-vals='{"id":"{{id}}"}'
+      >
+        {{> icons/stop}}
+      </button>
+    {{/unless}}
     <button
       type="button"
-      class="action share {{#if shared}}is-shared{{/if}}"
-      aria-label="{{#if shared}}Stop sharing domain{{else}}Share domain with all users{{/if}}"
-      data-tooltip="{{#if shared}}Stop sharing{{else}}Share with all users{{/if}}"
-      hx-post="/api/domains/admin/share/{{id}}"
-      hx-swap="none"
-    >
-      {{> icons/globe}}
-    </button>
-    <button 
-      type="button"
-      class="action ban" 
-      aria-label="Ban domain"
-      data-tooltip="Ban"
-      data-action="open-dialog" data-dialog="admin-table-dialog" 
-      hx-get="/confirm-domain-ban" 
-      hx-target="#admin-table-dialog .content-wrapper" 
-      hx-indicator="#admin-table-dialog" 
+      class="action delete"
+      aria-label="Delete {{address}}"
+      data-tooltip="Delete"
+      data-action="open-dialog" data-dialog="admin-table-dialog"
+      hx-get="/confirm-domain-delete-admin"
+      hx-target="#admin-table-dialog .content-wrapper"
+      hx-indicator="#admin-table-dialog"
       hx-vals='{"id":"{{id}}"}'
     >
-      {{> icons/stop}}
+      {{> icons/trash}}
     </button>
-  {{/unless}}
-  <button 
-    type="button"
-    class="action delete" 
-    aria-label="Delete domain"
-    data-tooltip="Delete"
-    data-action="open-dialog" data-dialog="admin-table-dialog" 
-    hx-get="/confirm-domain-delete-admin" 
-    hx-target="#admin-table-dialog .content-wrapper" 
-    hx-indicator="#admin-table-dialog" 
-    hx-vals='{"id":"{{id}}"}'
-  >
-    {{> icons/trash}}
-  </button>
+  </div>
 </td>

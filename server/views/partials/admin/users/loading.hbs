@@ -1,15 +1,17 @@
 {{#unless users}}
   {{#ifEquals users.length 0}}
     <tr class="no-data">
-      <td>
+      <td colspan="7">
         No users.
       </td>
     </tr>
   {{else}}
     <tr class="loading-placeholder">
-      <td>
-        {{> icons/spinner}}
-        Loading users...
+      <td colspan="7">
+        <span class="loading-inline" role="status">
+          {{> icons/spinner}}
+          Loading users...
+        </span>
       </td>
     </tr>
   {{/ifEquals}}

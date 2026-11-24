@@ -1,6 +1,6 @@
 {{#if error}}
   <div class="stats-error">
-    <p>{{> icons/x}} {{error}}</p>
+    <p role="alert">{{> icons/x}} {{error}}</p>
     <div class="stats-back-to-home">
       <a class="back-to-home" href="{{site_url}}/">
         ← Back to homepage
@@ -9,24 +9,24 @@
   </div>
 {{else}}
   <div class="stats-info">
-    <h2>
+    <h1>
       Stats for:
-      <a href="{{link.link.url}}" title="Short link" target="_blank" rel="noopener noreferrer">
+      <a href="{{link.link.url}}" target="_blank" rel="noopener noreferrer">
         {{link.link.link}}
       </a>
-    </h2>
-    <p title="{{link.target}}">{{link.target}}</p>
+    </h1>
+    <p>{{link.target}}</p>
   </div>
-  <main id="stats">
+  <div id="stats">
     <div class="stats-head">
       <p>
         Total views: <span class="total-number">{{link.visit_count}}</span>
       </p>
-      <nav class="stats-nav">
-        <button type="button" class="nav" data-period="year" data-action="stats-period">Year</button>
-        <button type="button" class="nav" data-period="month" data-action="stats-period">Month</button>
-        <button type="button" class="nav" data-period="week" data-action="stats-period">Week</button>
-        <button type="button" class="nav" data-period="day" data-action="stats-period" disabled="true">Day</button>
+      <nav class="stats-nav" aria-label="Time period">
+        <button type="button" class="nav" data-period="year" data-action="stats-period" aria-pressed="false">Year</button>
+        <button type="button" class="nav" data-period="month" data-action="stats-period" aria-pressed="false">Month</button>
+        <button type="button" class="nav" data-period="week" data-action="stats-period" aria-pressed="false">Week</button>
+        <button type="button" class="nav active" data-period="day" data-action="stats-period" aria-pressed="true">Day</button>
       </nav>
     </div>
 
@@ -37,29 +37,29 @@
       <h2 class="hidden" data-period="year"><span class="total-in-period">{{stats.lastYear.total}}</span> tracked visits in the last year</h2>
       <p class="last-update">Last update at <span class="last-update-value" data-date="{{stats.updatedAt}}"></span>.</p>
       <div class="chart-box chart-box--visits">
-        <canvas class="visits" data-period="day" data-data="{{json stats.lastDay.views}}"></canvas>
-        <canvas class="visits hidden" data-period="week" data-data="{{json stats.lastWeek.views}}"></canvas>
-        <canvas class="visits hidden" data-period="month" data-data="{{json stats.lastMonth.views}}"></canvas>
-        <canvas class="visits hidden" data-period="year" data-data="{{json stats.lastYear.views}}"></canvas>
+        <canvas class="visits" data-period="day" data-data="{{json stats.lastDay.views}}" aria-label="Visits over the last day" role="img"></canvas>
+        <canvas class="visits hidden" data-period="week" data-data="{{json stats.lastWeek.views}}" aria-label="Visits over the last week" role="img"></canvas>
+        <canvas class="visits hidden" data-period="month" data-data="{{json stats.lastMonth.views}}" aria-label="Visits over the last month" role="img"></canvas>
+        <canvas class="visits hidden" data-period="year" data-data="{{json stats.lastYear.views}}" aria-label="Visits over the last year" role="img"></canvas>
       </div>
       <hr />
       <div class="stats-columns-wrapper">
         <div>
           <h2>Referrers</h2>
           <div class="chart-box chart-box--doughnut">
-            <canvas class="referrers" data-period="day" data-data="{{json stats.lastDay.stats.referrer}}"></canvas>
-            <canvas class="referrers hidden" data-period="week" data-data="{{json stats.lastWeek.stats.referrer}}"></canvas>
-            <canvas class="referrers hidden" data-period="month" data-data="{{json stats.lastMonth.stats.referrer}}"></canvas>
-            <canvas class="referrers hidden" data-period="year" data-data="{{json stats.lastYear.stats.referrer}}"></canvas>
+            <canvas class="referrers" data-period="day" data-data="{{json stats.lastDay.stats.referrer}}" aria-label="Referrers breakdown" role="img"></canvas>
+            <canvas class="referrers hidden" data-period="week" data-data="{{json stats.lastWeek.stats.referrer}}" aria-label="Referrers breakdown" role="img"></canvas>
+            <canvas class="referrers hidden" data-period="month" data-data="{{json stats.lastMonth.stats.referrer}}" aria-label="Referrers breakdown" role="img"></canvas>
+            <canvas class="referrers hidden" data-period="year" data-data="{{json stats.lastYear.stats.referrer}}" aria-label="Referrers breakdown" role="img"></canvas>
           </div>
         </div>
         <div>
           <h2>Browsers</h2>
           <div class="chart-box">
-            <canvas class="browsers" data-period="day" data-data="{{json stats.lastDay.stats.browser}}"></canvas>
-            <canvas class="browsers hidden" data-period="week" data-data="{{json stats.lastWeek.stats.browser}}"></canvas>
-            <canvas class="browsers hidden" data-period="month" data-data="{{json stats.lastMonth.stats.browser}}"></canvas>
-            <canvas class="browsers hidden" data-period="year" data-data="{{json stats.lastYear.stats.browser}}"></canvas>
+            <canvas class="browsers" data-period="day" data-data="{{json stats.lastDay.stats.browser}}" aria-label="Browsers breakdown" role="img"></canvas>
+            <canvas class="browsers hidden" data-period="week" data-data="{{json stats.lastWeek.stats.browser}}" aria-label="Browsers breakdown" role="img"></canvas>
+            <canvas class="browsers hidden" data-period="month" data-data="{{json stats.lastMonth.stats.browser}}" aria-label="Browsers breakdown" role="img"></canvas>
+            <canvas class="browsers hidden" data-period="year" data-data="{{json stats.lastYear.stats.browser}}" aria-label="Browsers breakdown" role="img"></canvas>
           </div>
         </div>
       </div>
@@ -67,11 +67,12 @@
       <div class="stats-columns-wrapper">
         <div>
           <h2>Countries</h2>
-          <div id="map-tooltip" role="tooltip" aria-hidden="true"></div>
-          <svg 
-            class="map" 
-            xmlns="http://www.w3.org/2000/svg" 
-            aria-label="world map" 
+          <div id="map-tooltip" popover="manual" role="tooltip"></div>
+          <svg
+            class="map"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="World map of visits by country"
             viewBox="{{map.viewBox}}"
             data-day="{{json stats.lastDay.stats.country}}"
             data-week="{{json stats.lastWeek.stats.country}}"
@@ -87,15 +88,15 @@
         <div>
           <h2>Operating systems</h2>
           <div class="chart-box">
-            <canvas class="os" data-period="day" data-data="{{json stats.lastDay.stats.os}}"></canvas>
-            <canvas class="os hidden" data-period="week" data-data="{{json stats.lastWeek.stats.os}}"></canvas>
-            <canvas class="os hidden" data-period="month" data-data="{{json stats.lastMonth.stats.os}}"></canvas>
-            <canvas class="os hidden" data-period="year" data-data="{{json stats.lastYear.stats.os}}"></canvas>
+            <canvas class="os" data-period="day" data-data="{{json stats.lastDay.stats.os}}" aria-label="Operating systems breakdown" role="img"></canvas>
+            <canvas class="os hidden" data-period="week" data-data="{{json stats.lastWeek.stats.os}}" aria-label="Operating systems breakdown" role="img"></canvas>
+            <canvas class="os hidden" data-period="month" data-data="{{json stats.lastMonth.stats.os}}" aria-label="Operating systems breakdown" role="img"></canvas>
+            <canvas class="os hidden" data-period="year" data-data="{{json stats.lastYear.stats.os}}" aria-label="Operating systems breakdown" role="img"></canvas>
           </div>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 
   <div class="stats-back-to-home">
     <a class="back-to-home" href="{{site_url}}/">

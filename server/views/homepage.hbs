@@ -1,6 +1,8 @@
 {{> header}}
-{{> shortener}}
-{{#if user}}
-  {{> links/table}}
-{{/if}}
+<main id="main-content" class="page-main" tabindex="-1">
+  {{> shortener}}
+  {{#if user}}
+    {{> links/table}}
+  {{/if}}
+</main>
 {{> footer}}

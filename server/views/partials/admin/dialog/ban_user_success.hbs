@@ -1,12 +1,12 @@
 <div class="content">
-  <div class="icon success">
+  <div class="icon success" aria-hidden="true">
     {{> icons/check}}
   </div>
-  <p>
+  <h1 id="dialog-title" class="visually-hidden">User banned</h1>
+  <p role="status">
     The user <b>"{{email}}"</b> is banned.
   </p>
   <div class="buttons">
-    <button type="button" data-action="close-dialog">Close</button>
+    <button type="button" data-action="close-dialog" autofocus>Close</button>
   </div>
 </div>
-

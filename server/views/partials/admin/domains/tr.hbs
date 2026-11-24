@@ -1,64 +1,72 @@
 <tr id="tr-{{id}}" {{#if swap_oob}}hx-swap-oob="true"{{/if}}>
-  <td class="domains-id">
+  <td class="domains-id" data-label="ID">
     {{id}}
   </td>
-  <td class="domains-address right-fade">
-    <span class="domains-address-line">
-      {{address}}
-      {{#if shared}}
-        <span class="status green">Shared</span>
-      {{/if}}
-    </span>
-    <p class="description">
-      by&nbsp;
-      {{~#if user_id~}}
-        <a 
-          aria-label="View user" 
-          data-tooltip="View user" 
-          hx-get="/api/users/admin"
-          hx-target="closest table"
-          hx-swap="outerHTML" 
-          hx-sync="this:replace"
-          hx-indicator="closest table"
-          hx-vals='{"search":"{{email}}"}'
-          data-action="set-tab" data-tab-target="tab-users"
-        >
-          {{email}}
-        </a>
-        {{#ifEquals @root.query.user email}}
-        {{else}}
-          &nbsp;(
-          <a 
-            aria-label="View domains" 
-            data-tooltip="View domains" 
-            hx-get="/api/domains/admin"
-            hx-target="closest table"
-            hx-swap="outerHTML" 
+  <td class="domains-address right-fade" data-label="Address">
+    <div class="cell-stack">
+      <span class="domains-address-line">
+        {{address}}
+        {{#if shared}}
+          <span class="status green">Shared</span>
+        {{/if}}
+      </span>
+      <p class="description">
+        by&nbsp;
+        {{~#if user_id~}}
+          <button
+            type="button"
+            class="link"
+            aria-label="View user {{email}}"
+            data-tooltip="View user"
+            hx-get="/api/users/admin"
+            hx-target="closest .table-card"
+            hx-swap="outerHTML"
             hx-sync="this:replace"
-            hx-indicator="closest table"
-            hx-vals='{"user":"{{email}}"}'
+            hx-indicator="closest .table-card"
+            hx-vals='{"search":"{{email}}"}'
+            data-action="set-tab" data-tab-target="tab-users"
           >
-            view domains
-          </a>)
-        {{/ifEquals}}
-      {{~else~}}
-        <a 
-          aria-label="View system domains" 
-          data-tooltip="View system domains" 
-          hx-get="/api/domains/admin"
-          hx-target="closest table"
-          hx-swap="outerHTML" 
-          hx-sync="this:replace"
-          hx-indicator="closest table"
-          hx-vals='{"owner":"false"}'
-        >
-          System
-        </a>
-      {{~/if~}}
-      &nbsp;{{~#if description~}}· {{description}}{{~/if}}
-    </p>
+            {{email}}
+          </button>
+          {{#ifEquals @root.query.user email}}
+          {{else}}
+            &nbsp;(
+            <button
+              type="button"
+              class="link"
+              aria-label="View domains by {{email}}"
+              data-tooltip="View domains"
+              hx-get="/api/domains/admin"
+              hx-target="closest .table-card"
+              hx-swap="outerHTML"
+              hx-sync="this:replace"
+              hx-indicator="closest .table-card"
+              hx-vals='{"user":"{{email}}"}'
+            >
+              view domains
+            </button>)
+          {{/ifEquals}}
+        {{~else~}}
+          <button
+            type="button"
+            class="link"
+            aria-label="View system domains"
+            data-tooltip="View system domains"
+            hx-get="/api/domains/admin"
+            hx-target="closest .table-card"
+            hx-swap="outerHTML"
+            hx-sync="this:replace"
+            hx-indicator="closest .table-card"
+            hx-vals='{"owner":"false"}'
+          >
+            System
+          </button>
+        {{~/if~}}
+        &nbsp;{{~#if description~}}· {{description}}{{~/if}}
+      </p>
+    </div>
   </td>
-  <td class="domains-homepage right-fade">
+  <td class="domains-homepage right-fade" data-label="Homepage">
     {{#if homepage}}
       <a href="{{homepage}}" target="_blank" rel="noopener noreferrer">
         {{homepage}}
@@ -67,26 +75,28 @@
       No homepage
     {{/if}}
   </td>
-  <td class="domains-created-at">
+  <td class="domains-created-at" data-label="Created at">
     {{relative_created_at}}
   </td>
-  <td class="domains-links-count">
+  <td class="domains-links-count" data-label="Total links">
     {{#ifEquals links_count '0'}}
       {{links_count}}
     {{else}}
-      <a
+      <button
+        type="button"
+        class="link"
         data-tooltip="View links"
-        aria-label="View links"
+        aria-label="View {{links_count}} links for {{address}}"
         hx-get="/api/links/admin"
-        hx-target="closest table"
-        hx-swap="outerHTML" 
+        hx-target="closest .table-card"
+        hx-swap="outerHTML"
         hx-sync="this:replace"
         hx-vals='{"domain":"{{address}}"}'
-        hx-indicator="closest table"
+        hx-indicator="closest .table-card"
         data-action="set-tab" data-tab-target="tab-links"
       >
         {{links_count}}
-      </a>
+      </button>
     {{/ifEquals}}
   </td>
   {{> admin/domains/actions}}

@@ -3,7 +3,7 @@
     Delete account
   </h2>
   <p>Delete your account from {{default_domain}}.</p>
-  <form 
+  <form
     id="delete-account"
     hx-post="/api/users/delete"
     hx-select="form"
@@ -12,20 +12,23 @@
     hx-sync="this:abort"
   >
     {{#if success}}
-      <p class="success">{{success}}</p>
+      <p class="success" role="status">{{success}}</p>
     {{else}}
       <div class="inputs">
-        <label class="{{#if errors.password}}error{{/if}}">
-          Password:
-          <input 
-            id="password-for-delete-account" 
-            name="password" 
-            type="password" 
+        <div class="field {{#if errors.password}}error{{/if}}">
+          <label for="password-for-delete-account">Password:</label>
+          <input
+            id="password-for-delete-account"
+            name="password"
+            type="password"
+            autocomplete="current-password"
             placeholder="Password..."
+            required
             hx-preserve="true"
+            {{#if errors.password}}aria-invalid="true" aria-describedby="delete-account-password-error"{{/if}}
           />
-          {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
-        </label>
+          {{#if errors.password}}<p id="delete-account-password-error" class="error" role="alert">{{errors.password}}</p>{{/if}}
+        </div>
       </div>
       <button type="submit" class="danger">
         <span>{{> icons/trash}}</span>
@@ -34,7 +37,7 @@
       </button>
       {{#if error}}
         {{#unless errors}}
-          <p class="error">{{error}}</p>
+          <p class="error" role="alert">{{error}}</p>
         {{/unless}}
       {{/if}}
     {{/if}}

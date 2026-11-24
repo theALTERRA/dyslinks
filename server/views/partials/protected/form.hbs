@@ -5,30 +5,43 @@
   hx-post="/api/links/{{id}}/protected"
   hx-sync="this:abort"
   hx-swap="outerHTML"
-> 
+>
   {{#if message}}
-    <p class="success">{{message}}</p>
+    <p class="success" role="status">{{message}}</p>
   {{else}}
     <div class="inputs-wrapper">
-      <label class="{{#if error}}error{{/if}}">
-        Password
-        <input 
-          type="password" 
-          id="protected-link-password" 
-          name="password" 
-          placeholder="Enter password..."
-          autofocus="true"
-          autocomplete="current-password"
-          hx-preserve="true"
-          required 
-        />
-      </label>
+      <div class="field {{#if error}}error{{/if}}">
+        <label for="protected-link-password">Password</label>
+        <div class="password-input-wrapper">
+          <input
+            type="password"
+            id="protected-link-password"
+            name="password"
+            placeholder="Enter password..."
+            autofocus
+            autocomplete="current-password"
+            hx-preserve="true"
+            required
+            {{#if error}}aria-invalid="true" aria-describedby="protected-error"{{/if}}
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            data-action="toggle-password"
+            aria-label="Show password"
+            aria-pressed="false"
+          >
+            <span class="icon-show">{{> icons/eye}}</span>
+            <span class="icon-hide">{{> icons/eye_off}}</span>
+          </button>
+        </div>
+      </div>
       <button type="submit" class="primary">
         <span>{{> icons/spinner}}</span>
         <span>{{> icons/key}}</span>
-        Unlock & Go
+        Unlock &amp; Go
       </button>
     </div>
-    {{#if error}}<p class="error">{{error}}</p>{{/if}}
+    {{#if error}}<p id="protected-error" class="error" role="alert">{{error}}</p>{{/if}}
   {{/if}}
 </form>

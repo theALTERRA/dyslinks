@@ -1,68 +1,92 @@
 <div class="content admin-create">
-  <h2>Create user</h2>
+  <h1 id="dialog-title">Create user</h1>
   <form
     id="create-user-form"
-    hx-post="/api/users/admin" 
-    hx-target="closest .content" 
-    hx-swap="outerHTML" 
+    hx-post="/api/users/admin"
+    hx-target="closest .content"
+    hx-swap="outerHTML"
     hx-indicator="closest .content"
   >
-    <label class="{{#if errors.email}}error{{/if}}">
-      Email address:
+    <div class="field {{#if errors.email}}error{{/if}}">
+      <label for="create-user-email">Email address:</label>
       <input
         name="email"
         id="create-user-email"
         type="email"
+        inputmode="email"
+        autocomplete="email"
         placeholder="Email address..."
+        autofocus
+        required
         hx-preserve="true"
+        {{#if errors.email}}aria-invalid="true" aria-describedby="create-user-email-error"{{/if}}
       />
-      {{#if errors.email}}<p class="error">{{errors.email}}</p>{{/if}}
-    </label>
-    <label class="{{#if errors.password}}error{{/if}}">
-      Password:
-      <input
-        name="password"
-        id="create-user-password"
-        type="password"
-        placeholder="Password..."
+      {{#if errors.email}}<p id="create-user-email-error" class="error" role="alert">{{errors.email}}</p>{{/if}}
+    </div>
+    <div class="field {{#if errors.password}}error{{/if}}">
+      <label for="create-user-password">Password:</label>
+      <div class="password-input-wrapper">
+        <input
+          name="password"
+          id="create-user-password"
+          type="password"
+          placeholder="Password..."
+          required
+          hx-preserve="true"
+          autocomplete="new-password"
+          {{#if errors.password}}aria-invalid="true" aria-describedby="create-user-password-error"{{/if}}
+        />
+        <button
+          type="button"
+          class="password-toggle"
+          data-action="toggle-password"
+          aria-label="Show password"
+          aria-pressed="false"
+        >
+          <span class="icon-show">{{> icons/eye}}</span>
+          <span class="icon-hide">{{> icons/eye_off}}</span>
+        </button>
+      </div>
+      {{#if errors.password}}<p id="create-user-password-error" class="error" role="alert">{{errors.password}}</p>{{/if}}
+    </div>
+    <div class="field {{#if errors.role}}error{{/if}}">
+      <label for="create-user-role">Role:</label>
+      <select
+        name="role"
+        id="create-user-role"
         hx-preserve="true"
-        autocomplete="new-password"
-      />
-      {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
-    </label>
-    <label class="{{#if errors.role}}error{{/if}}">
-      Role:
-      <select name="role" id="create-user-role" hx-preserve="true">
+        {{#if errors.role}}aria-invalid="true" aria-describedby="create-user-role-error"{{/if}}
+      >
         <option value="USER" selected>User</option>
         <option value="ADMIN">Admin</option>
       </select>
-      {{#if errors.role}}<p class="error">{{errors.role}}</p>{{/if}}
-    </label>
+      {{#if errors.role}}<p id="create-user-role-error" class="error" role="alert">{{errors.role}}</p>{{/if}}
+    </div>
     <div class="checkbox-wrapper">
-      <label class="checkbox">
-        <input 
-          id="create-user-verified" 
-          name="verified" 
+      <label class="checkbox" for="create-user-verified">
+        <input
+          id="create-user-verified"
+          name="verified"
           type="checkbox"
-          data-action="toggle-verification-email" 
+          data-action="toggle-verification-email"
           hx-preserve="true"
           checked
         />
         Verified
       </label>
-      <label class="checkbox">
-        <input 
-          id="create-user-banned" 
+      <label class="checkbox" for="create-user-banned">
+        <input
+          id="create-user-banned"
           name="banned"
           type="checkbox"
-          data-action="toggle-verification-email" 
+          data-action="toggle-verification-email"
           hx-preserve="true"
         />
         Banned
       </label>
     </div>
     {{#if mail_enabled}}
-      <label id="send-email-label" class="checkbox hidden" hx-preserve="true">
+      <label id="send-email-label" class="checkbox hidden" for="create-user-send-email" hx-preserve="true">
         <input id="create-user-send-email" name="verification_email" type="checkbox" />
         Send verification email
       </label>
@@ -76,7 +100,7 @@
       {{> icons/spinner}}
     </div>
   </form>
-  <div id="dialog-error">
+  <div id="dialog-error" role="alert">
     {{#if error}}
       <p class="error">{{error}}</p>
     {{/if}}

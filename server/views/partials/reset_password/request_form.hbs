@@ -4,27 +4,30 @@
   hx-post="/api/auth/reset-password"
   hx-sync="this:abort"
   hx-swap="outerHTML"
-> 
+>
   {{#if message}}
-    <p class="success">{{message}}</p>
+    <p class="success" role="status">{{message}}</p>
   {{else}}
     <div class="inputs-wrapper">
-      <label class="{{#if errors.email}}error{{/if}}">
-        Email address:
-        <input 
-          id="reset-password-email" 
-          name="email" 
-          type="email" 
+      <div class="field {{#if errors.email}}error{{/if}}">
+        <label for="reset-password-email">Email address:</label>
+        <input
+          id="reset-password-email"
+          name="email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
           placeholder="Email address..."
           hx-preserve="true"
-          required 
+          required
+          {{#if error}}aria-invalid="true" aria-describedby="reset-password-error"{{/if}}
         />
-      </label>
+      </div>
       <button type="submit" class="primary">
         <span>{{> icons/spinner}}</span>
         Reset password
       </button>
     </div>
-    {{#if error}}<p class="error">{{error}}</p>{{/if}}
+    {{#if error}}<p id="reset-password-error" class="error" role="alert">{{error}}</p>{{/if}}
   {{/if}}
 </form>

@@ -1,83 +1,92 @@
-<td class="content">
+<td class="content" colspan="6">
   {{#if id}}
-    <form 
+    <form
       id="edit-form-{{id}}"
       hx-patch="/api/links/{id}"
       hx-ext="path-params"
-      hx-vals='{"id":"{{id}}"}' 
+      hx-vals='{"id":"{{id}}"}'
       hx-select="form"
       hx-swap="outerHTML"
       hx-sync="this:replace"
       class="{{class}}"
     >
       <div>
-        <label class="{{#if errors.target}}error{{/if}}">
-          Target:
-          <input 
+        <div class="field {{#if errors.target}}error{{/if}}">
+          <label for="edit-target-{{id}}">Target:</label>
+          <input
             id="edit-target-{{id}}"
-            name="target" 
-            type="text" 
-            placeholder="Target..." 
-            required="true"
+            name="target"
+            type="url"
+            inputmode="url"
+            placeholder="Target..."
+            required
             value="{{target}}"
             hx-preserve="true"
+            {{#if errors.target}}aria-invalid="true" aria-describedby="edit-target-error-{{id}}"{{/if}}
           />
-          {{#if errors.target}}<p class="error">{{errors.target}}</p>{{/if}}
-        </label>
-        <label class="{{#if errors.address}}error{{/if}}">
-          <span id="edit-link-domain-{{id}}" hx-preserve="true">{{domain}}/</span>
-          <input 
+          {{#if errors.target}}<p id="edit-target-error-{{id}}" class="error" role="alert">{{errors.target}}</p>{{/if}}
+        </div>
+        <div class="field {{#if errors.address}}error{{/if}}">
+          <label for="edit-address-{{id}}">
+            <span id="edit-link-domain-{{id}}" hx-preserve="true">{{domain}}/</span>
+          </label>
+          <input
             id="edit-address-{{id}}"
-            name="address" 
-            type="text" 
-            placeholder="Custom URL..." 
-            required="true"
+            name="address"
+            type="text"
+            placeholder="Custom URL..."
+            required
             value="{{address}}"
             hx-preserve="true"
+            {{#if errors.address}}aria-invalid="true" aria-describedby="edit-address-error-{{id}}"{{/if}}
           />
-          {{#if errors.address}}<p class="error">{{errors.address}}</p>{{/if}}
-        </label>
-        <label class="{{#if errors.password}}error{{/if}}">
-          Password:
-          <input 
+          {{#if errors.address}}<p id="edit-address-error-{{id}}" class="error" role="alert">{{errors.address}}</p>{{/if}}
+        </div>
+        <div class="field {{#if errors.password}}error{{/if}}">
+          <label for="edit-password-{{id}}">Password:</label>
+          <input
             id="edit-password-{{id}}"
-            name="password" 
-            type="password" 
-            placeholder="Password..." 
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Password..."
             value="{{#if password}}••••••••{{/if}}"
             hx-preserve="true"
+            {{#if errors.password}}aria-invalid="true" aria-describedby="edit-password-error-{{id}}"{{/if}}
           />
-          {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
-        </label>
+          {{#if errors.password}}<p id="edit-password-error-{{id}}" class="error" role="alert">{{errors.password}}</p>{{/if}}
+        </div>
       </div>
       <div>
-        <label class="{{#if errors.description}}error{{/if}}">
-          Description:
-          <input 
+        <div class="field {{#if errors.description}}error{{/if}}">
+          <label for="edit-description-{{id}}">Description:</label>
+          <input
             id="edit-description-{{id}}"
-            name="description" 
-            type="text" 
-            placeholder="Description..." 
+            name="description"
+            type="text"
+            placeholder="Description..."
             value="{{description}}"
             hx-preserve="true"
+            {{#if errors.description}}aria-invalid="true" aria-describedby="edit-description-error-{{id}}"{{/if}}
           />
-          {{#if errors.description}}<p class="error">{{errors.description}}</p>{{/if}}
-        </label>
-        <label class="{{#if errors.expire_in}}error{{/if}}">
-          Expire in:
-          <input 
+          {{#if errors.description}}<p id="edit-description-error-{{id}}" class="error" role="alert">{{errors.description}}</p>{{/if}}
+        </div>
+        <div class="field {{#if errors.expire_in}}error{{/if}}">
+          <label for="edit-expire_in-{{id}}">Expire in:</label>
+          <input
             id="edit-expire_in-{{id}}"
-            name="expire_in" 
-            type="text" 
+            name="expire_in"
+            type="text"
             placeholder="2 minutes/hours/days"
             value="{{edit_expire_in}}"
             hx-preserve="true"
+            {{#if errors.expire_in}}aria-invalid="true" aria-describedby="edit-expire-in-error-{{id}}"{{/if}}
           />
-          {{#if errors.expire_in}}<p class="error">{{errors.expire_in}}</p>{{/if}}
-        </label>
+          {{#if errors.expire_in}}<p id="edit-expire-in-error-{{id}}" class="error" role="alert">{{errors.expire_in}}</p>{{/if}}
+        </div>
       </div>
-      <div>
-        <button 
+      <div class="edit-actions">
+        <button
           type="button"
           data-action="close-edit-row"
         >
@@ -96,10 +105,10 @@
       <div class="response">
         {{#if error}}
           {{#unless errors}}
-            <p class="error">{{error}}</p>
+            <p class="error" role="alert">{{error}}</p>
           {{/unless}}
         {{else if success}}
-          <p class="success">{{success}}</p>
+          <p class="success" role="status">{{success}}</p>
         {{/if}}
       </div>
       <template>

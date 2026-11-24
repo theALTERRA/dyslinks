@@ -1,20 +1,22 @@
-<tr class="category">
-  <th class="category-total">
+<div class="table-category">
+  <div class="category-total">
     <p id="category-total">
       Total {{title}}: <b>{{#if total includeZero=true}}{{total_formatted}}{{else}}-{{/if}}</b>
     </p>
-  </th>
-  <th class="category-tab">
-    <nav class="tab" role="tablist">
-      <a 
-        id="tab-links" 
-        role="tab" 
+  </div>
+  <div class="category-tab">
+    <nav class="tab" role="tablist" aria-label="Admin resource tables">
+      <button
+        type="button"
+        id="tab-links"
+        role="tab"
+        aria-selected="{{#ifEquals title 'links'}}true{{else}}false{{/ifEquals}}"
         hx-get="/api/links/admin"
-        hx-target="closest table"
-        hx-swap="outerHTML" 
+        hx-target="closest .table-card"
+        hx-swap="outerHTML"
         hx-disinherit="*"
         hx-sync="this:replace"
-        hx-indicator="closest table"
+        hx-indicator="closest .table-card"
         data-action="set-tab"
         {{#ifEquals title 'links'}}
           class="active"
@@ -22,16 +24,18 @@
         {{/ifEquals}}
       >
         Links
-      </a>
-      <a 
-        id="tab-users" 
-        role="tab" 
+      </button>
+      <button
+        type="button"
+        id="tab-users"
+        role="tab"
+        aria-selected="{{#ifEquals title 'users'}}true{{else}}false{{/ifEquals}}"
         hx-get="/api/users/admin"
-        hx-target="closest table"
-        hx-swap="outerHTML" 
+        hx-target="closest .table-card"
+        hx-swap="outerHTML"
         hx-disinherit="*"
         hx-sync="this:replace"
-        hx-indicator="closest table"
+        hx-indicator="closest .table-card"
         data-action="set-tab"
         {{#ifEquals title 'users'}}
           class="active"
@@ -39,16 +43,18 @@
         {{/ifEquals}}
       >
         Users
-      </a>
-       <a 
-        id="tab-domains" 
-        role="tab" 
+      </button>
+      <button
+        type="button"
+        id="tab-domains"
+        role="tab"
+        aria-selected="{{#ifEquals title 'domains'}}true{{else}}false{{/ifEquals}}"
         hx-get="/api/domains/admin"
-        hx-target="closest table"
-        hx-swap="outerHTML" 
+        hx-target="closest .table-card"
+        hx-swap="outerHTML"
         hx-disinherit="*"
         hx-sync="this:replace"
-        hx-indicator="closest table"
+        hx-indicator="closest .table-card"
         data-action="set-tab"
         {{#ifEquals title 'domains'}}
           class="active"
@@ -56,7 +62,7 @@
         {{/ifEquals}}
       >
         Domains
-      </a>
+      </button>
     </nav>
-  </th>
-</tr>
+  </div>
+</div>

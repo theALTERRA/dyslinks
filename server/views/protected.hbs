@@ -1,14 +1,16 @@
 {{> header}}
-<section id="protected" class="section-container">
-  <div class="protected-badge" aria-hidden="true">
-    {{> icons/key}}
-  </div>
-  <h2>
-    Protected link
-  </h2>
-  <p>
-    Enter the password to continue to this link.
-  </p>
-  {{> protected/form}}
-</section>
+<main id="main-content" class="page-main" tabindex="-1">
+  <section id="protected" class="section-container">
+    <div class="protected-badge" aria-hidden="true">
+      {{> icons/key}}
+    </div>
+    <h1>
+      Protected link
+    </h1>
+    <p>
+      Enter the password to continue to this link.
+    </p>
+    {{> protected/form}}
+  </section>
+</main>
 {{> footer}}

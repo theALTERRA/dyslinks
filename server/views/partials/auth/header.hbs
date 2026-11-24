@@ -1,12 +1,13 @@
-<div class="auth-topbar">
+<header class="auth-topbar">
   <button
     type="button"
     id="theme-toggle"
     class="theme-toggle"
-    aria-label="Toggle dark mode"
-    title="Toggle dark mode"
+    data-tooltip="Switch theme"
   >
     {{> icons/sun}}
     {{> icons/moon}}
+    <span class="visually-hidden theme-label-light">Switch to light mode</span>
+    <span class="visually-hidden theme-label-dark">Switch to dark mode</span>
   </button>
-</div>
+</header>

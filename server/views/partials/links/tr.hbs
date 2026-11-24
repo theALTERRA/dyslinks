@@ -1,5 +1,5 @@
 <tr id="tr-{{id}}" {{#if swap_oob}}hx-swap-oob="true"{{/if}}>
-  <td class="select-col">
+  <td class="select-col" data-label="Select">
     <input
       type="checkbox"
       class="link-select-checkbox"
@@ -8,55 +8,61 @@
       data-action="toggle-select-link"
     />
   </td>
-  <td class="original-url right-fade">
-    {{#if is_http_target}}
-      <a href="{{target}}" target="_blank" rel="noopener noreferrer">
-        {{target}}
-      </a>
-    {{else}}
-      <span class="non-http-target">{{target}}</span>
-    {{/if}}
-    {{#if description}}
-      <p class="description">
-        {{description}}
-      </p>
-    {{/if}}
-  </td>
-  <td class="created-at">
-    {{relative_created_at}}
-    {{#if is_expired}}
-      <p class="description">
-        Expired
-      </p>
-    {{else if relative_expire_in}}
-      <p class="description">
-        Expires in {{relative_expire_in}}
-      </p>
-    {{/if}}
-  </td>
-  <td class="short-link right-fade">
-    <div class="clipboard small">
-      <button 
-        type="button"
-        aria-label="Copy" 
-        data-action="copy-link"
-        data-url="{{link.url}}"
-      >
-        {{> icons/copy}}
-      </button>
-      {{> icons/check}}
+  <td class="original-url right-fade" data-label="Original URL">
+    <div class="cell-stack">
+      {{#if is_http_target}}
+        <a href="{{target}}" target="_blank" rel="noopener noreferrer">
+          {{target}}
+        </a>
+      {{else}}
+        <span class="non-http-target">{{target}}</span>
+      {{/if}}
+      {{#if description}}
+        <p class="description">
+          {{description}}
+        </p>
+      {{/if}}
     </div>
-    <a href="{{link.url}}" target="_blank" rel="noopener noreferrer">
-      {{link.link}}
-    </a>
   </td>
-  <td class="views">
+  <td class="created-at" data-label="Created at">
+    <div class="cell-stack">
+      <span>{{relative_created_at}}</span>
+      {{#if is_expired}}
+        <p class="description">
+          Expired
+        </p>
+      {{else if relative_expire_in}}
+        <p class="description">
+          Expires in {{relative_expire_in}}
+        </p>
+      {{/if}}
+    </div>
+  </td>
+  <td class="short-link right-fade" data-label="Short link">
+    <div class="short-link-wrapper">
+      <div class="clipboard small">
+        <button
+          type="button"
+          aria-label="Copy {{link.link}}"
+          data-action="copy-link"
+          data-url="{{link.url}}"
+        >
+          {{> icons/copy}}
+        </button>
+        {{> icons/check}}
+      </div>
+      <a href="{{link.url}}" target="_blank" rel="noopener noreferrer">
+        {{link.link}}
+      </a>
+    </div>
+  </td>
+  <td class="views" data-label="Views">
     {{visit_count}}
   </td>
-    {{> links/actions}}
+  {{> links/actions}}
 </tr>
 <tr class="edit">
-  <td class="loading">
+  <td class="loading" colspan="6">
     {{> icons/spinner}}
   </td>
 </tr>

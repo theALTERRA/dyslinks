@@ -3,6 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="light dark">
+  <meta name="text-scale" content="scale">
   <link rel="icon" type="image/svg+xml" href="/images/logo.svg?v=3" />
   <link rel="apple-touch-icon" href="/images/logo.svg?v=3" />
   <link rel="mask-icon" href="/images/logo.svg?v=3" color="#8b5cf6" />
@@ -27,13 +29,15 @@
   {{{block "stylesheets"}}}
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to main content</a>
   <div class="main-wrapper">
     {{{body}}}
   </div>
+  <div id="app-tooltip" class="app-tooltip" popover="hint" role="tooltip"></div>
+  <div id="live-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
 
+  <script defer src="/libs/htmx.min.js"></script>
+  <script defer src="/scripts/main.js?v={{app_version}}"></script>
   {{{block "scripts"}}}
-  <script src="/libs/htmx.min.js"></script>
-  <script src="/libs/qrcode.min.js"></script>
-  <script src="/scripts/main.js?v={{app_version}}"></script>
 </body>
 </html>

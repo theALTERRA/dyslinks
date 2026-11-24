@@ -1,33 +1,52 @@
 <form id="login-signup" hx-post="/api/auth/create-admin" hx-swap="outerHTML">
-  <h2 class="admin-form-title">
+  <h1 class="admin-form-title">
     Create an admin account
-  </h2>
-  <label class="{{#if errors.email}}error{{/if}}">
-    Email address
+  </h1>
+  <div class="field {{#if errors.email}}error{{/if}}">
+    <label for="email">Email address</label>
     <input
       name="email"
       id="email"
       type="email"
-      autofocus="true"
+      inputmode="email"
+      autofocus
+      required
+      autocomplete="email"
       placeholder="Email address..."
       hx-preserve="true"
+      {{#if errors.email}}aria-invalid="true" aria-describedby="email-error"{{/if}}
     />
-    {{#if errors.email}}<p class="error">{{errors.email}}</p>{{/if}}
-  </label>
-  <label class="{{#if errors.password}}error{{/if}}">
-    Password
-    <input
-      name="password"
-      id="password"
-      type="password"
-      placeholder="Password..."
-      hx-preserve="true"
-    />
-    {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
-  </label>
+    {{#if errors.email}}<p id="email-error" class="error" role="alert">{{errors.email}}</p>{{/if}}
+  </div>
+  <div class="field {{#if errors.password}}error{{/if}}">
+    <label for="password">Password</label>
+    <div class="password-input-wrapper">
+      <input
+        name="password"
+        id="password"
+        type="password"
+        required
+        autocomplete="new-password"
+        placeholder="Password..."
+        hx-preserve="true"
+        {{#if errors.password}}aria-invalid="true" aria-describedby="password-error"{{/if}}
+      />
+      <button
+        type="button"
+        class="password-toggle"
+        data-action="toggle-password"
+        aria-label="Show password"
+        aria-pressed="false"
+      >
+        <span class="icon-show">{{> icons/eye}}</span>
+        <span class="icon-hide">{{> icons/eye_off}}</span>
+      </button>
+    </div>
+    {{#if errors.password}}<p id="password-error" class="error" role="alert">{{errors.password}}</p>{{/if}}
+  </div>
   {{#if admin_bootstrap_required}}
-    <label class="{{#if errors.bootstrap_secret}}error{{/if}}">
-      Bootstrap secret
+    <div class="field {{#if errors.bootstrap_secret}}error{{/if}}">
+      <label for="bootstrap_secret">Bootstrap secret</label>
       <input
         name="bootstrap_secret"
         id="bootstrap_secret"
@@ -35,9 +54,10 @@
         placeholder="Bootstrap secret..."
         autocomplete="off"
         required
+        {{#if errors.bootstrap_secret}}aria-invalid="true" aria-describedby="bootstrap-secret-error"{{/if}}
       />
-      {{#if errors.bootstrap_secret}}<p class="error">{{errors.bootstrap_secret}}</p>{{/if}}
-    </label>
+      {{#if errors.bootstrap_secret}}<p id="bootstrap-secret-error" class="error" role="alert">{{errors.bootstrap_secret}}</p>{{/if}}
+    </div>
   {{/if}}
   <div class="buttons-wrapper admin-form">
     <button type="submit" class="secondary full">
@@ -48,7 +68,7 @@
   </div>
   {{#unless errors}}
     {{#if error}}
-      <p class="error">{{error}}</p>
+      <p class="error" role="alert">{{error}}</p>
     {{/if}}
   {{/unless}}
 </form>

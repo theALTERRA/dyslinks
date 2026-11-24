@@ -1,17 +1,18 @@
-<table 
+<div
+  class="table-card"
   hx-get="/api/users/admin"
-  hx-target="tbody"
-  hx-swap="outerHTML" 
+  hx-target="find tbody"
+  hx-swap="outerHTML"
   hx-select="tbody"
   hx-disinherit="*"
   hx-include=".users-controls"
   hx-params="not total"
   hx-sync="this:replace"
-  hx-select-oob="#total,#category-total" 
+  hx-select-oob="#total,#category-total"
   hx-trigger="
     {{#if onload}}load once,{{/if}}
     reloadMainTable from:body,
-    click delay:100ms from:button.nav, 
+    click delay:100ms from:button.nav,
     input changed delay:500ms from:[name='search'],
     input changed from:[name='verified'],
     input changed from:[name='banned'],
@@ -20,10 +21,86 @@
     input changed from:[name='links']"
   data-update-nav="true"
 >
-  {{> admin/users/thead}}
-  {{> admin/users/tbody}}
-  {{> admin/users/tfoot}}
-</table>
+  {{> admin/table_tab title='users'}}
+  <div class="table-toolbar controls users-controls with-filters">
+    <search class="filters" aria-label="Filter users">
+      <div>
+        <div class="search-input-wrapper">
+          <input
+            id="search"
+            name="search"
+            type="search"
+            aria-label="Search user"
+            placeholder="Search user..."
+            class="table-input search admin"
+            data-action="search-input"
+            value="{{query.search}}"
+          />
+          <button
+            type="button"
+            aria-label="Clear search"
+            class="clear"
+            data-action="clear-search"
+          >
+            {{> icons/x}}
+          </button>
+        </div>
+        <select id="users-select-verified" name="verified" aria-label="Filter by verification" class="table-input verification" data-action="reset-table-nav">
+          <option value="">Verification...</option>
+          <option value="true" {{#ifEquals query.verified 'true'}}selected{{/ifEquals}}>Verified</option>
+          <option value="false" {{#ifEquals query.verified 'false'}}selected{{/ifEquals}}>Not verified</option>
+        </select>
+        <select id="users-select-banned" name="banned" aria-label="Filter by banned status" class="table-input ban" data-action="reset-table-nav">
+          <option value="">Banned...</option>
+          <option value="true" {{#ifEquals query.banned 'true'}}selected{{/ifEquals}}>Banned</option>
+          <option value="false" {{#ifEquals query.banned 'false'}}selected{{/ifEquals}}>Not banned</option>
+        </select>
+        <select id="users-select-role" name="role" aria-label="Filter by role" class="table-input role" data-action="reset-table-nav">
+          <option value="">Role...</option>
+          <option value="USER" {{#ifEquals query.role 'USER'}}selected{{/ifEquals}}>User</option>
+          <option value="ADMIN" {{#ifEquals query.role 'ADMIN'}}selected{{/ifEquals}}>Admin</option>
+        </select>
+      </div>
+      <div>
+        <select id="users-select-domain" name="domains" aria-label="Filter by domains" class="table-input domains" data-action="reset-table-nav">
+          <option value="">Domain...</option>
+          <option value="true" {{#ifEquals query.domains 'true'}}selected{{/ifEquals}}>With domains</option>
+          <option value="false" {{#ifEquals query.domains 'false'}}selected{{/ifEquals}}>No domains</option>
+        </select>
+        <select id="users-select-links" name="links" aria-label="Filter by links" class="table-input links" data-action="reset-table-nav">
+          <option value="">Links...</option>
+          <option value="true" {{#ifEquals query.links 'true'}}selected{{/ifEquals}}>With links</option>
+          <option value="false" {{#ifEquals query.links 'false'}}selected{{/ifEquals}}>No links</option>
+        </select>
+        <input id="total" name="total" type="hidden" value="{{total}}" />
+        <input id="limit" name="limit" type="hidden" value="10" />
+        <input id="skip" name="skip" type="hidden" value="0" />
+        <button
+          type="button"
+          class="table primary"
+          data-action="open-dialog" data-dialog="admin-table-dialog"
+          hx-get="/create-user"
+          hx-target="#admin-table-dialog .content-wrapper"
+          hx-indicator="#admin-table-dialog"
+        >
+          <span>{{> icons/new_user}}</span>
+          Create user
+        </button>
+      </div>
+    </search>
+    {{> admin/table_nav}}
+  </div>
+  <div class="table-scroll" tabindex="0" role="region" aria-labelledby="admin-table-title">
+    <table class="data-table data-table--users">
+      <caption class="visually-hidden">Recent created users</caption>
+      {{> admin/users/thead}}
+      {{> admin/users/tbody}}
+    </table>
+  </div>
+  <div class="table-footer controls users-controls">
+    {{> admin/table_nav}}
+  </div>
+</div>
 <template>
-  <h2 id="admin-table-title" hx-swap-oob="true">Recent created users</h2>
+  <h1 id="admin-table-title" hx-swap-oob="true">Recent created users</h1>
 </template>

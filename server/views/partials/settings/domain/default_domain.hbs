@@ -9,9 +9,13 @@
     hx-sync="this:abort"
   >
     <div class="default-domain-controls">
-      <label class="{{#if errors.domain}}error{{/if}}">
-        Default domain:
-        <select id="default-domain" name="domain">
+      <div class="field {{#if errors.domain}}error{{/if}}">
+        <label for="default-domain">Default domain:</label>
+        <select
+          id="default-domain"
+          name="domain"
+          {{#if errors.domain}}aria-invalid="true" aria-describedby="default-domain-error"{{/if}}
+        >
           <option value="{{default_domain}}" {{#ifEquals user_default_domain default_domain}}selected{{/ifEquals}}>
             {{default_domain}} (Site default)
           </option>
@@ -21,7 +25,7 @@
             </option>
           {{/each}}
         </select>
-      </label>
+      </div>
       <button type="submit" class="primary">
         <span>{{> icons/check}}</span>
         <span>{{> icons/spinner}}</span>
@@ -29,17 +33,17 @@
       </button>
     </div>
     {{#if errors.domain}}
-      <p class="error">{{errors.domain}}</p>
+      <p id="default-domain-error" class="error" role="alert">{{errors.domain}}</p>
     {{/if}}
     {{#unless shortener_domains}}
       <p class="default-domain-hint">Add a custom domain above to select a different default domain.</p>
     {{/unless}}
     {{#if error}}
       {{#unless errors}}
-        <p class="error">{{error}}</p>
+        <p class="error" role="alert">{{error}}</p>
       {{/unless}}
     {{else if success}}
-      <p class="success">{{success}}</p>
+      <p class="success" role="status">{{success}}</p>
     {{/if}}
   </form>
 </section>

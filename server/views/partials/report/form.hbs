@@ -3,27 +3,29 @@
   hx-post="/api/links/report"
   hx-sync="this:abort"
   hx-swap="outerHTML"
-> 
+>
   {{#if message}}
-    <p class="success">{{message}}</p>
+    <p class="success" role="status">{{message}}</p>
   {{else}}
     <div class="inputs-wrapper">
-      <label class="{{#if errors.link}}error{{/if}}">
-        URL containing malware/scam:
-        <input 
-          type="text" 
-          id="link" 
-          name="link" 
+      <div class="field {{#if errors.link}}error{{/if}}">
+        <label for="link">URL containing malware/scam:</label>
+        <input
+          type="url"
+          inputmode="url"
+          id="link"
+          name="link"
           placeholder="{{default_domain}}/example"
           hx-preserve="true"
-          required 
+          required
+          {{#if error}}aria-invalid="true" aria-describedby="report-error"{{/if}}
         />
-      </label>
+      </div>
       <button type="submit" class="primary">
         <span>{{> icons/spinner}}</span>
         Send report
       </button>
     </div>
-    {{#if error}}<p class="error">{{error}}</p>{{/if}}
+    {{#if error}}<p id="report-error" class="error" role="alert">{{error}}</p>{{/if}}
   {{/if}}
 </form>

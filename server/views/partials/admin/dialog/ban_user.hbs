@@ -1,28 +1,28 @@
 <div class="content">
-  <h2>Ban user?</h2>
+  <h1 id="dialog-title">Ban user?</h1>
   <p>
     Are you sure you want to ban the user &quot;<b>{{email}}</b>&quot;?
   </p>
   <div class="ban-checklist">
-    <label class="checkbox">
+    <label class="checkbox" for="ban-user-links">
       <input id="ban-user-links" name="links" type="checkbox" />
       User links
     </label>
-    <label class="checkbox">
+    <label class="checkbox" for="ban-user-domains">
       <input id="ban-user-domains" name="domains" type="checkbox" />
       User domains
     </label>
   </div>
   <div class="buttons">
-    <button type="button" data-action="close-dialog">Cancel</button>
-    <button 
+    <button type="button" data-action="close-dialog" autofocus>Cancel</button>
+    <button
       type="button"
-      class="danger confirm" 
-      hx-post="/api/users/admin/ban/{id}" 
-      hx-ext="path-params" 
-      hx-vals='{"id":"{{id}}"}' 
-      hx-target="closest .content" 
-      hx-swap="none" 
+      class="danger confirm"
+      hx-post="/api/users/admin/ban/{id}"
+      hx-ext="path-params"
+      hx-vals='{"id":"{{id}}"}'
+      hx-target="closest .content"
+      hx-swap="none"
       hx-include=".ban-checklist"
       hx-indicator="closest .content"
       hx-select-oob="#dialog-error"
@@ -34,7 +34,7 @@
     </button>
     {{> icons/spinner}}
   </div>
-  <div id="dialog-error">
+  <div id="dialog-error" role="alert">
     {{#if error}}
       <p class="error">{{error}}</p>
     {{/if}}

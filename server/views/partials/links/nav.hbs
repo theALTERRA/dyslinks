@@ -1,16 +1,16 @@
-<th class="nav" >
-  <div class="limit">
-    <button type="button" class="nav" data-action="set-limit" disabled="true">10</button>
-    <button type="button" class="nav" data-action="set-limit">20</button>
-    <button type="button" class="nav" data-action="set-limit">50</button>
+<div class="nav">
+  <div class="limit" role="group" aria-label="Links per page">
+    <button type="button" class="nav active" data-action="set-limit" aria-pressed="true">10</button>
+    <button type="button" class="nav" data-action="set-limit" aria-pressed="false">20</button>
+    <button type="button" class="nav" data-action="set-limit" aria-pressed="false">50</button>
   </div>
-  <div class="nav-divider"></div>
-  <div class="pagination">
-    <button type="button" class="nav prev" data-action="set-skip" data-direction="prev" disabled="true">
+  <div class="nav-divider" aria-hidden="true"></div>
+  <div class="pagination" role="group" aria-label="Pagination">
+    <button type="button" class="nav prev" aria-label="Previous page" data-action="set-skip" data-direction="prev" disabled>
       {{> icons/chevron_left}}
     </button>
-    <button type="button" class="nav next" data-action="set-skip" data-direction="next" disabled="true">
+    <button type="button" class="nav next" aria-label="Next page" data-action="set-skip" data-direction="next" disabled>
       {{> icons/chevron_right}}
     </button>
   </div>
-</th>
+</div>

@@ -1,4 +1,4 @@
-<h2>
+<h2 id="custom-domains-heading">
   Custom domain
 </h2>
 <p>
@@ -9,7 +9,7 @@
 
 {{#if server_cname_address}}
   <p>
-    Point your domain's A record to 
+    Point your domain's A record to
     {{#if server_ip_address}}
       <b>{{server_ip_address}}</b>
     {{else}}
@@ -21,17 +21,19 @@
   <p>Then, add the domain via the form below:</p>
 {{else}}
   <p>
-    Point your domain's A record to 
+    Point your domain's A record to
     {{#if server_ip_address}}
       <b>{{server_ip_address}}</b>
     {{else}}
       our <b>IP address</b>
-    {{/if}} 
+    {{/if}}
     then add the domain via the form below:
   </p>
 {{/if}}
 
-{{> settings/domain/table}}
+<div class="table-scroll table-scroll--compact" tabindex="0" role="region" aria-labelledby="custom-domains-heading">
+  {{> settings/domain/table}}
+</div>
 <div class="add-domain-wrapper">
   <button
     type="button"

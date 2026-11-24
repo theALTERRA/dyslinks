@@ -1,30 +1,47 @@
 <form id="login-signup" class="signup" hx-post="/api/auth/signup" hx-swap="outerHTML">
-  <h2 class="auth-form-title">Create an account</h2>
-  <label class="{{#if errors.email}}error{{/if}}">
-    Email address
+  <h1 class="auth-form-title">Create an account</h1>
+  <div class="field {{#if errors.email}}error{{/if}}">
+    <label for="email">Email address</label>
     <input
       name="email"
       id="email"
       type="email"
-      autofocus="true"
+      inputmode="email"
+      autofocus
+      required
       autocomplete="email"
       placeholder="Email address..."
       hx-preserve="true"
+      {{#if errors.email}}aria-invalid="true" aria-describedby="email-error"{{/if}}
     />
-    {{#if errors.email}}<p class="error">{{errors.email}}</p>{{/if}}
-  </label>
-  <label class="{{#if errors.password}}error{{/if}}">
-    Password
-    <input
-      name="password"
-      id="password"
-      type="password"
-      autocomplete="new-password"
-      placeholder="Password..."
-      hx-preserve="true"
-    />
-    {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
-  </label>
+    {{#if errors.email}}<p id="email-error" class="error" role="alert">{{errors.email}}</p>{{/if}}
+  </div>
+  <div class="field {{#if errors.password}}error{{/if}}">
+    <label for="password">Password</label>
+    <div class="password-input-wrapper">
+      <input
+        name="password"
+        id="password"
+        type="password"
+        required
+        autocomplete="new-password"
+        placeholder="Password..."
+        hx-preserve="true"
+        {{#if errors.password}}aria-invalid="true" aria-describedby="password-error"{{/if}}
+      />
+      <button
+        type="button"
+        class="password-toggle"
+        data-action="toggle-password"
+        aria-label="Show password"
+        aria-pressed="false"
+      >
+        <span class="icon-show">{{> icons/eye}}</span>
+        <span class="icon-hide">{{> icons/eye_off}}</span>
+      </button>
+    </div>
+    {{#if errors.password}}<p id="password-error" class="error" role="alert">{{errors.password}}</p>{{/if}}
+  </div>
   <div class="buttons-wrapper">
     <button type="submit" class="primary signup full">
       <span>{{> icons/new_user}}</span>
@@ -34,12 +51,12 @@
   </div>
   {{#unless errors}}
     {{#if error}}
-      <p class="error">{{error}}</p>
+      <p class="error" role="alert">{{error}}</p>
     {{/if}}
   {{/unless}}
   <div class="auth-links">
     <p class="auth-switch">
-      Already have an account? <a href="/login" title="Log in">Log in</a>
+      Already have an account? <a href="/login">Log in</a>
     </p>
   </div>
 </form>

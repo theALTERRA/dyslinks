@@ -1,75 +1,78 @@
-<td class="actions">
-  {{#if password}}
-    <span class="action password" role="img" aria-label="Password protected" data-tooltip="Password protected">
-      {{> icons/key}}
-    </span>
-  {{/if}}
-  {{#if banned}}
-    <span class="action banned" role="img" aria-label="Banned" data-tooltip="Banned">
-      {{> icons/stop}}
-    </span>
-  {{/if}}
-  <a
-    class="button action stats"
-    href="/stats?id={{id}}"
-    aria-label="Stats"
-    data-tooltip="Stats"
-  >
-    {{> icons/chart}}
-  </a>
-  <button
-    type="button"
-    class="action qrcode"
-    aria-label="QR Code"
-    data-tooltip="QR Code"
-    data-action="open-qrcode" data-dialog="admin-table-dialog"
-    data-url="{{link.url}}"
-  >
-    {{> icons/qrcode}}
-  </button>
-  <button 
-    type="button"
-    class="action edit"
-    aria-label="Edit"
-    data-tooltip="Edit"
-    hx-trigger="click queue:none"
-    hx-ext="path-params"
-    hx-get="/admin/link/edit/{id}" 
-    hx-vals='{"id":"{{id}}"}'
-    hx-swap="beforeend"
-    hx-target="next tr.edit"
-    hx-indicator="next tr.edit"
-    hx-sync="this:drop"
-    data-action="toggle-edit-row"
-  >
-    {{> icons/pencil}}
-  </button>
-  {{#unless banned}}
-    <button 
+<td class="actions" data-label="Actions">
+  <div class="actions-group">
+    {{#if password}}
+      <span class="action password" role="img" aria-label="Password protected" data-tooltip="Password protected" tabindex="0">
+        {{> icons/key}}
+      </span>
+    {{/if}}
+    {{#if banned}}
+      <span class="action banned" role="img" aria-label="Banned" data-tooltip="Banned" tabindex="0">
+        {{> icons/stop}}
+      </span>
+    {{/if}}
+    <a
+      class="button action stats"
+      href="/stats?id={{id}}"
+      aria-label="Stats for {{link.link}}"
+      data-tooltip="Stats"
+    >
+      {{> icons/chart}}
+    </a>
+    <button
       type="button"
-      class="action ban" 
-      aria-label="Ban"
-      data-tooltip="Ban"
-      data-action="open-dialog" data-dialog="admin-table-dialog" 
-      hx-get="/confirm-link-ban" 
-      hx-target="#admin-table-dialog .content-wrapper" 
-      hx-indicator="#admin-table-dialog" 
+      class="action qrcode"
+      aria-label="QR Code for {{link.link}}"
+      data-tooltip="QR Code"
+      data-action="open-qrcode" data-dialog="admin-table-dialog"
+      data-url="{{link.url}}"
+    >
+      {{> icons/qrcode}}
+    </button>
+    <button
+      type="button"
+      class="action edit"
+      aria-label="Edit {{link.link}}"
+      data-tooltip="Edit"
+      aria-expanded="false"
+      hx-trigger="click queue:none"
+      hx-ext="path-params"
+      hx-get="/admin/link/edit/{id}"
+      hx-vals='{"id":"{{id}}"}'
+      hx-swap="beforeend"
+      hx-target="next tr.edit"
+      hx-indicator="next tr.edit"
+      hx-sync="this:drop"
+      data-action="toggle-edit-row"
+    >
+      {{> icons/pencil}}
+    </button>
+    {{#unless banned}}
+      <button
+        type="button"
+        class="action ban"
+        aria-label="Ban {{link.link}}"
+        data-tooltip="Ban"
+        data-action="open-dialog" data-dialog="admin-table-dialog"
+        hx-get="/confirm-link-ban"
+        hx-target="#admin-table-dialog .content-wrapper"
+        hx-indicator="#admin-table-dialog"
+        hx-vals='{"id":"{{id}}"}'
+      >
+        {{> icons/stop}}
+      </button>
+    {{/unless}}
+    <button
+      type="button"
+      class="action delete"
+      aria-label="Delete {{link.link}}"
+      data-tooltip="Delete"
+      data-action="open-dialog" data-dialog="admin-table-dialog"
+      hx-get="/confirm-link-delete"
+      hx-target="#admin-table-dialog .content-wrapper"
+      hx-indicator="#admin-table-dialog"
       hx-vals='{"id":"{{id}}"}'
     >
-      {{> icons/stop}}
+      {{> icons/trash}}
     </button>
-  {{/unless}}
-  <button 
-    type="button"
-    class="action delete" 
-    aria-label="Delete"
-    data-tooltip="Delete"
-    data-action="open-dialog" data-dialog="admin-table-dialog" 
-    hx-get="/confirm-link-delete" 
-    hx-target="#admin-table-dialog .content-wrapper" 
-    hx-indicator="#admin-table-dialog" 
-    hx-vals='{"id":"{{id}}"}'
-  >
-    {{> icons/trash}}
-  </button>
+  </div>
 </td>

@@ -11,3 +11,5 @@ docs/api/static
 *.sqlite-shm
 db/*
 !db/.gitkeep
+.agents/
+skills-lock.json

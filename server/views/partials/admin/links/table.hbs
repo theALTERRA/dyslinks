@@ -1,17 +1,18 @@
-<table 
+<div
+  class="table-card"
   hx-get="/api/links/admin"
-  hx-target="tbody"
-  hx-swap="outerHTML" 
+  hx-target="find tbody"
+  hx-swap="outerHTML"
   hx-select="tbody"
   hx-disinherit="*"
   hx-include=".links-controls"
   hx-params="not total"
   hx-sync="this:replace"
-  hx-select-oob="#total,#category-total" 
+  hx-select-oob="#total,#category-total"
   hx-trigger="
     {{#if onload}}load once,{{/if}}
     reloadMainTable from:body,
-    click delay:100ms from:button.nav, 
+    click delay:100ms from:button.nav,
     input changed delay:500ms from:[name='search'],
     input changed delay:500ms from:[name='user'],
     input changed delay:500ms from:[name='domain'],
@@ -20,10 +21,123 @@
     input changed from:[name='has_domain']"
   data-update-nav="true"
 >
-  {{> admin/links/thead}}
-  {{> admin/links/tbody}}
-  {{> admin/links/tfoot}}
-</table>
+  {{> admin/table_tab title='links'}}
+  <div class="table-toolbar controls links-controls with-filters">
+    <search class="filters" aria-label="Filter admin links">
+      <div>
+        <div class="search-input-wrapper">
+          <input
+            id="search"
+            name="search"
+            type="search"
+            aria-label="Search link"
+            placeholder="Search link..."
+            class="table-input search admin"
+            data-action="search-input"
+            value="{{query.search}}"
+          />
+          <button
+            type="button"
+            aria-label="Clear search"
+            class="clear"
+            data-action="clear-search"
+          >
+            {{> icons/x}}
+          </button>
+        </div>
+        <div class="search-input-wrapper">
+          <input
+            id="search_domain"
+            name="domain"
+            type="search"
+            aria-label="Search domain"
+            placeholder="Search domain..."
+            class="table-input search admin"
+            data-action="search-input"
+            value="{{query.domain}}"
+          />
+          <button
+            type="button"
+            aria-label="Clear domain search"
+            class="clear"
+            data-action="clear-search"
+          >
+            {{> icons/x}}
+          </button>
+        </div>
+        <div class="search-input-wrapper">
+          <input
+            id="search_user"
+            name="user"
+            type="search"
+            aria-label="Search user"
+            placeholder="Search user..."
+            class="table-input search admin"
+            data-action="search-input"
+            value="{{query.user}}"
+          />
+          <button
+            type="button"
+            aria-label="Clear user search"
+            class="clear"
+            data-action="clear-search"
+          >
+            {{> icons/x}}
+          </button>
+        </div>
+      </div>
+      <div>
+        <select
+          id="links-select-banned"
+          name="banned"
+          aria-label="Filter by banned status"
+          class="table-input ban"
+          data-action="reset-table-nav"
+        >
+          <option value="">Banned...</option>
+          <option value="true" {{#ifEquals query.banned 'true'}}selected{{/ifEquals}}>Banned</option>
+          <option value="false" {{#ifEquals query.banned 'false'}}selected{{/ifEquals}}>Not banned</option>
+        </select>
+        <select
+          id="links-select-anonymous"
+          name="anonymous"
+          aria-label="Filter by ownership"
+          class="table-input anonymous"
+          data-action="reset-table-nav"
+        >
+          <option value="">Anonymous...</option>
+          <option value="true" {{#ifEquals query.anonymous 'true'}}selected{{/ifEquals}}>Anonymous</option>
+          <option value="false" {{#ifEquals query.anonymous 'false'}}selected{{/ifEquals}}>User</option>
+        </select>
+        <select
+          id="links-select-domain"
+          name="has_domain"
+          aria-label="Filter by domain presence"
+          class="table-input has_domain"
+          data-action="reset-table-nav"
+        >
+          <option value="">Domain...</option>
+          <option value="true" {{#ifEquals query.has_domain 'true'}}selected{{/ifEquals}}>With domain</option>
+          <option value="false" {{#ifEquals query.has_domain 'false'}}selected{{/ifEquals}}>No domain</option>
+        </select>
+        <input id="total" name="total" type="hidden" value="{{total}}" />
+        <input id="limit" name="limit" type="hidden" value="10" />
+        <input id="skip" name="skip" type="hidden" value="0" />
+      </div>
+    </search>
+    {{> admin/table_nav}}
+  </div>
+  <div class="table-scroll" tabindex="0" role="region" aria-labelledby="admin-table-title">
+    <table class="data-table data-table--admin-links">
+      <caption class="visually-hidden">Recent shortened links</caption>
+      {{> admin/links/thead}}
+      {{> admin/links/tbody}}
+    </table>
+  </div>
+  <div class="table-footer controls links-controls">
+    {{> admin/table_nav}}
+  </div>
+</div>
 <template>
-  <h2 id="admin-table-title" hx-swap-oob="true">Recent shortened links</h2>
+  <h1 id="admin-table-title" hx-swap-oob="true">Recent shortened links</h1>
 </template>

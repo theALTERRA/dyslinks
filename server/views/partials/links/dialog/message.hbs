@@ -1,11 +1,11 @@
 <div class="content">
+  <h1 id="dialog-title" class="visually-hidden">Notice</h1>
   {{#if error}}
-    <p>{{error}}</p>
+    <p role="alert">{{error}}</p>
   {{else}}
-    <p>{{message}}</p>
+    <p role="status">{{message}}</p>
   {{/if}}
   <div class="buttons">
-    <button type="button" data-action="close-dialog">Close</button>
+    <button type="button" data-action="close-dialog" autofocus>Close</button>
   </div>
 </div>
-

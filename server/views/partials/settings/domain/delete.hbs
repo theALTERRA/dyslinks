@@ -1,11 +1,11 @@
 <div class="content">
   {{#if id}}
-    <h2>Delete domain?</h2>
+    <h1 id="dialog-title">Delete domain?</h1>
     <p>
       Are you sure you want to delete the domain &quot;<b>{{address}}</b>&quot;?
     </p>
     <div class="buttons">
-      <button type="button" data-action="close-dialog">Cancel</button>
+      <button type="button" data-action="close-dialog" autofocus>Cancel</button>
       <button
         type="button"
         class="danger confirm"
@@ -22,16 +22,16 @@
       </button>
       {{> icons/spinner}}
     </div>
-    <div id="dialog-error">
+    <div id="dialog-error" role="alert">
       {{#if error}}
         <p class="error">{{error}}</p>
       {{/if}}
     </div>
   {{else}}
-    <h2>Error</h2>
-    <p>{{#if error}}{{error}}{{else}}Could not find the domain.{{/if}}</p>
+    <h1 id="dialog-title">Error</h1>
+    <p role="alert">{{#if error}}{{error}}{{else}}Could not find the domain.{{/if}}</p>
     <div class="buttons">
-      <button type="button" data-action="close-dialog">Close</button>
+      <button type="button" data-action="close-dialog" autofocus>Close</button>
     </div>
   {{/if}}
 </div>

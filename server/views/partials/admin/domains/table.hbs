@@ -1,17 +1,18 @@
-<table 
+<div
+  class="table-card"
   hx-get="/api/domains/admin"
-  hx-target="tbody"
-  hx-swap="outerHTML" 
+  hx-target="find tbody"
+  hx-swap="outerHTML"
   hx-select="tbody"
   hx-disinherit="*"
   hx-include=".domains-controls"
   hx-params="not total"
   hx-sync="this:replace"
-  hx-select-oob="#total,#category-total" 
+  hx-select-oob="#total,#category-total"
   hx-trigger="
     {{#if onload}}load once,{{/if}}
     reloadMainTable from:body,
-    click delay:100ms from:button.nav, 
+    click delay:100ms from:button.nav,
     input changed delay:500ms from:[name='search'],
     input changed delay:500ms from:[name='user'],
     input changed from:[name='banned'],
@@ -20,10 +21,101 @@
     input changed from:[name='shared']"
   data-update-nav="true"
 >
-  {{> admin/domains/thead}}
-  {{> admin/domains/tbody}}
-  {{> admin/domains/tfoot}}
-</table>
+  {{> admin/table_tab title='domains'}}
+  <div class="table-toolbar controls domains-controls with-filters">
+    <search class="filters" aria-label="Filter domains">
+      <div>
+        <div class="search-input-wrapper">
+          <input
+            id="search"
+            name="search"
+            type="search"
+            aria-label="Search domain"
+            placeholder="Search domain..."
+            class="table-input search admin"
+            data-action="search-input"
+            value="{{query.search}}"
+          />
+          <button
+            type="button"
+            aria-label="Clear search"
+            class="clear"
+            data-action="clear-search"
+          >
+            {{> icons/x}}
+          </button>
+        </div>
+        <div class="search-input-wrapper">
+          <input
+            id="search_user"
+            name="user"
+            type="search"
+            aria-label="Search user"
+            placeholder="Search user..."
+            class="table-input search admin"
+            data-action="search-input"
+            value="{{query.user}}"
+          />
+          <button
+            type="button"
+            aria-label="Clear user search"
+            class="clear"
+            data-action="clear-search"
+          >
+            {{> icons/x}}
+          </button>
+        </div>
+        <select id="domains-select-banned" name="banned" aria-label="Filter by banned status" class="table-input ban" data-action="reset-table-nav">
+          <option value="">Banned...</option>
+          <option value="true" {{#ifEquals query.banned 'true'}}selected{{/ifEquals}}>Banned</option>
+          <option value="false" {{#ifEquals query.banned 'false'}}selected{{/ifEquals}}>Not banned</option>
+        </select>
+      </div>
+      <div>
+        <select id="domains-select-links" name="links" aria-label="Filter by links" class="table-input links" data-action="reset-table-nav">
+          <option value="">Links...</option>
+          <option value="true" {{#ifEquals query.links 'true'}}selected{{/ifEquals}}>With links</option>
+          <option value="false" {{#ifEquals query.links 'false'}}selected{{/ifEquals}}>No links</option>
+        </select>
+        <select id="domains-select-owner" name="owner" aria-label="Filter by owner" class="table-input owner" data-action="reset-table-nav">
+          <option value="">Owner...</option>
+          <option value="true" {{#ifEquals query.owner 'true'}}selected{{/ifEquals}}>With owner</option>
+          <option value="false" {{#ifEquals query.owner 'false'}}selected{{/ifEquals}}>No owner</option>
+        </select>
+        <select id="domains-select-shared" name="shared" aria-label="Filter by sharing" class="table-input shared" data-action="reset-table-nav">
+          <option value="">Sharing...</option>
+          <option value="true" {{#ifEquals query.shared 'true'}}selected{{/ifEquals}}>Shared</option>
+          <option value="false" {{#ifEquals query.shared 'false'}}selected{{/ifEquals}}>Private</option>
+        </select>
+        <input id="total" name="total" type="hidden" value="{{total}}" />
+        <input id="limit" name="limit" type="hidden" value="10" />
+        <input id="skip" name="skip" type="hidden" value="0" />
+        <button
+          type="button"
+          class="table primary"
+          data-action="open-dialog" data-dialog="admin-table-dialog"
+          hx-get="/add-domain"
+          hx-target="#admin-table-dialog .content-wrapper"
+          hx-indicator="#admin-table-dialog"
+        >
+          <span>{{> icons/plus}}</span>
+          Add domain
+        </button>
+      </div>
+    </search>
+    {{> admin/table_nav}}
+  </div>
+  <div class="table-scroll" tabindex="0" role="region" aria-labelledby="admin-table-title">
+    <table class="data-table data-table--admin-domains">
+      <caption class="visually-hidden">Recent added domains</caption>
+      {{> admin/domains/thead}}
+      {{> admin/domains/tbody}}
+    </table>
+  </div>
+  <div class="table-footer controls domains-controls">
+    {{> admin/table_nav}}
+  </div>
+</div>
 <template>
-  <h2 id="admin-table-title" hx-swap-oob="true">Recent added domains</h2>
+  <h1 id="admin-table-title" hx-swap-oob="true">Recent added domains</h1>
 </template>

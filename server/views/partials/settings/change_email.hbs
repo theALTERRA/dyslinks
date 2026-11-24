@@ -3,7 +3,7 @@
     Change email
   </h2>
   <p>Enter your password and a new email address to change your email address.</p>
-  <form 
+  <form
     id="change-email"
     hx-post="/api/auth/change-email"
     hx-select="form"
@@ -11,28 +11,35 @@
     hx-sync="this:abort"
   >
     <div class="inputs">
-      <label class="{{#if errors.password}}error{{/if}}">
-        Password:
-        <input 
-          id="password-for-change-email" 
-          name="password" 
-          type="password" 
+      <div class="field {{#if errors.password}}error{{/if}}">
+        <label for="password-for-change-email">Password:</label>
+        <input
+          id="password-for-change-email"
+          name="password"
+          type="password"
+          autocomplete="current-password"
           placeholder="Password..."
+          required
           hx-preserve="true"
+          {{#if errors.password}}aria-invalid="true" aria-describedby="change-email-password-error"{{/if}}
         />
-        {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
-      </label>
-      <label class="{{#if errors.email}}error{{/if}}">
-        New email address:
-        <input 
-          id="email-for-change-email" 
-          name="email" 
-          type="email" 
+        {{#if errors.password}}<p id="change-email-password-error" class="error" role="alert">{{errors.password}}</p>{{/if}}
+      </div>
+      <div class="field {{#if errors.email}}error{{/if}}">
+        <label for="email-for-change-email">New email address:</label>
+        <input
+          id="email-for-change-email"
+          name="email"
+          type="email"
+          inputmode="email"
+          autocomplete="email"
           placeholder="john@example.com"
+          required
           hx-preserve="true"
+          {{#if errors.email}}aria-invalid="true" aria-describedby="change-email-address-error"{{/if}}
         />
-        {{#if errors.email}}<p class="error">{{errors.email}}</p>{{/if}}
-      </label>
+        {{#if errors.email}}<p id="change-email-address-error" class="error" role="alert">{{errors.email}}</p>{{/if}}
+      </div>
     </div>
     <button type="submit" class="primary">
       <span>{{> icons/reload}}</span>
@@ -41,10 +48,10 @@
     </button>
     {{#if error}}
       {{#unless errors}}
-        <p class="error">{{error}}</p>
+        <p class="error" role="alert">{{error}}</p>
       {{/unless}}
     {{else if success}}
-      <p class="success">{{success}}</p>
+      <p class="success" role="status">{{success}}</p>
     {{/if}}
   </form>
 </section>

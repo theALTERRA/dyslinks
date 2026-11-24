@@ -1,7 +1,7 @@
 <header>
   <div class="header-inner">
     <div class="logo-wrapper">
-      <a class="logo nav" href="{{site_url}}/" title="Homepage">
+      <a class="logo nav" href="{{site_url}}/">
         <svg class="logo-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="24" height="24" shape-rendering="crispEdges" aria-hidden="true">
           <rect class="logo-d" x="3" y="3" width="2" height="10"/>
           <rect class="logo-d" x="5" y="3" width="4" height="2"/>
@@ -13,65 +13,66 @@
       </a>
       <ul class="logo-links">
         <li>
-          <a class="nav" href="https://github.com/theALTERRA/dyslinks" target="_blank" rel="noopener noreferrer" title="GitHub">
+          <a class="nav" href="https://github.com/theALTERRA/dyslinks" target="_blank" rel="noopener noreferrer">
             GitHub
           </a>
         </li>
         {{#if report_email}}
           <li>
-            <a class="nav" href="{{site_url}}/report" title="Report abuse">
+            <a class="nav" href="{{site_url}}/report">
               Report
             </a>
           </li>
         {{/if}}
       </ul>
     </div>
-    <nav>
+    <nav aria-label="Primary">
       <ul>
-        <li class="theme-toggle-item">
-          <button
-            type="button"
-            id="theme-toggle"
-            class="theme-toggle"
-            aria-label="Toggle dark mode"
-            title="Toggle dark mode"
-          >
-            {{> icons/sun}}
-            {{> icons/moon}}
-          </button>
-        </li>
-        {{#unless user}}
-          {{#unless login_disabled}}
-            <li>
-              <a class="button primary" href="{{site_url}}/login" title="{{#if disallow_registration}}Log in{{else}}Log in or sign up{{/if}}">
-                {{#if disallow_registration}}Log in{{else}}Log in / Sign up{{/if}}
-              </a>
-            </li>
-          {{/unless}}
-        {{/unless}}
         {{#if user}}
           <li>
-            <a class="button primary" href="{{site_url}}/settings" title="Settings">
-              <span>{{> icons/cog}}</span>
-              Settings
-            </a>
+            <form method="post" action="{{site_url}}/api/auth/logout" class="logout-form">
+              <button type="submit" class="nav">
+                Log out
+              </button>
+            </form>
           </li>
           {{#if isAdmin}}
             <li>
-              <a class="button secondary" href="{{site_url}}/admin" title="Admin">
+              <a class="button secondary" href="{{site_url}}/admin">
                 <span>{{> icons/shield}}</span>
                 Admin
               </a>
             </li>
           {{/if}}
           <li>
-            <form method="post" action="{{site_url}}/api/auth/logout" class="logout-form">
-              <button type="submit" class="nav" title="Log out">
-                Log out
-              </button>
-            </form>
+            <a class="button primary" href="{{site_url}}/settings">
+              <span>{{> icons/cog}}</span>
+              Settings
+            </a>
           </li>
         {{/if}}
+        {{#unless user}}
+          {{#unless login_disabled}}
+            <li>
+              <a class="button primary" href="{{site_url}}/login">
+                {{#if disallow_registration}}Log in{{else}}Log in / Sign up{{/if}}
+              </a>
+            </li>
+          {{/unless}}
+        {{/unless}}
+        <li class="theme-toggle-item">
+          <button
+            type="button"
+            id="theme-toggle"
+            class="theme-toggle"
+            data-tooltip="Switch theme"
+          >
+            {{> icons/sun}}
+            {{> icons/moon}}
+            <span class="visually-hidden theme-label-light">Switch to light mode</span>
+            <span class="visually-hidden theme-label-dark">Switch to dark mode</span>
+          </button>
+        </li>
       </ul>
     </nav>
   </div>

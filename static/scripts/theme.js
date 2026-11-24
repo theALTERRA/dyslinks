@@ -1,11 +1,11 @@
 (function () {
-  var STORAGE_KEY = "dyslinks-theme";
-  var LIGHT_THEME_COLOR = "#fafafa";
-  var DARK_THEME_COLOR = "#09090b";
+  const STORAGE_KEY = "dyslinks-theme";
+  const LIGHT_THEME_COLOR = "#fafafa";
+  const DARK_THEME_COLOR = "#09090b";
 
   function getStoredTheme() {
     try {
-      var stored = window.localStorage.getItem(STORAGE_KEY);
+      const stored = window.localStorage.getItem(STORAGE_KEY);
       if (stored === "dark" || stored === "light") return stored;
     } catch (_) {
       // ignore storage errors (e.g. private browsing)
@@ -20,32 +20,40 @@
     return "light";
   }
 
-  function updateToggleButtons(theme) {
-    var buttons = document.querySelectorAll(".theme-toggle");
-    var label = theme === "dark" ? "Switch to light mode" : "Switch to dark mode";
+  function setStoredTheme(override) {
+    try {
+      if (override === "dark" || override === "light") {
+        window.localStorage.setItem(STORAGE_KEY, override);
+      } else {
+        window.localStorage.removeItem(STORAGE_KEY);
+      }
+    } catch (_) {
+      // ignore storage errors
+    }
+  }
+
+  function updateToggleButtons(resolved) {
+    const buttons = document.querySelectorAll(".theme-toggle");
+    const tooltip = resolved === "dark" ? "Switch to light mode" : "Switch to dark mode";
     buttons.forEach(function (btn) {
-      btn.setAttribute("aria-label", label);
-      btn.setAttribute("title", label);
-      btn.setAttribute("aria-pressed", theme === "dark" ? "true" : "false");
+      btn.setAttribute("data-tooltip", tooltip);
     });
   }
 
-  function applyTheme(theme, persist) {
-    var resolved = theme === "dark" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", resolved);
-    document.documentElement.style.colorScheme = resolved;
+  function syncTheme(override) {
+    const hasOverride = override === "dark" || override === "light";
+    const resolved = hasOverride ? override : getSystemTheme();
 
-    var metaTheme = document.querySelector('meta[name="theme-color"]');
-    if (metaTheme) {
-      metaTheme.setAttribute("content", resolved === "dark" ? DARK_THEME_COLOR : LIGHT_THEME_COLOR);
+    const metaScheme = document.querySelector('meta[name="color-scheme"]');
+    if (metaScheme) {
+      metaScheme.setAttribute("content", hasOverride ? override : "light dark");
     }
 
-    if (persist) {
-      try {
-        window.localStorage.setItem(STORAGE_KEY, resolved);
-      } catch (_) {
-        // ignore storage errors
-      }
+    document.documentElement.setAttribute("data-theme", resolved);
+
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute("content", resolved === "dark" ? DARK_THEME_COLOR : LIGHT_THEME_COLOR);
     }
 
     updateToggleButtons(resolved);
@@ -57,52 +65,61 @@
     }
   }
 
-  // Apply immediately before first paint to avoid FOUC
-  var initialTheme = getStoredTheme() || getSystemTheme();
-  applyTheme(initialTheme, false);
+  function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || getSystemTheme();
+    const target = current === "dark" ? "light" : "dark";
+    const system = getSystemTheme();
+    // Two-state toggle: if toggling back to match system preference, remove override so OS changes are followed again.
+    const nextOverride = target === system ? null : target;
+    setStoredTheme(nextOverride);
+    syncTheme(nextOverride);
+  }
 
-  // Sync toggle button labels once DOM is ready and after any HTMX swap
+  // Apply immediately before first paint to avoid FOUC
+  syncTheme(getStoredTheme());
+
   document.addEventListener("DOMContentLoaded", function () {
-    updateToggleButtons(document.documentElement.getAttribute("data-theme") || initialTheme);
+    updateToggleButtons(document.documentElement.getAttribute("data-theme") || getSystemTheme());
   });
 
   document.addEventListener("htmx:afterSwap", function () {
-    updateToggleButtons(document.documentElement.getAttribute("data-theme") || initialTheme);
+    updateToggleButtons(document.documentElement.getAttribute("data-theme") || getSystemTheme());
   });
 
-  // Event delegation so toggle keeps working even across HTMX body swaps
+  // Event delegation so toggle keeps working across HTMX swaps
   document.addEventListener("click", function (event) {
-    var target = event.target && event.target.closest ? event.target.closest(".theme-toggle") : null;
+    const target = event.target && event.target.closest ? event.target.closest(".theme-toggle") : null;
     if (!target) return;
-    var current = document.documentElement.getAttribute("data-theme") || getSystemTheme();
-    applyTheme(current === "dark" ? "light" : "dark", true);
+    toggleTheme();
   });
 
-  // Follow OS preference changes if the user has not chosen an explicit override
+  // Follow OS preference changes when no explicit override is stored (never retroactively delete stored overrides)
   if (window.matchMedia) {
-    var mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    var onSystemChange = function (e) {
-      if (!getStoredTheme()) {
-        applyTheme(e.matches ? "dark" : "light", false);
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    mediaQuery.addEventListener("change", function () {
+      const stored = getStoredTheme();
+      if (!stored) {
+        syncTheme(null);
       }
-    };
-    if (mediaQuery.addEventListener) {
-      mediaQuery.addEventListener("change", onSystemChange);
-    } else if (mediaQuery.addListener) {
-      mediaQuery.addListener(onSystemChange);
-    }
+    });
   }
+
+  // Sync theme override across tabs
+  window.addEventListener("storage", function (event) {
+    if (event.key === STORAGE_KEY) {
+      syncTheme(getStoredTheme());
+    }
+  });
 
   window.dyslinksTheme = {
     get: function () {
       return document.documentElement.getAttribute("data-theme") || getSystemTheme();
     },
     set: function (theme) {
-      applyTheme(theme, true);
+      const override = theme === "dark" || theme === "light" ? theme : null;
+      setStoredTheme(override);
+      syncTheme(override);
     },
-    toggle: function () {
-      var current = document.documentElement.getAttribute("data-theme") || getSystemTheme();
-      applyTheme(current === "dark" ? "light" : "dark", true);
-    }
+    toggle: toggleTheme,
   };
 })();

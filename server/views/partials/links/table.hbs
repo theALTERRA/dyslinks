@@ -1,25 +1,101 @@
 <section id="main-table-wrapper">
-  <h2>Recent shortened links</h2>
-  <table 
+  <h2 id="links-table-heading">Recent shortened links</h2>
+  <div
+    class="table-card"
     hx-get="/api/links"
-    hx-target="tbody"
-    hx-swap="outerHTML" 
+    hx-target="find tbody"
+    hx-swap="outerHTML"
     hx-select="tbody"
     hx-disinherit="*"
     hx-include=".links-controls"
     hx-params="not total"
     hx-sync="this:replace"
-    hx-select-oob="#total" 
+    hx-select-oob="#total"
     hx-trigger="
-      load once, 
-      reloadMainTable from:body, 
-      click delay:100ms from:button.nav, 
+      load once,
+      reloadMainTable from:body,
+      click delay:100ms from:button.nav,
       input changed delay:500ms from:[name='search']"
     data-update-nav="true"
   >
-    {{> links/thead}}
-    {{> links/tbody}}
-    {{> links/tfoot}}
-  </table>
+    <div class="table-toolbar controls links-controls">
+      <search class="search" aria-label="Filter links">
+        <div class="search-input-wrapper">
+          <input
+            class="table-input search"
+            id="search"
+            name="search"
+            type="search"
+            aria-label="Search links"
+            placeholder="Search links..."
+            data-action="search-input"
+          />
+          <button
+            type="button"
+            aria-label="Clear search"
+            class="clear"
+            data-action="clear-search"
+          >
+            {{> icons/x}}
+          </button>
+        </div>
+        <select
+          id="filter-domain"
+          name="domain"
+          class="table-input domain-filter"
+          aria-label="Filter by domain"
+          data-action="filter-domain"
+        >
+          <option value="">All domains</option>
+          <option value="{{default_domain}}">{{default_domain}}</option>
+          {{#each filter_domains}}
+            <option value="{{this}}">{{this}}</option>
+          {{/each}}
+        </select>
+        <button
+          type="button"
+          id="select-all-links-btn"
+          class="table select-all-btn"
+          data-action="toggle-select-all-links-btn"
+          disabled
+        >
+          Select all
+        </button>
+        <button
+          type="button"
+          id="bulk-delete-links-btn"
+          class="table danger bulk-delete-btn hidden"
+          data-action="open-bulk-delete"
+          hx-indicator="#link-dialog"
+        >
+          <span>{{> icons/trash}}</span>
+          <span class="bulk-delete-label">Delete selected</span>
+        </button>
+        <input id="total" name="total" type="hidden" value="{{total}}" />
+        <input id="limit" name="limit" type="hidden" value="10" />
+        <input id="skip" name="skip" type="hidden" value="0" />
+      </search>
+      {{> links/nav}}
+    </div>
+    <div id="bulk-select-banner" class="bulk-select-banner hidden" role="status" aria-live="polite">
+      <span id="bulk-select-banner-text"></span>
+      <button
+        type="button"
+        id="bulk-select-banner-action"
+        class="link"
+        data-action="select-all-matching"
+      ></button>
+    </div>
+    <div class="table-scroll" tabindex="0" role="region" aria-labelledby="links-table-heading">
+      <table class="data-table data-table--links">
+        <caption class="visually-hidden">Recent shortened links</caption>
+        {{> links/thead}}
+        {{> links/tbody}}
+      </table>
+    </div>
+    <div class="table-footer controls links-controls">
+      {{> links/nav}}
+    </div>
+  </div>
   {{> links/dialog/frame}}
 </section>

@@ -1,35 +1,36 @@
-<form 
+<form
   id="add-domain"
   hx-post="/api/domains"
   hx-sync="this:abort"
   hx-swap="outerHTML"
 >
   <div class="inputs">
-    <label class="{{#if errors.address}}error{{/if}}">
-      Address:
-      <input 
-        id="address" 
-        name="address" 
-        type="text" 
-        placeholder="yoursite.com" 
-        required="true" 
-        hx-preserve="true" 
-
+    <div class="field {{#if errors.address}}error{{/if}}">
+      <label for="address">Address:</label>
+      <input
+        id="address"
+        name="address"
+        type="text"
+        placeholder="yoursite.com"
+        required
+        hx-preserve="true"
+        {{#if errors.address}}aria-invalid="true" aria-describedby="add-domain-err-address"{{/if}}
       />
-      {{#if errors.address}}<p class="error">{{errors.address}}</p>{{/if}}
-    </label>
-    <label class="{{#if errors.homepage}}error{{/if}}">
-      Homepage (Optional):
-      <input 
-        id="homepage" 
-        name="homepage" 
-        placeholder="Homepage URL" 
-        type="text" 
-        hx-preserve="true" 
-
+      {{#if errors.address}}<p id="add-domain-err-address" class="error" role="alert">{{errors.address}}</p>{{/if}}
+    </div>
+    <div class="field {{#if errors.homepage}}error{{/if}}">
+      <label for="homepage">Homepage (Optional):</label>
+      <input
+        id="homepage"
+        name="homepage"
+        placeholder="Homepage URL"
+        type="url"
+        inputmode="url"
+        hx-preserve="true"
+        {{#if errors.homepage}}aria-invalid="true" aria-describedby="add-domain-err-homepage"{{/if}}
       />
-      {{#if errors.homepage}}<p class="error">{{errors.homepage}}</p>{{/if}}
-    </label>
+      {{#if errors.homepage}}<p id="add-domain-err-homepage" class="error" role="alert">{{errors.homepage}}</p>{{/if}}
+    </div>
   </div>
   <p>
     <small>
@@ -48,7 +49,7 @@
   {{> icons/spinner}}
   {{#unless errors}}
     {{#if error}}
-      <p class="error">{{error}}</p>
+      <p class="error" role="alert">{{error}}</p>
     {{/if}}
   {{/unless}}
 </form>

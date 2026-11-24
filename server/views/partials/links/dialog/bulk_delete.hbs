@@ -1,5 +1,5 @@
 <div class="content">
-  <h2>Delete {{#if is_plural}}links{{else}}link{{/if}}?</h2>
+  <h1 id="dialog-title">Delete {{#if is_plural}}links{{else}}link{{/if}}?</h1>
   <p>
     {{#if all}}
       Are you sure you want to delete all <b>{{count_formatted}}</b> {{#if is_plural}}links{{else}}link{{/if}}{{#if domain}} for domain &quot;<b>{{domain}}</b>&quot;{{/if}}{{#if search}} matching &quot;<b>{{search}}</b>&quot;{{/if}}?
@@ -28,7 +28,7 @@
       {{/each}}
     {{/if}}
     <div class="buttons">
-      <button type="button" data-action="close-dialog">Cancel</button>
+      <button type="button" data-action="close-dialog" autofocus>Cancel</button>
       <button type="submit" class="danger confirm">
         <span>{{> icons/trash}}</span>
         Delete{{#if is_plural}} ({{count_formatted}}){{/if}}
@@ -36,7 +36,7 @@
       {{> icons/spinner}}
     </div>
   </form>
-  <div id="dialog-error">
+  <div id="dialog-error" role="alert">
     {{#if error}}
       <p class="error">{{error}}</p>
     {{/if}}

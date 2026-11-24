@@ -1,15 +1,17 @@
 {{> header}}
-<section id="verify" class="section-container verify-page">
-  {{#if token_verified}}
-    <h2 data-redirect="/">
-      Your account has been verified. Redirecting to homepage...
-    </h2>
-  {{else}}
-    <h2>
-      {{> icons/x}}
-      Invalid verification. Please try again.
-    </h2>
-    <a href="/login" title="Log in or sign up">Log in / sign up →</a>
-  {{/if}}
-</section>
+<main id="main-content" class="page-main" tabindex="-1">
+  <section id="verify" class="section-container verify-page">
+    {{#if token_verified}}
+      <h1 data-redirect="/">
+        Your account has been verified. Redirecting to homepage...
+      </h1>
+    {{else}}
+      <h1>
+        {{> icons/x}}
+        Invalid verification. Please try again.
+      </h1>
+      <a href="/login">Log in / sign up →</a>
+    {{/if}}
+  </section>
+</main>
 {{> footer}}

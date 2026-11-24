@@ -1,134 +1,160 @@
-<main>
+<section id="shortener-section" class="shortener" aria-label="URL shortener">
   <div id="shorturl">
     {{#if link}}
       <div class="clipboard">
-        <button 
+        <button
           type="button"
-          aria-label="Copy" 
-          data-action="copy-link" 
+          aria-label="Copy short link"
+          data-action="copy-link"
           data-url="{{url}}"
         >
-        {{> icons/copy}}
+          {{> icons/copy}}
         </button>
         {{> icons/check}}
       </div>
-      <h1 
-        class="link" 
-        data-action="copy-link" 
-        data-url="{{url}}"
-      >
-        {{link}}
+      <h1>
+        <button
+          type="button"
+          class="link-copy-btn"
+          data-action="copy-link"
+          data-url="{{url}}"
+          aria-label="Copy {{link}}"
+        >
+          {{link}}
+        </button>
       </h1>
     {{/if}}
     {{#unless link}}
-        <h1>Cut your links <span>shorter</span>.</h1>
+      <h1>Cut your links <span>shorter</span>.</h1>
     {{/unless}}
   </div>
-  <form 
-    id="shortener-form" 
-    hx-post="/api/links" 
-    hx-trigger="submit queue:none" 
-    hx-target="closest main" 
-    hx-swap="outerHTML" 
-    autocomplete="off"
+  <form
+    id="shortener-form"
+    hx-post="/api/links"
+    hx-trigger="submit queue:none"
+    hx-target="#shortener-section"
+    hx-swap="outerHTML"
+    novalidate
   >
     <div class="target-wrapper {{#if errors.target}}error{{/if}}">
+      <label for="target" class="visually-hidden">Long URL to shorten</label>
       <input
         id="target"
         name="target"
-        type="text"
+        type="url"
+        inputmode="url"
         placeholder="Paste your long URL"
-        aria-label="target"
-        autofocus="true"
+        autofocus
+        required
         data-lpignore="true"
         hx-preserve="true"
+        {{#if errors.target}}aria-invalid="true" aria-describedby="target-error"{{/if}}
       />
-      <button type="submit" class="submit" aria-label="Shorten URL" title="Shorten URL">
+      <button type="submit" class="submit" aria-label="Shorten URL" data-tooltip="Shorten URL">
         {{> icons/send}}
         {{> icons/spinner}}
       </button>
-      {{#if errors.target}}<p class="error">{{errors.target}}</p>{{/if}}
+      {{#if errors.target}}<p id="target-error" class="error" role="alert">{{errors.target}}</p>{{/if}}
       {{#unless errors}}
         {{#if error}}
-          <p class="error">{{error}}</p>
+          <p id="shortener-error" class="error" role="alert">{{error}}</p>
         {{/if}}
       {{/unless}}
     </div>
-    <label id="advanced" class="checkbox">
-      <input 
-        name="show_advanced" 
-        type="checkbox" 
-        data-action="toggle-advanced"
-        {{#if show_advanced}}checked="true"{{/if}}
-      />
-      Show advanced options
-    </label>
-    <section id="advanced-options" class="{{#unless show_advanced}}hidden{{/unless}}">
-      <div class="advanced-input-wrapper">
-        <label class="{{#if errors.domain}}error{{/if}}">
-          Domain:
-          <select 
-            id="domain" 
-            name="domain" 
-            hx-preserve="true" 
-            data-action="update-domain-label"
-          >
-            <option value="{{default_domain}}" {{#unless user_default_domain}}selected{{else}}{{#ifEquals user_default_domain default_domain}}selected{{/ifEquals}}{{/unless}}>{{default_domain}}</option>
-            {{#each shortener_domains}}
-              <option value="{{address}}" {{#ifEquals ../user_default_domain address}}selected{{/ifEquals}}>{{address}}</option>
-            {{/each}}
-          </select>
-          {{#if errors.domain}}<p class="error">{{errors.domain}}</p>{{/if}}
-        </label>
-        <label id="customurl-label" class="{{#if errors.customurl}}error{{/if}}">
-          <span id="customurl-label-value" hx-preserve="true">{{#if user_default_domain}}{{user_default_domain}}{{else}}{{default_domain}}{{/if}}/</span>
-          <input
-            type="text" 
-            id="customurl" 
-            name="customurl" 
-            placeholder="Custom address..." 
-            hx-preserve="true"
-            autocomplete="off" 
-          />
-          {{#if errors.customurl}}<p class="error">{{errors.customurl}}</p>{{/if}}
-        </label>
-        <label class="{{#if errors.password}}error{{/if}}">
-          Password:
-          <input 
-            type="password" 
-            id="password" 
-            name="password" 
-            placeholder="Password..." 
-            hx-preserve="true" 
-            autocomplete="new-password"
-          />
-          {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
-        </label>
+    <input
+      type="hidden"
+      id="show-advanced-input"
+      name="show_advanced"
+      value="{{#if show_advanced}}1{{/if}}"
+    />
+    <details id="advanced-options-details" class="advanced-details" {{#if show_advanced}}open{{/if}}>
+      <summary id="advanced">Show advanced options</summary>
+      <div id="advanced-options">
+        <div class="advanced-input-wrapper">
+          <div class="field {{#if errors.domain}}error{{/if}}">
+            <label for="domain">Domain:</label>
+            <select
+              id="domain"
+              name="domain"
+              hx-preserve="true"
+              data-action="update-domain-label"
+              {{#if errors.domain}}aria-invalid="true" aria-describedby="domain-error"{{/if}}
+            >
+              <option value="{{default_domain}}" {{#unless user_default_domain}}selected{{else}}{{#ifEquals user_default_domain default_domain}}selected{{/ifEquals}}{{/unless}}>{{default_domain}}</option>
+              {{#each shortener_domains}}
+                <option value="{{address}}" {{#ifEquals ../user_default_domain address}}selected{{/ifEquals}}>{{address}}</option>
+              {{/each}}
+            </select>
+            {{#if errors.domain}}<p id="domain-error" class="error" role="alert">{{errors.domain}}</p>{{/if}}
+          </div>
+          <div id="customurl-label" class="field {{#if errors.customurl}}error{{/if}}">
+            <label for="customurl">
+              <span id="customurl-label-value" hx-preserve="true">{{#if user_default_domain}}{{user_default_domain}}{{else}}{{default_domain}}{{/if}}/</span>
+            </label>
+            <input
+              type="text"
+              id="customurl"
+              name="customurl"
+              placeholder="Custom address..."
+              hx-preserve="true"
+              autocomplete="off"
+              {{#if errors.customurl}}aria-invalid="true" aria-describedby="customurl-error"{{/if}}
+            />
+            {{#if errors.customurl}}<p id="customurl-error" class="error" role="alert">{{errors.customurl}}</p>{{/if}}
+          </div>
+          <div class="field {{#if errors.password}}error{{/if}}">
+            <label for="password">Password:</label>
+            <div class="password-input-wrapper">
+              <input
+                type="password"
+                id="password"
+                name="password"
+                placeholder="Password..."
+                hx-preserve="true"
+                autocomplete="new-password"
+                {{#if errors.password}}aria-invalid="true" aria-describedby="password-error"{{/if}}
+              />
+              <button
+                type="button"
+                class="password-toggle"
+                data-action="toggle-password"
+                aria-label="Show password"
+                aria-pressed="false"
+              >
+                <span class="icon-show">{{> icons/eye}}</span>
+                <span class="icon-hide">{{> icons/eye_off}}</span>
+              </button>
+            </div>
+            {{#if errors.password}}<p id="password-error" class="error" role="alert">{{errors.password}}</p>{{/if}}
+          </div>
+        </div>
+        <div class="advanced-input-wrapper">
+          <div class="field expire-in {{#if errors.expire_in}}error{{/if}}">
+            <label for="expire_in">Expire in:</label>
+            <input
+              type="text"
+              id="expire_in"
+              name="expire_in"
+              placeholder="2 minutes/hours/days"
+              hx-preserve="true"
+              {{#if errors.expire_in}}aria-invalid="true" aria-describedby="expire-in-error"{{/if}}
+            />
+            {{#if errors.expire_in}}<p id="expire-in-error" class="error" role="alert">{{errors.expire_in}}</p>{{/if}}
+          </div>
+          <div class="field description {{#if errors.description}}error{{/if}}">
+            <label for="description">Description:</label>
+            <input
+              type="text"
+              id="description"
+              name="description"
+              placeholder="Description..."
+              hx-preserve="true"
+              {{#if errors.description}}aria-invalid="true" aria-describedby="description-error"{{/if}}
+            />
+            {{#if errors.description}}<p id="description-error" class="error" role="alert">{{errors.description}}</p>{{/if}}
+          </div>
+        </div>
       </div>
-      <div class="advanced-input-wrapper">
-        <label class="expire-in {{#if errors.expire_in}}error{{/if}}">
-          Expire in:
-          <input 
-            type="text" 
-            id="expire_in" 
-            name="expire_in" 
-            placeholder="2 minutes/hours/days" 
-            hx-preserve="true" 
-          />
-          {{#if errors.expire_in}}<p class="error">{{errors.expire_in}}</p>{{/if}}
-        </label>
-        <label class="description {{#if errors.description}}error{{/if}}">
-          Description:
-          <input 
-            type="text" 
-            id="description" 
-            name="description" 
-            placeholder="Description..." 
-            hx-preserve="true" 
-          />
-          {{#if errors.description}}<p class="error">{{errors.description}}</p>{{/if}}
-        </label>
-      </div>
-    </section>
+    </details>
   </form>
-</main>
+</section>
