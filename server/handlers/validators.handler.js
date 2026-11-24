@@ -8,7 +8,6 @@ const ms = require("ms");
 const { ROLES } = require("../consts");
 const query = require("../queries");
 const utils = require("../utils");
-const knex = require("../knex");
 const env = require("../env");
 
 const dnsLookup = promisify(dns.lookup);

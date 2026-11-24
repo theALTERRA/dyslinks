@@ -120,9 +120,8 @@ async function removeByAdmin(req, res) {
 };
 
 async function getAdmin(req, res) {
-  const { limit, skip, all } = req.context;
+  const { limit, skip } = req.context;
   const { role, search } = req.query;
-  const userId = req.user.id;
   const verified = utils.parseBooleanQuery(req.query.verified);
   const banned = utils.parseBooleanQuery(req.query.banned);
   const domains = utils.parseBooleanQuery(req.query.domains);

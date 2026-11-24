@@ -5,7 +5,6 @@ const helpers = require("../handlers/helpers.handler");
 const asyncHandler = require("../utils/asyncHandler");
 const locals = require("../handlers/locals.handler");
 const auth = require("../handlers/auth.handler");
-const utils = require("../utils");
 const env = require("../env");
 
 const router = Router();

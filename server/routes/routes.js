@@ -1,6 +1,5 @@
 const { Router } = require("express");
 
-const helpers = require("./../handlers/helpers.handler");
 const locals = require("./../handlers/locals.handler");
 const renders = require("./renders.routes");
 const domains = require("./domain.routes");

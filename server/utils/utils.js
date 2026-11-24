@@ -1,4 +1,4 @@
-const { differenceInDays, differenceInHours, differenceInMonths, differenceInMilliseconds, addDays, subHours, subDays, subMonths, subYears, format } = require("date-fns");
+const { differenceInDays, differenceInHours, differenceInMonths, differenceInMilliseconds, addDays, subHours, subDays, subMonths, format } = require("date-fns");
 const { customAlphabet } = require("nanoid");
 const crypto = require("node:crypto");
 const JWT = require("jsonwebtoken");
@@ -309,7 +309,6 @@ const preservedURLs = [
   "get-report-email",
   "get-support-email",
   "link",
-  "admin",
   "url-password",
   "url-info",
   "api",

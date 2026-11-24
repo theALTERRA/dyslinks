@@ -6,7 +6,6 @@ const express = require("express");
 const session = require("cookie-session");
 const helmet = require("helmet");
 const path = require("node:path");
-const hbs = require("hbs");
 
 const helpers = require("./handlers/helpers.handler");
 const renders = require("./handlers/renders.handler");

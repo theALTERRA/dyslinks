@@ -360,10 +360,6 @@ function clearSearchInput(event) {
   htmx.trigger("body", "reloadMainTable");
 }
 
-function clearSeachInput(event) {
-  return clearSearchInput(event);
-}
-
 // detect if search inputs have value on load to show clear button
 function onSearchInputLoad() {
   ["search", "search_user", "search_domain"].forEach(function (id) {

@@ -333,7 +333,7 @@ async function newPassword(req, res) {
   const { new_password, reset_password_token } = req.body;
 
   const salt = await bcrypt.genSalt(12);
-  const password = await bcrypt.hash(req.body.new_password, salt);
+  const password = await bcrypt.hash(new_password, salt);
   
   const user = await query.user.update(
     {

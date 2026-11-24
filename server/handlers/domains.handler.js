@@ -1,5 +1,3 @@
-const { Handler } = require("express");
-
 const { CustomError, sanitize } = require("../utils");
 const locals = require("./locals.handler");
 const query = require("../queries");

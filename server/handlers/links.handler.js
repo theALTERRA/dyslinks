@@ -189,7 +189,7 @@ async function create(req, res) {
     .send(utils.sanitize.link({ ...link }));
 }
 
-async function edit(req, res) {
+async function editLink(req, res, { template, sanitizeHtml }) {
   const link = await query.link.find({
     uuid: req.params.id,
     ...(!req.user.admin && { user_id: req.user.id })
@@ -254,7 +254,7 @@ async function edit(req, res) {
   }
 
   const { address, target, description, expire_in, password } = req.body;
-  
+
   const targetDomain = target && utils.removeWww(URL.parse(target)?.hostname);
   const domain_id = link.domain_id || null;
 
@@ -272,7 +272,7 @@ async function edit(req, res) {
   if (tasks[0]) {
     const error = "Custom URL is already in use.";
     res.locals.errors = { address: error };
-    throw new CustomError("Custom URL is already in use.", 400);
+    throw new CustomError(error, 400);
   }
 
   // Update link
@@ -300,138 +300,30 @@ async function edit(req, res) {
   }
 
   if (req.isHTML) {
-    res.render("partials/links/edit", {
+    res.render(template, {
       swap_oob: true,
       success: "Link has been updated.",
-      ...utils.sanitize.link_html({ ...updatedLink }),
+      ...sanitizeHtml({ ...updatedLink }),
     });
     return;
   }
 
   return res.status(200).send(utils.sanitize.link({ ...updatedLink }));
-};
+}
 
-async function editAdmin(req, res) {
-  const link = await query.link.find({
-    uuid: req.params.id,
-    ...(!req.user.admin && { user_id: req.user.id })
+function edit(req, res) {
+  return editLink(req, res, {
+    template: "partials/links/edit",
+    sanitizeHtml: utils.sanitize.link_html,
   });
+}
 
-  if (!link) {
-    throw new CustomError("Link was not found.");
-  }
-
-  let isChanged = false;
-  [
-    [req.body.address, "address"],
-    [req.body.target, "target"],
-    [req.body.description, "description"],
-    [req.body.expire_in, "expire_in"],
-    [req.body.password, "password"]
-  ].forEach(([value, name]) => {
-    if (value === undefined) {
-      delete req.body[name];
-      return;
-    }
-    if (value === "" || value === null) {
-      if (name === "password" && link.password) {
-        req.body.password = null;
-        isChanged = true;
-      } else if (name === "description" && link.description) {
-        req.body.description = null;
-        isChanged = true;
-      } else if (
-        name === "expire_in" &&
-        link.expire_in &&
-        differenceInSeconds(utils.parseDatetime(link.expire_in), new Date()) >= 60
-      ) {
-        req.body.expire_in = null;
-        isChanged = true;
-      } else {
-        delete req.body[name];
-      }
-      return;
-    }
-    if (value === link[name] && name !== "password") {
-      delete req.body[name];
-      return;
-    }
-    if (name === "expire_in" && link.expire_in) {
-      if (Math.abs(differenceInSeconds(utils.parseDatetime(value), utils.parseDatetime(link.expire_in))) < 60) {
-        delete req.body.expire_in;
-        return;
-      }
-    }
-    if (name === "password") {
-      if (value && value.replace(/•/ig, "").length === 0) {
-        delete req.body.password;
-        return;
-      }
-    }
-    isChanged = true;
+function editAdmin(req, res) {
+  return editLink(req, res, {
+    template: "partials/admin/links/edit",
+    sanitizeHtml: utils.sanitize.link_admin,
   });
-
-  if (!isChanged) {
-    throw new CustomError("Should at least update one field.");
-  }
-
-  const { address, target, description, expire_in, password } = req.body;
-  
-  const targetDomain = target && utils.removeWww(URL.parse(target)?.hostname);
-  const domain_id = link.domain_id || null;
-
-  const tasks = await Promise.all([
-    address &&
-      query.link.find({
-        address,
-        domain_id
-      }),
-    target && validators.bannedDomain(targetDomain),
-    target && validators.bannedHost(targetDomain)
-  ]);
-
-  // Check if custom link already exists
-  if (tasks[0]) {
-    const error = "Custom URL is already in use.";
-    res.locals.errors = { address: error };
-    throw new CustomError("Custom URL is already in use.", 400);
-  }
-
-  // Update link
-  let updatedLink;
-  try {
-    [updatedLink] = await query.link.update(
-      {
-        id: link.id
-      },
-      {
-        ...(address && { address }),
-        ...((description || description === null) && { description }),
-        ...(target && { target }),
-        ...((expire_in || expire_in === null) && { expire_in }),
-        ...((password || password === null) && { password })
-      }
-    );
-  } catch (err) {
-    if (utils.isUniqueConstraintError(err)) {
-      const error = "Custom URL is already in use.";
-      res.locals.errors = { address: error };
-      throw new CustomError(error, 400);
-    }
-    throw err;
-  }
-
-  if (req.isHTML) {
-    res.render("partials/admin/links/edit", {
-      swap_oob: true,
-      success: "Link has been updated.",
-      ...utils.sanitize.link_admin({ ...updatedLink }),
-    });
-    return;
-  }
-
-  return res.status(200).send(utils.sanitize.link({ ...updatedLink }));
-};
+}
 
 async function remove(req, res) {
   const { error, isRemoved, link } = await query.link.remove({

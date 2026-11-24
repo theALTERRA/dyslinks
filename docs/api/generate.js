@@ -5,7 +5,7 @@ const api = require("./api");
 
 const Template = (output, { api, title, redoc }) =>
 	fs.writeFile(output,
-`<DOCTYPE html>
+`<!DOCTYPE html>
 <html>
 	<head>
 		<meta charset="UTF-8" />

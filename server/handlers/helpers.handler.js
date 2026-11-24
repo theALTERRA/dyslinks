@@ -52,8 +52,6 @@ function verify(req, res, next) {
 }
 
 function parseQuery(req, res, next) {
-  const { admin } = req.user || {};
-
   if (
     typeof req.query.limit !== "undefined" &&
     typeof req.query.limit !== "string"
