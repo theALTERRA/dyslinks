@@ -645,6 +645,7 @@ button.action {
   padding: 6px;
   width: 30px;
   height: 30px;
+  flex-shrink: 0;
   border-radius: var(--radius-md);
   border: 1px solid transparent;
   background: transparent;
@@ -1169,6 +1170,7 @@ table tbody tr:last-child {
 table th,
 table td {
   flex-basis: 0;
+  min-width: 0;
   padding: 0.75rem 0.85rem;
 }
 
@@ -1238,7 +1240,7 @@ table tr.loading-placeholder td {
 }
 
 table select {
-  margin-right: 0.5rem;
+  margin-right: 0;
 }
 
 /* Admin Category Tabs — Segmented Control */
@@ -2233,8 +2235,8 @@ main form label#advanced:hover {
 #main-table-wrapper table .created-at { flex: 2.5 2.5 0; }
 #main-table-wrapper table .short-link { flex: 3.2 3.2 0; }
 #main-table-wrapper.admin-table-wrapper table .short-link { overflow: visible; }
-#main-table-wrapper table .views { flex: 1 1 0; justify-content: flex-end; }
-#main-table-wrapper table .actions { flex: 3 3 0; justify-content: flex-end; overflow: visible; gap: 0.25rem; }
+#main-table-wrapper table .views { flex: 0 0 84px; justify-content: flex-end; }
+#main-table-wrapper table .actions { flex: 0 0 232px; justify-content: flex-end; overflow: visible; gap: 0.25rem; }
 #main-table-wrapper table .actions a.button,
 #main-table-wrapper table .actions button { margin-right: 0; }
 
@@ -2247,26 +2249,26 @@ main form label#advanced:hover {
   font-weight: 500;
 }
 
-#main-table-wrapper table .users-id { flex: 2.5 2.5 0; justify-content: flex-end; }
+#main-table-wrapper table .users-id { flex: 0 0 76px; justify-content: flex-end; }
 #main-table-wrapper table .users-email { flex: 9 9 0; }
 #main-table-wrapper table .users-created-at { flex: 4 4 0; }
 #main-table-wrapper table .users-updated-at { flex: 4 4 0; }
-#main-table-wrapper table .users-verified { flex: 3 3 0; overflow: visible; }
-#main-table-wrapper table .users-role { flex: 2 2 0; overflow: visible; }
-#main-table-wrapper table .users-links-count { flex: 3 3 0; justify-content: flex-end; overflow: visible; }
-#main-table-wrapper table .users-actions { flex: 2.5 2.5 0; }
+#main-table-wrapper table .users-verified { flex: 0 0 136px; overflow: visible; }
+#main-table-wrapper table .users-role { flex: 0 0 92px; overflow: visible; }
+#main-table-wrapper table .users-links-count { flex: 0 0 116px; justify-content: flex-end; overflow: visible; }
+#main-table-wrapper table .users-actions { flex: 0 0 96px; }
 
 #main-table-wrapper table td.users-id { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 13px; color: var(--secondary-text-color); }
 #main-table-wrapper table td.users-created-at,
 #main-table-wrapper table td.users-updated-at { color: var(--text-secondary); font-size: 13.5px; }
 #main-table-wrapper table td.users-links-count { font-variant-numeric: tabular-nums; font-weight: 600; }
 
-#main-table-wrapper table .domains-id { flex: 2 2 0; justify-content: flex-end; }
+#main-table-wrapper table .domains-id { flex: 0 0 76px; justify-content: flex-end; }
 #main-table-wrapper table .domains-address { flex: 6.3 6.3 0; }
 #main-table-wrapper table .domains-homepage { flex: 5 5 0; }
 #main-table-wrapper table .domains-created-at { flex: 3 3 0; }
-#main-table-wrapper table .domains-links-count { flex: 3 3 0; justify-content: flex-end; overflow: visible; }
-#main-table-wrapper table .domains-actions { flex: 3.2 3.2 0; }
+#main-table-wrapper table .domains-links-count { flex: 0 0 116px; justify-content: flex-end; overflow: visible; }
+#main-table-wrapper table .domains-actions { flex: 0 0 132px; }
 
 #main-table-wrapper table td.domains-id { font-variant-numeric: tabular-nums; font-family: var(--font-mono); font-size: 13px; color: var(--secondary-text-color); }
 #main-table-wrapper table td.domains-address { font-weight: 500; }
@@ -2303,7 +2305,12 @@ main form label#advanced:hover {
   color: var(--color-primary);
 }
 
-table .short-link-wrapper { display: flex; align-items: center; }
+table .short-link-wrapper {
+  display: flex;
+  align-items: center;
+  max-width: 100%;
+  overflow: hidden;
+}
 
 #main-table-wrapper table td .description {
   display: flex;
@@ -2402,7 +2409,7 @@ table .short-link-wrapper { display: flex; align-items: center; }
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin-bottom: 0.65rem;
+  margin-bottom: 0.5rem;
 }
 
 #main-table-wrapper table th.filters > div:last-child { margin-bottom: 0; }
@@ -2559,7 +2566,7 @@ table .short-link-wrapper { display: flex; align-items: center; }
    ========================================================================== */
 
 table .search-input-wrapper {
-  margin-right: 0.35rem;
+  margin-right: 0;
 }
 
 input.search.admin {
@@ -3463,6 +3470,16 @@ a.back-to-home {
   #main-table-wrapper tr { padding: 0 0.25rem; }
   #main-table-wrapper th,
   #main-table-wrapper td { padding: 0.7rem; }
+  #main-table-wrapper table .views { flex: 0 0 74px; }
+  #main-table-wrapper table .actions { flex: 0 0 214px; }
+  #main-table-wrapper table .users-id { flex: 0 0 64px; }
+  #main-table-wrapper table .users-verified { flex: 0 0 128px; }
+  #main-table-wrapper table .users-role { flex: 0 0 84px; }
+  #main-table-wrapper table .users-links-count { flex: 0 0 108px; }
+  #main-table-wrapper table .users-actions { flex: 0 0 86px; }
+  #main-table-wrapper table .domains-id { flex: 0 0 64px; }
+  #main-table-wrapper table .domains-links-count { flex: 0 0 108px; }
+  #main-table-wrapper table .domains-actions { flex: 0 0 120px; }
   #main-table-wrapper table td p.description { font-size: 12px; }
   #main-table-wrapper table tr.no-data td { font-size: 14px; }
   #main-table-wrapper.admin-table-wrapper table th.nav { flex-direction: column; align-items: flex-end; gap: 0.5rem; }
