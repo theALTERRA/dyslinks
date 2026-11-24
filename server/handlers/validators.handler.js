@@ -26,7 +26,7 @@ const createLink = [
     next();
   },
   body("target")
-    .exists({ checkNull: true, checkFalsy: true })
+    .exists({ values: "falsy" })
     .withMessage("Target is missing.")
     .isString()
     .trim()
@@ -38,14 +38,14 @@ const createLink = [
     .custom(value => (utils.removeWww(URL.parse(value)?.host) || "").toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage(`${env.DEFAULT_DOMAIN} URLs are not allowed.`),
   body("password")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .custom(checkUser)
     .withMessage("Only users can use this field.")
     .isString()
     .isLength({ min: 3, max: 64 })
     .withMessage("Password length must be between 3 and 64."),
   body("customurl")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .custom(checkUser)
     .withMessage("Only users can use this field.")
     .isString()
@@ -57,19 +57,19 @@ const createLink = [
     .custom(value => !utils.preservedURLs.some(url => url.toLowerCase() === value.toLowerCase()))
     .withMessage("You can't use this custom URL."),
   body("reuse")
-    .optional({ nullable: true })
+    .optional({ values: "null" })
     .custom(checkUser)
     .withMessage("Only users can use this field.")
     .isBoolean()
     .withMessage("Reuse must be boolean."),
   body("description")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .isLength({ min: 1, max: 2040 })
     .withMessage("Description length must be between 1 and 2040."),
   body("expire_in")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .custom(value => {
@@ -85,7 +85,7 @@ const createLink = [
     .withMessage("Expire time should be more than 1 minute.")
     .customSanitizer(value => utils.dateToUTC(addMilliseconds(new Date(), value))),
   body("domain")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .customSanitizer((value, { req }) => {
       req.domainExplicit = true;
       return String(value).trim().toLowerCase() === env.DEFAULT_DOMAIN.toLowerCase() ? null : value;
@@ -108,7 +108,7 @@ const createLink = [
 
 const editLink = [
   body("target")
-    .optional({ checkFalsy: true, nullable: true })
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .isLength({ min: 1, max: 2040 })
@@ -119,12 +119,12 @@ const editLink = [
     .custom(value => (utils.removeWww(URL.parse(value)?.host) || "").toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage(`${env.DEFAULT_DOMAIN} URLs are not allowed.`),
   body("password")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .isString()
     .isLength({ min: 3, max: 64 })
     .withMessage("Password length must be between 3 and 64."),
   body("address")
-    .optional({ checkFalsy: true, nullable: true })
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .isLength({ min: 1, max: 64 })
@@ -134,7 +134,7 @@ const editLink = [
     .custom(value => !utils.preservedURLs.some(url => url.toLowerCase() === value.toLowerCase()))
     .withMessage("You can't use this custom URL."),
   body("expire_in")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .custom(value => {
@@ -150,30 +150,30 @@ const editLink = [
     .withMessage("Expire time should be more than 1 minute.")
     .customSanitizer(value => utils.dateToUTC(addMilliseconds(new Date(), value))),
   body("description")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .isLength({ min: 0, max: 2040 })
     .withMessage("Description length must be between 0 and 2040."),
   param("id", "ID is invalid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 36, max: 36 })
 ];
 
 const redirectProtected = [
   body("password", "Password is invalid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isString()
     .isLength({ min: 3, max: 64 })
     .withMessage("Password length must be between 3 and 64."),
   param("id", "ID is invalid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 36, max: 36 })
 ];
 
 const addDomain = [
   body("address", "Domain is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 3, max: 64 })
     .withMessage("Domain length must be between 3 and 64.")
     .trim()
@@ -191,7 +191,7 @@ const addDomain = [
     })
     .withMessage("You can't add this domain."),
   body("homepage")
-    .optional({ checkFalsy: true, nullable: true })
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .isLength({ min: 1, max: 2040 })
@@ -202,7 +202,7 @@ const addDomain = [
 
 const addDomainAdmin = [
   body("address", "Domain is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 3, max: 64 })
     .withMessage("Domain length must be between 3 and 64.")
     .trim()
@@ -220,7 +220,7 @@ const addDomainAdmin = [
     })
     .withMessage("Domain already exists."),
   body("homepage")
-    .optional({ checkFalsy: true, nullable: true })
+    .optional({ values: "falsy" })
     .isString()
     .trim()
     .isLength({ min: 1, max: 2040 })
@@ -228,61 +228,46 @@ const addDomainAdmin = [
     .custom(value => utils.isSafeUrl(value, { allowCustomProtocols: false }))
     .withMessage("Homepage is not valid."),
   body("banned")
-    .optional({ nullable: true })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
   body("shared")
-    .optional({ nullable: true })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
 ]
 
 const toggleShareDomain = [
   param("id", "ID is invalid.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isNumeric()
 ];
 
 const removeDomain = [
   param("id", "ID is invalid.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isLength({ min: 36, max: 36 })
 ];
 
 const removeDomainAdmin = [
   param("id", "ID is invalid.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isNumeric(),
   queryValidator("links")
-    .optional({ nullable: true })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
 ];
 
 const deleteLink = [
   param("id", "ID is invalid.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isLength({ min: 36, max: 36 })
 ];
 
 const reportLink = [
   body("link", "No link has been provided.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isString()
     .trim()
     .isLength({ min: 1, max: 2040 })
@@ -302,86 +287,61 @@ const reportLink = [
 
 const banLink = [
   param("id", "ID is invalid.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isLength({ min: 36, max: 36 }),
   body("host", '"host" should be a boolean.')
-    .optional({
-      nullable: true
-    })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
   body("user", '"user" should be a boolean.')
-    .optional({
-      nullable: true
-    })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
   body("userLinks", '"userLinks" should be a boolean.')
-    .optional({
-      nullable: true
-    })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
   body("domain", '"domain" should be a boolean.')
-    .optional({
-      nullable: true
-    })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean()
 ];
 
 const banUser = [
   param("id", "ID is invalid.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isNumeric(),
   body("links", '"links" should be a boolean.')
-    .optional({
-      nullable: true
-    })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
   body("domains", '"domains" should be a boolean.')
-    .optional({
-      nullable: true
-    })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean()
 ];
 
 const banDomain = [
   param("id", "ID is invalid.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isNumeric(),
   body("links", '"links" should be a boolean.')
-    .optional({
-      nullable: true
-    })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
   body("user", '"user" should be a boolean.')
-    .optional({
-      nullable: true
-    })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean()
 ];
 
 const createUser = [
   body("password", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .withMessage("Password length must be between 8 and 64."),
   body("email", "Email is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .trim()
     .isLength({ min: 1, max: 255 })
     .withMessage("Email length must be max 255.")
@@ -393,39 +353,36 @@ const createUser = [
     })
     .withMessage("User already exists."),
   body("role", "Role is not valid.")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .trim()
     .isIn([ROLES.USER, ROLES.ADMIN]),
   body("verified")
-    .optional({ nullable: true })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
   body("banned")
-    .optional({ nullable: true })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
   body("verification_email")
-    .optional({ nullable: true })
+    .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
 ];
 
 const getStats = [
   param("id", "ID is invalid.")
-    .exists({
-      checkFalsy: true,
-      checkNull: true
-    })
+    .exists({ values: "falsy" })
     .isLength({ min: 36, max: 36 })
 ];
 
 const signup = [
   body("password", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .withMessage("Password length must be between 8 and 64."),
   body("email", "Email is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .trim()
     .isLength({ min: 0, max: 255 })
     .withMessage("Email length must be max 255.")
@@ -461,11 +418,11 @@ const signupEmailTaken = [
 
 const login = [
   body("password", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .withMessage("Password length must be between 8 and 64."),
   body("email", "Email is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .trim()
     .isLength({ min: 1, max: 255 })
     .withMessage("Email length must be max 255.")
@@ -474,11 +431,11 @@ const login = [
 
 const createAdmin = [
   body("password", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .withMessage("Password length must be between 8 and 64."),
   body("email", "Email is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .trim()
     .isLength({ min: 0, max: 255 })
     .withMessage("Email length must be max 255.")
@@ -487,22 +444,22 @@ const createAdmin = [
 
 const changePassword = [
   body("currentpassword", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .withMessage("Password length must be between 8 and 64."),
   body("newpassword", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .withMessage("Password length must be between 8 and 64.")
 ];
 
 const changeEmail = [
   body("password", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .withMessage("Password length must be between 8 and 64."),
   body("email", "Email address is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .trim()
     .isLength({ min: 1, max: 255 })
     .withMessage("Email length must be max 255.")
@@ -511,7 +468,7 @@ const changeEmail = [
 
 const resetPassword = [
   body("email", "Email is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .trim()
     .isLength({ min: 0, max: 255 })
     .withMessage("Email length must be max 255.")
@@ -520,10 +477,10 @@ const resetPassword = [
 
 const newPassword = [
   body("reset_password_token", "Reset password token is invalid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 36, max: 36 }),
   body("new_password", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .withMessage("Password length must be between 8 and 64."),
   body("repeat_password", "Password is not valid.")
@@ -535,7 +492,7 @@ const newPassword = [
 
 const deleteUser = [
   body("password", "Password is not valid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
     .custom(async (password, { req }) => {
       const isMatch = await bcrypt.compare(password, req.user.password);
@@ -546,7 +503,7 @@ const deleteUser = [
 
 const deleteUserByAdmin = [
   param("id", "ID is invalid.")
-    .exists({ checkFalsy: true, checkNull: true })
+    .exists({ values: "falsy" })
     .isNumeric()
 ];
 
@@ -588,7 +545,7 @@ const setDefaultDomain = [
     next();
   },
   body("domain")
-    .optional({ nullable: true, checkFalsy: true })
+    .optional({ values: "falsy" })
     .isString()
     .withMessage("Domain should be string.")
     .customSanitizer(value => {

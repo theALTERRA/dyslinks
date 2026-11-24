@@ -93,65 +93,88 @@ if (env.OIDC_ENABLED) {
         throw new Error(`Missing required env ${key}`);
       }
     });
-    const { Issuer, Strategy: OIDCStrategy } = await import("openid-client");
-    const issuer = await Issuer.discover(env.OIDC_ISSUER).catch(function (error) {
+
+    const client = await import("openid-client");
+    const { Strategy: OIDCStrategy } = await import("openid-client/passport");
+
+    const issuerUrl = new URL(env.OIDC_ISSUER);
+    const discoveryOptions = !env.isProd && issuerUrl.protocol === "http:"
+      ? { execute: [client.allowInsecureRequests] }
+      : undefined;
+
+    const config = await client
+      .discovery(issuerUrl, env.OIDC_CLIENT_ID, env.OIDC_CLIENT_SECRET, undefined, discoveryOptions)
+      .catch(function (error) {
         error.info = "Failed connecting to OIDC issuer.";
         throw error;
       });
-    const client = new issuer.Client({
-      client_id: env.OIDC_CLIENT_ID,
-      client_secret: env.OIDC_CLIENT_SECRET,
-      redirect_uris: [utils.getSiteURL() + "/login/oidc"],
-      response_types: ["code"]
-    });
-  
-    passport.use(
-      "oidc",
-      new OIDCStrategy(
-        {
-          client,
-          params: {
-            scope: env.OIDC_SCOPE,
-            ...(env.OIDC_PROMPT ? { prompt: env.OIDC_PROMPT } : {})
-          },
-          passReqToCallback: true
-        },
-        async (req, tokenset, userinfo, done) => {
-          try {
-            const rawEmail = userinfo?.[env.OIDC_EMAIL_CLAIM];
-            if (typeof rawEmail !== "string" || !rawEmail.trim()) {
-              return done(null, false, new Error("OIDC email claim is missing."));
-            }
-            if (userinfo?.email_verified === false) {
-              return done(null, false, new Error("OIDC email address is not verified."));
-            }
-            const email = rawEmail.trim();
-            const existingUser = await query.user.find({ email });
-  
-            // Existing user.
-            if (existingUser) return done(null, existingUser);
-  
-            if (env.DISALLOW_REGISTRATION && !env.OIDC_ALLOW_REGISTRATION) {
-              return done(null, false, new Error("Registration is disabled."));
-            }
 
-            // New user.
-            // Generate a random password which is not supposed to be used directly.
-            const salt = await bcrypt.genSalt(12);
-            const password = await bcrypt.hash(utils.generateRandomPassword(), salt);
-            const newUser = await query.user.create({
-              email,
-              password,
-              verified: true,
-            });
-            return done(null, newUser);
-  
-          } catch (err) {
-            return done(err);
+    const strategy = new OIDCStrategy(
+      {
+        name: "oidc",
+        config,
+        scope: env.OIDC_SCOPE,
+        callbackURL: utils.getSiteURL() + "/login/oidc",
+        passReqToCallback: true,
+      },
+      async (req, tokens, done) => {
+        try {
+          const claims = tokens.claims?.() || {};
+          let userinfo = {};
+          if (config.serverMetadata().userinfo_endpoint && tokens.access_token) {
+            userinfo = await client.fetchUserInfo(
+              config,
+              tokens.access_token,
+              claims.sub ?? client.skipSubjectCheck
+            );
           }
+          const profile = { ...claims, ...userinfo };
+
+          const rawEmail = profile?.[env.OIDC_EMAIL_CLAIM];
+          if (typeof rawEmail !== "string" || !rawEmail.trim()) {
+            return done(null, false, new Error("OIDC email claim is missing."));
+          }
+          if (profile?.email_verified === false) {
+            return done(null, false, new Error("OIDC email address is not verified."));
+          }
+          const email = rawEmail.trim();
+          const existingUser = await query.user.find({ email });
+
+          // Existing user.
+          if (existingUser) return done(null, existingUser);
+
+          if (env.DISALLOW_REGISTRATION && !env.OIDC_ALLOW_REGISTRATION) {
+            return done(null, false, new Error("Registration is disabled."));
+          }
+
+          // New user.
+          // Generate a random password which is not supposed to be used directly.
+          const salt = await bcrypt.genSalt(12);
+          const password = await bcrypt.hash(utils.generateRandomPassword(), salt);
+          const newUser = await query.user.create({
+            email,
+            password,
+            verified: true,
+          });
+          return done(null, newUser);
+        } catch (err) {
+          return done(err);
         }
-      )
+      }
     );
+
+    if (env.OIDC_PROMPT) {
+      const origAuthParams = strategy.authorizationRequestParams.bind(strategy);
+      strategy.authorizationRequestParams = (req, options) => {
+        const params = new URLSearchParams(origAuthParams(req, options));
+        if (!params.has("prompt")) {
+          params.set("prompt", env.OIDC_PROMPT);
+        }
+        return params;
+      };
+    }
+
+    passport.use(strategy);
     return true;
   }
 

@@ -44,8 +44,9 @@ function verify(req, res, next) {
   
   res.locals.errors = {};
   errors.forEach(e => {
-    if (res.locals.errors[e.param]) return;
-    res.locals.errors[e.param] = e.msg;
+    const field = e.path ?? e.param;
+    if (!field || res.locals.errors[field]) return;
+    res.locals.errors[field] = e.msg;
   });
 
   throw new CustomError(error, 400);

@@ -116,7 +116,7 @@ function rateLimitBasicAuthRedirect(req, res, next) {
 app.get("/:id", rateLimitBasicAuthRedirect, asyncHandler(links.redirect));
 
 // 404 pages that don't exist
-app.get("*", renders.notFound);
+app.get("/{*splat}", renders.notFound);
 
 // handle errors coming from above routes
 app.use(helpers.error);

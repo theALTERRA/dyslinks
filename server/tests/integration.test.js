@@ -273,3 +273,41 @@ test("password-protected links reject wrong passwords and unlock with the right 
   assert.equal(right.status, 200);
   assert.equal(right.json.target, "https://example.com/secret-doc");
 });
+
+test("Express 5 HTML views, 404 wildcard, express-validator v7 field errors, and date-fns v4 expire_in work", async () => {
+  // HTML page render & Express 5 /{*splat} 404 handler
+  const loginPage = await rawGet("/login", { Host: "localhost:3000", Accept: "text/html" });
+  assert.equal(loginPage.status, 200);
+  assert.match(loginPage.body, /<form/i);
+
+  const notFound = await rawGet("/nonexistent/nested/route", { Host: "localhost:3000", Accept: "text/html" });
+  assert.equal(notFound.status, 404);
+  assert.match(notFound.body, /404/i);
+
+  // express-validator v7 maps e.path into res.locals.errors for HTMX/HTML responses
+  const badHtmlRes = await fetch(`${baseUrl}/api/links`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/html",
+      "hx-request": "true",
+      "x-api-key": apiKey,
+    },
+    body: JSON.stringify({ target: "javascript:alert(1)" }),
+  });
+  const badHtml = await badHtmlRes.text();
+  assert.match(badHtml, /URL is not valid\./);
+
+  // date-fns v4 expire_in handling
+  const expiring = await jsonRequest("/api/links", {
+    method: "POST",
+    headers: { "x-api-key": apiKey },
+    body: {
+      target: "https://example.com/expiring",
+      customurl: "exp-test",
+      expire_in: "2 hours",
+    },
+  });
+  assert.equal(expiring.status, 201);
+  assert.ok(expiring.json.expire_in);
+});
