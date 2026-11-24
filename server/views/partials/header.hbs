@@ -65,9 +65,11 @@
             </li>
           {{/if}}
           <li>
-            <a class="nav" href="{{site_url}}/logout" title="Log out">
-              Log out
-            </a>
+            <form method="post" action="{{site_url}}/api/auth/logout" class="logout-form">
+              <button type="submit" class="nav" title="Log out">
+                Log out
+              </button>
+            </form>
           </li>
         {{/if}}
       </ul>

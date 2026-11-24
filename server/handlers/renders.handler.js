@@ -1,8 +1,17 @@
-const JWT = require("jsonwebtoken");
-
 const query = require("../queries");
 const utils = require("../utils");
 const env = require("../env");
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const NUMERIC_ID_REGEX = /^\d+$/;
+
+function getQueryUUID(req) {
+  return typeof req.query.id === "string" && UUID_REGEX.test(req.query.id) ? req.query.id : null;
+}
+
+function getQueryNumericId(req) {
+  return typeof req.query.id === "string" && NUMERIC_ID_REGEX.test(req.query.id) ? parseInt(req.query.id, 10) : null;
+}
 
 /** 
 *
@@ -47,24 +56,14 @@ async function signup(req, res) {
 }
 
 async function logout(req, res) {
-  const token = req.cookies?.token;
-  if (token) {
-    try {
-      const payload = JWT.verify(token, env.JWT_SECRET, { algorithms: ["HS256"] });
-      if (typeof payload?.sub === "number") {
-        await query.user.update(
-          { id: payload.sub, token_version: payload.ver ?? 0 },
-          {},
-          { increments: ["token_version"] }
-        );
-      }
-    } catch {
-      // ignore invalid/expired token on logout
-    }
+  if (!req.user) {
+    utils.deleteCurrentToken(res);
+    res.redirect("/login");
+    return;
   }
-  utils.deleteCurrentToken(res);
   res.render("logout", {
-    title: "Logging out..."
+    title: "Log out",
+    logged_out: false,
   });
 }
 
@@ -172,10 +171,13 @@ async function terms(req, res) {
 **/
 
 async function confirmLinkDelete(req, res) {
-  const link = await query.link.find({
-    uuid: req.query.id,
-    ...(!req.user.admin && { user_id: req.user.id })
-  });
+  const uuid = getQueryUUID(req);
+  const link = uuid
+    ? await query.link.find({
+        uuid,
+        ...(!req.user.admin && { user_id: req.user.id })
+      })
+    : null;
   if (!link) {
     return res.render("partials/links/dialog/message", {
       layout: false,
@@ -190,10 +192,13 @@ async function confirmLinkDelete(req, res) {
 }
 
 async function confirmLinkBan(req, res) {
-  const link = await query.link.find({
-    uuid: req.query.id,
-    ...(!req.user.admin && { user_id: req.user.id })
-  });
+  const uuid = getQueryUUID(req);
+  const link = uuid
+    ? await query.link.find({
+        uuid,
+        ...(!req.user.admin && { user_id: req.user.id })
+      })
+    : null;
   if (!link) {
     return res.render("partials/links/dialog/message", {
       message: "Could not find the link."
@@ -206,7 +211,8 @@ async function confirmLinkBan(req, res) {
 }
 
 async function confirmUserDelete(req, res) {
-  const user = await query.user.find({ id: req.query.id });
+  const id = getQueryNumericId(req);
+  const user = id !== null ? await query.user.find({ id }) : null;
   if (!user) {
     return res.render("partials/admin/dialog/message", {
       layout: false,
@@ -221,7 +227,8 @@ async function confirmUserDelete(req, res) {
 }
 
 async function confirmUserBan(req, res) {
-  const user = await query.user.find({ id: req.query.id });
+  const id = getQueryNumericId(req);
+  const user = id !== null ? await query.user.find({ id }) : null;
   if (!user) {
     return res.render("partials/admin/dialog/message", {
       layout: false,
@@ -252,10 +259,13 @@ async function addDomainForm(req, res) {
 }
 
 async function confirmDomainDelete(req, res) {
-  const domain = await query.domain.find({
-    uuid: req.query.id,
-    user_id: req.user.id
-  });
+  const uuid = getQueryUUID(req);
+  const domain = uuid
+    ? await query.domain.find({
+        uuid,
+        user_id: req.user.id
+      })
+    : null;
   if (!domain) {
     return res.render("partials/settings/domain/delete", {
       error: "Could not find the domain."
@@ -267,9 +277,8 @@ async function confirmDomainDelete(req, res) {
 }
 
 async function confirmDomainBan(req, res) {
-  const domain = await query.domain.find({
-    id: req.query.id
-  });
+  const id = getQueryNumericId(req);
+  const domain = id !== null ? await query.domain.find({ id }) : null;
   if (!domain) {
     return res.render("partials/admin/dialog/message", {
       layout: false,
@@ -287,9 +296,8 @@ async function confirmDomainBan(req, res) {
 }
 
 async function confirmDomainDeleteAdmin(req, res) {
-  const domain = await query.domain.find({
-    id: req.query.id
-  });
+  const id = getQueryNumericId(req);
+  const domain = id !== null ? await query.domain.find({ id }) : null;
   if (!domain) {
     return res.render("partials/admin/dialog/message", {
       layout: false,
@@ -317,7 +325,6 @@ async function getSupportEmail(req, res) {
   if (!env.CONTACT_EMAIL) {
     throw new utils.CustomError("No support email is available.", 400);
   }
-  await utils.sleep(500);
   res.render("partials/support_email", {
     email: env.CONTACT_EMAIL,
   });

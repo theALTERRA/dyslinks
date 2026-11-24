@@ -5,7 +5,7 @@
       Are you sure you want to delete the domain &quot;<b>{{address}}</b>&quot;?
     </p>
     <div class="buttons">
-      <button type="button" hx-on:click="closeDialog()">Cancel</button>
+      <button type="button" data-action="close-dialog">Cancel</button>
       <button
         type="button"
         class="danger confirm"
@@ -31,7 +31,7 @@
     <h2>Error</h2>
     <p>{{#if error}}{{error}}{{else}}Could not find the domain.{{/if}}</p>
     <div class="buttons">
-      <button type="button" hx-on:click="closeDialog()">Close</button>
+      <button type="button" data-action="close-dialog">Close</button>
     </div>
   {{/if}}
 </div>

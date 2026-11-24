@@ -16,8 +16,19 @@ router.post(
   validators.login,
   asyncHandler(helpers.verify),
   helpers.rateLimit({ window: 60, limit: 5 }),
+  helpers.rateLimit({
+    window: 300,
+    limit: 10,
+    keyFn: (req) => typeof req.body?.email === "string" ? `login-acct:${req.body.email.trim().toLowerCase()}` : null,
+  }),
   asyncHandler(auth.local),
   asyncHandler(auth.login)
+);
+
+router.post(
+  "/logout",
+  helpers.rateLimit({ window: 60, limit: 20 }),
+  asyncHandler(auth.logout)
 );
 
 router.post(
@@ -77,6 +88,11 @@ router.post(
   validators.resetPassword,
   asyncHandler(helpers.verify),
   helpers.rateLimit({ window: 60, limit: 3 }),
+  helpers.rateLimit({
+    window: 300,
+    limit: 5,
+    keyFn: (req) => typeof req.body?.email === "string" ? `reset-acct:${req.body.email.trim().toLowerCase()}` : null,
+  }),
   asyncHandler(auth.resetPassword)
 );
 

@@ -137,8 +137,22 @@ async function sendReportEmail(link) {
   }
 }
 
+async function emailChangedNotice(oldEmail, newEmail) {
+  if (!env.MAIL_ENABLED || !oldEmail) return;
+
+  const safeNewEmail = escapeHtml(newEmail);
+  await transporter.sendMail({
+    from: env.MAIL_FROM || env.MAIL_USER,
+    to: oldEmail,
+    subject: `Your ${env.SITE_NAME} email address was changed`,
+    text: `Your ${env.SITE_NAME} account email address was changed to ${newEmail}. If you did not make this change, contact your administrator immediately.`,
+    html: `<p>Your ${escapeHtml(env.SITE_NAME)} account email address was changed to <strong>${safeNewEmail}</strong>. If you did not make this change, contact your administrator immediately.</p>`
+  });
+}
+
 module.exports = {
   changeEmail,
+  emailChangedNotice,
   verification,
   resetPasswordToken,
   sendReportEmail,

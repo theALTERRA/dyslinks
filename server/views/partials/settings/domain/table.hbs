@@ -25,7 +25,7 @@
             <button 
               type="button"
               class="action delete" 
-              hx-on:click='openDialog("domain-dialog")' 
+              data-action="open-dialog" data-dialog="domain-dialog" 
               hx-get="/confirm-domain-delete" 
               hx-target="#domain-dialog .content-wrapper" 
               hx-indicator="#domain-dialog" 

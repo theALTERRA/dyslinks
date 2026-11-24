@@ -1915,14 +1915,31 @@ header nav ul li a.button {
   font-size: 13px;
 }
 
-header nav ul li a.nav {
+header nav ul li a.nav,
+header nav ul li button.nav {
   padding: 6px 10px;
   border-radius: var(--radius-md);
   font-size: 13.5px;
 }
 
-header nav ul li a.nav:hover {
+header nav ul li form.logout-form {
+  display: inline-flex;
+  margin: 0;
+}
+
+header nav ul li button.nav {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+header nav ul li a.nav:hover,
+header nav ul li button.nav:hover {
   background: var(--surface-muted);
+  color: var(--text-color);
 }
 
 /* ==========================================================================
@@ -3701,7 +3718,8 @@ a.back-to-home {
 @media only screen and (max-width: 640px) {
   header .header-inner { padding: 0 0.75rem; }
   header nav ul { gap: 0.35rem; }
-  header nav ul li a.nav { padding: 5px 7px; font-size: 12.5px; }
+  header nav ul li a.nav,
+  header nav ul li button.nav { padding: 5px 7px; font-size: 12.5px; }
   header nav ul li a.button { padding: 0 9px; font-size: 12.5px; }
 
   table tr.loading-placeholder { justify-content: flex-start; }

@@ -15,7 +15,7 @@
           hx-sync="this:replace"
           hx-indicator="closest table"
           hx-vals='{"user":"{{email}}"}'
-          onclick="setTab(event, 'tab-domains')"
+          data-action="set-tab" data-tab-target="tab-domains"
         >
           {{domains}}
         </a>
@@ -54,7 +54,7 @@
         hx-sync="this:replace"
         hx-vals='{"user":"{{email}}"}'
         hx-indicator="closest table"
-        onclick="setTab(event, 'tab-links')"
+        data-action="set-tab" data-tab-target="tab-links"
       >
         {{links_count}}
       </a>

@@ -20,7 +20,7 @@
       class="action ban" 
       aria-label="Ban domain"
       data-tooltip="Ban"
-      hx-on:click='openDialog("admin-table-dialog")' 
+      data-action="open-dialog" data-dialog="admin-table-dialog" 
       hx-get="/confirm-domain-ban" 
       hx-target="#admin-table-dialog .content-wrapper" 
       hx-indicator="#admin-table-dialog" 
@@ -34,7 +34,7 @@
     class="action delete" 
     aria-label="Delete domain"
     data-tooltip="Delete"
-    hx-on:click='openDialog("admin-table-dialog")' 
+    data-action="open-dialog" data-dialog="admin-table-dialog" 
     hx-get="/confirm-domain-delete-admin" 
     hx-target="#admin-table-dialog .content-wrapper" 
     hx-indicator="#admin-table-dialog" 

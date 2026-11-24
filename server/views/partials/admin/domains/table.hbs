@@ -18,8 +18,7 @@
     input changed from:[name='links'],
     input changed from:[name='owner'],
     input changed from:[name='shared']"
-  hx-on:htmx:after-on-load="updateLinksNav()"
-  hx-on:htmx:after-settle="onSearchInputLoad();"
+  data-update-nav="true"
 >
   {{> admin/domains/thead}}
   {{> admin/domains/tbody}}

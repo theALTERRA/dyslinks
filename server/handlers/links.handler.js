@@ -394,22 +394,27 @@ async function ban(req, res) {
   const domain = utils.removeWww(URL.parse(link.target)?.hostname);
 
   // 3. ban target's domain
-  if (req.body.domain) {
+  if (req.body.domain && domain) {
     tasks.push(query.domain.add({ ...update, address: domain }));
   }
 
   // 4. ban target's host
-  if (req.body.host) {
+  if (req.body.host && domain) {
     const dnsRes = await dnsLookup(domain).catch(() => {
       throw new CustomError("Couldn't fetch DNS info.");
     });
     const host = dnsRes?.address;
-    tasks.push(query.host.add({ ...update, address: host }));
+    if (host) {
+      tasks.push(query.host.add({ ...update, address: host }));
+    }
   }
 
-  // 5. ban link owner
-  if (req.body.user && link.user_id) {
-    tasks.push(query.user.update({ id: link.user_id }, update));
+  // 5. ban link owner (guard against banning self or admin accounts)
+  if (req.body.user && link.user_id && link.user_id !== req.user.id) {
+    const owner = await query.user.find({ id: link.user_id });
+    if (owner && !utils.isAdmin(owner)) {
+      tasks.push(query.user.update({ id: link.user_id }, { ...update, apikey: null }, { increments: ["token_version"] }));
+    }
   }
 
   // 6. ban all of owner's links
@@ -434,6 +439,15 @@ async function ban(req, res) {
 
   return res.status(200).send({ message: "Banned link successfully." });
 };
+
+function getTrustedCountryHeader(req) {
+  if (!env.TRUST_CF_HEADERS) return undefined;
+  const raw = req.get("cf-ipcountry");
+  if (typeof raw !== "string") return undefined;
+  const code = raw.trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code) || code === "XX" || code === "T1") return undefined;
+  return code;
+}
 
 async function redirect(req, res, next) {
   const isPreservedUrl = utils.preservedURLs.some(
@@ -519,7 +533,7 @@ async function redirect(req, res, next) {
                 queue.visit.add({
                   userAgent: req.headers["user-agent"],
                   ip: req.ip,
-                  country: req.get("cf-ipcountry"),
+                  country: getTrustedCountryHeader(req),
                   referrer: req.get("Referrer"),
                   link
                 });
@@ -547,14 +561,18 @@ async function redirect(req, res, next) {
     queue.visit.add({
       userAgent: req.headers["user-agent"],
       ip: req.ip,
-      country: req.get("cf-ipcountry"),
+      country: getTrustedCountryHeader(req),
       referrer: req.get("Referrer"),
       link
     });
   }
 
   // 8. Redirect to target
-  return res.redirect(link.target);
+  let redirectTarget = link.target;
+  try {
+    redirectTarget = new URL(link.target).href;
+  } catch {}
+  return res.redirect(redirectTarget);
 };
 
 async function redirectProtected(req, res) {
@@ -595,7 +613,7 @@ async function redirectProtected(req, res) {
     queue.visit.add({
       userAgent: req.headers["user-agent"],
       ip: req.ip,
-      country: req.get("cf-ipcountry"),
+      country: getTrustedCountryHeader(req),
       referrer: req.get("Referrer"),
       link
     });

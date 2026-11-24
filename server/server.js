@@ -5,6 +5,7 @@ const passport = require("passport");
 const express = require("express");
 const session = require("cookie-session");
 const helmet = require("helmet");
+const crypto = require("node:crypto");
 const path = require("node:path");
 
 const helpers = require("./handlers/helpers.handler");
@@ -39,6 +40,9 @@ if (["true", "t", "yes", "y", "on", "1"].includes(trustProxy)) {
   app.set("trust proxy", env.TRUST_PROXY);
 }
 
+const defaultHostClean = env.DEFAULT_DOMAIN.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+const isLocalDefaultDomain = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(defaultHostClean);
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -51,8 +55,8 @@ app.use(helmet({
       fontSrc: ["'self'"],
       imgSrc: ["'self'", "data:"],
       styleSrc: ["'self'", "'unsafe-inline'"],
-      scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-      upgradeInsecureRequests: null,
+      scriptSrc: ["'self'"],
+      upgradeInsecureRequests: env.isProd && !isLocalDefaultDomain ? [] : null,
     },
   },
   referrerPolicy: { policy: "strict-origin-when-cross-origin" },
@@ -64,9 +68,14 @@ app.use(express.urlencoded({ extended: true, limit: "100kb" }));
 // use cookie sessions only when OIDC is enabled
 // because only OIDC is using it
 if (env.OIDC_ENABLED) {
+  const oidcSessionKey = crypto
+    .createHmac("sha256", env.JWT_SECRET)
+    .update("dyslinks:oidc-session")
+    .digest("hex");
+
   app.use(session({
-    keys: [env.JWT_SECRET],
-    maxAge: 1000 * 60 * 60 * 24 * 7, // expire after seven days
+    keys: [oidcSessionKey],
+    maxAge: 1000 * 60 * 15, // 15 minutes (only needed for OIDC PKCE handshake)
     httpOnly: true,
     secure: env.isProd,
     sameSite: "lax",
@@ -105,7 +114,7 @@ app.use("/api", helpers.verifyOrigin, routes.api);
 const redirectBasicAuthRateLimit = helpers.rateLimit({
   window: 60,
   limit: 10,
-  key: "redirect-protected-basic",
+  key: "protected-link",
 });
 function rateLimitBasicAuthRedirect(req, res, next) {
   if (typeof req.headers.authorization === "string" && /^basic\s+/i.test(req.headers.authorization)) {

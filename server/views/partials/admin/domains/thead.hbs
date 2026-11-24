@@ -10,14 +10,14 @@
             type="text" 
             placeholder="Search domain..." 
             class="table-input search admin" 
-            hx-on:input="onSearchChange(event)" 
+            data-action="search-input" 
             value="{{query.search}}"
           />
           <button 
             type="button" 
             aria-label="Clear search" 
             class="clear" 
-            onclick="clearSearchInput(event)"
+            data-action="clear-search"
           >
             {{> icons/x}}
           </button>
@@ -29,36 +29,36 @@
             type="text" 
             placeholder="Search user..." 
             class="table-input search admin" 
-            hx-on:input="onSearchChange(event)" 
+            data-action="search-input" 
             value="{{query.user}}"
           />
           <button 
             type="button" 
             aria-label="Clear user search"
             class="clear" 
-            onclick="clearSearchInput(event)"
+            data-action="clear-search"
           >
             {{> icons/x}}
           </button>
         </div>
-        <select id="domains-select-banned" name="banned" class="table-input ban" hx-on:change="resetTableNav()">
+        <select id="domains-select-banned" name="banned" class="table-input ban" data-action="reset-table-nav">
           <option value="">Banned...</option>
           <option value="true" {{#ifEquals query.banned 'true'}}selected{{/ifEquals}}>Banned</option>
           <option value="false" {{#ifEquals query.banned 'false'}}selected{{/ifEquals}}>Not banned</option>
         </select>
       </div>
       <div>
-        <select id="domains-select-links" name="links" class="table-input links" hx-on:change="resetTableNav()">
+        <select id="domains-select-links" name="links" class="table-input links" data-action="reset-table-nav">
           <option value="">Links...</option>
           <option value="true" {{#ifEquals query.links 'true'}}selected{{/ifEquals}}>With links</option>
           <option value="false" {{#ifEquals query.links 'false'}}selected{{/ifEquals}}>No links</option>
         </select>
-        <select id="domains-select-owner" name="owner" class="table-input owner" hx-on:change="resetTableNav()">
+        <select id="domains-select-owner" name="owner" class="table-input owner" data-action="reset-table-nav">
           <option value="">Owner...</option>
           <option value="true" {{#ifEquals query.owner 'true'}}selected{{/ifEquals}}>With owner</option>
           <option value="false" {{#ifEquals query.owner 'false'}}selected{{/ifEquals}}>No owner</option>
         </select>
-        <select id="domains-select-shared" name="shared" class="table-input shared" hx-on:change="resetTableNav()">
+        <select id="domains-select-shared" name="shared" class="table-input shared" data-action="reset-table-nav">
           <option value="">Sharing...</option>
           <option value="true" {{#ifEquals query.shared 'true'}}selected{{/ifEquals}}>Shared</option>
           <option value="false" {{#ifEquals query.shared 'false'}}selected{{/ifEquals}}>Private</option>
@@ -69,7 +69,7 @@
         <button 
           type="button"
           class="table primary"
-          hx-on:click='openDialog("admin-table-dialog")' 
+          data-action="open-dialog" data-dialog="admin-table-dialog" 
           hx-get="/add-domain" 
           hx-target="#admin-table-dialog .content-wrapper" 
           hx-indicator="#admin-table-dialog"

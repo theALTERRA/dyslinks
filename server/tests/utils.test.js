@@ -32,11 +32,19 @@ test("isSafeUrl blocks dangerous schemes and private/loopback targets", () => {
     "http://169.254.169.254/latest/meta-data/",
     "http://192.168.1.1/",
     "http://172.16.0.1/",
+    "http://100.64.0.1/",
+    "http://198.18.0.1/",
+    "http://224.0.0.1/",
     "http://[::1]/",
     "http://[fc00::1]/",
     "http://[fe80::1]/",
+    "http://[ff02::1]/",
     "http://[::ffff:127.0.0.1]/",
     "http://example.com/\r\nSet-Cookie: a=b",
+    "ftp://example.com/file",
+    "ms-word:ofe|u|https://evil.example/doc.docx",
+    "smb://evil.example/share",
+    "intent://scan/#Intent;end",
   ];
 
   for (const url of unsafe) {

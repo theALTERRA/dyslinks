@@ -28,14 +28,14 @@
 - **Link Management & Analytics** — Custom slugs, password-protected links, link expiration, descriptions, QR codes, and private visit stats (views, referrers, browsers, OS, country map).
 - **Custom & Shared Domains** — Personal custom domains, admin-shared domains, per-user default domain selection, and an optional lock (`DISALLOW_CUSTOM_DOMAINS`) restricting custom domains to admins.
 - **Auth & API** — Multi-user admin panel, OpenID Connect (OIDC) SSO with PKCE, and REST API keys (`/api/v2`).
-- **Production Hardened** — Safe URL validation (blocks dangerous schemes and private/metadata IPs), Helmet CSP, CSRF Origin checks, rate limiting, JWT revocation (`token_version`), SQLite WAL mode, graceful shutdown, and non-root Docker images.
+- **Production Hardened** — Strict URL scheme allowlist & private-IP/DNS blocking, strict `script-src 'self'` CSP, CSRF Origin checks, `POST` logout, rate limiting, SHA-256 hashed header-only API keys, JWT revocation (`token_version`), SQLite WAL mode, graceful shutdown, and non-root Docker images.
 - **Flexible Storage** — Runs out of the box with SQLite, or scales with PostgreSQL / MariaDB and Redis (caching, rate limiting, and BullMQ visit queue).
 
 ---
 
 ## Quick Start (Docker Compose)
 
-Multi-arch images (`linux/amd64`, `linux/arm64`) are published to `ghcr.io/thealterra/dyslinks:latest` (and semver tags such as `:1.3.0`).
+Multi-arch images (`linux/amd64`, `linux/arm64`) are published to `ghcr.io/thealterra/dyslinks:latest` (and semver tags such as `:1.3.1`).
 
 ### 1. Download `docker-compose.yml` & create `.env`
 
@@ -48,7 +48,7 @@ JWT_SECRET=$(openssl rand -hex 32)
 EOF
 ```
 
-> Copy [`.example.env`](./.example.env) to `.env` for all options. PostgreSQL and MariaDB stacks also require `DB_PASSWORD=...`.
+> Copy [`.example.env`](./.example.env) to `.env` for all options. Redis stacks require `REDIS_PASSWORD=...`, and PostgreSQL/MariaDB stacks also require `DB_PASSWORD=...` (MariaDB optionally supports a separate `DB_ROOT_PASSWORD`).
 
 ### 2. Start Dyslinks
 
@@ -126,6 +126,8 @@ Configured via environment variables or `.env`. Any variable also supports Docke
 | `DISALLOW_REGISTRATION` | Disable public signups | `true` |
 | `DISALLOW_LOGIN_FORM` | Hide email/password login (use with `OIDC_ENABLED=true`) | `false` |
 | `DISALLOW_CUSTOM_DOMAINS` | Restrict adding/using personal custom domains to admins | `false` |
+| `ADMIN_BOOTSTRAP_SECRET` | Optional secret required on `/create-admin` to claim the initial admin account | `""` |
+| `TRUST_CF_HEADERS` | Trust Cloudflare `CF-IPCountry` header for visit analytics | `false` |
 
 <details>
 <summary><strong>Database &amp; Redis</strong></summary>
@@ -163,6 +165,7 @@ https://<DEFAULT_DOMAIN>/login/oidc
 | `OIDC_PROMPT` | Optional OIDC `prompt` parameter (e.g., `login`, `select_account`) | `""` |
 | `OIDC_BUTTON_TEXT` | Login button label | `Log in with OIDC` |
 | `OIDC_ALLOW_REGISTRATION` | Auto-provision new OIDC users even when `DISALLOW_REGISTRATION=true` | `false` |
+| `OIDC_ALLOW_UNVERIFIED_EMAIL` | Allow OIDC login when the IdP does not emit `email_verified: true` (not recommended) | `false` |
 
 </details>
 
@@ -187,6 +190,7 @@ https://<DEFAULT_DOMAIN>/login/oidc
 | --- | --- | --- |
 | `LINK_LENGTH` | Length of randomly generated short slugs | `6` |
 | `LINK_CUSTOM_ALPHABET` | Characters used for generated slugs | `abcdefghk...23456789` |
+| `ALLOWED_CUSTOM_PROTOCOLS` | Comma-separated allowlist of non-HTTP(S) redirect schemes | `mailto:,tel:` |
 | `CUSTOM_DOMAIN_USE_HTTPS` | Generate `https://` short links for custom domains | `false` |
 | `SERVER_IP_ADDRESS` / `SERVER_CNAME_ADDRESS` | DNS instructions displayed on the Settings page (display only) | `""` |
 
@@ -196,7 +200,7 @@ https://<DEFAULT_DOMAIN>/login/oidc
 
 ## REST API & Health Check
 
-Generate an API key under **Settings → API** and pass it in the `X-API-KEY` header:
+Generate an API key under **Settings → API** (shown once at creation and stored SHA-256 hashed) and pass it in the `X-API-KEY` header (query-string keys are not accepted):
 
 ```bash
 curl -X POST https://links.yourdomain.com/api/v2/links \

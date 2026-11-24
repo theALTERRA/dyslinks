@@ -47,6 +47,7 @@ function config(req, res, next) {
   res.locals.oidc_button_text = env.OIDC_BUTTON_TEXT;
   res.locals.mail_enabled = env.MAIL_ENABLED;
   res.locals.report_email = env.REPORT_EMAIL;
+  res.locals.admin_bootstrap_required = !!env.ADMIN_BOOTSTRAP_SECRET;
   res.locals.custom_styles = utils.getCustomCSSFileNames();
   res.locals.app_version = pkg.version;
   next();

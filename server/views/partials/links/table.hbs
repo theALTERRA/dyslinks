@@ -15,7 +15,7 @@
       reloadMainTable from:body, 
       click delay:100ms from:button.nav, 
       input changed delay:500ms from:[name='search']"
-    hx-on:htmx:after-on-load="updateLinksNav()"
+    data-update-nav="true"
   >
     {{> links/thead}}
     {{> links/tbody}}

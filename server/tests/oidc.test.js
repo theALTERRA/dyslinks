@@ -82,10 +82,12 @@ function startMockOIDCProvider() {
           }
 
           const now = Math.floor(Date.now() / 1000);
+          const sub = record.unverified ? "oidc-unverified-456" : "oidc-user-123";
+          const accessToken = record.unverified ? "mock-unverified-token" : "mock-access-token";
           const idToken = signRS256(
             {
               iss: issuer,
-              sub: "oidc-user-123",
+              sub,
               aud: "test-client-id",
               iat: now,
               exp: now + 300,
@@ -98,7 +100,7 @@ function startMockOIDCProvider() {
           res.writeHead(200, { "Content-Type": "application/json" });
           res.end(
             JSON.stringify({
-              access_token: "mock-access-token",
+              access_token: accessToken,
               token_type: "Bearer",
               expires_in: 300,
               id_token: idToken,
@@ -109,6 +111,16 @@ function startMockOIDCProvider() {
       }
 
       if (reqUrl.pathname === "/userinfo") {
+        if (req.headers.authorization === "Bearer mock-unverified-token") {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              sub: "oidc-unverified-456",
+              email: "unverified@example.com",
+            })
+          );
+          return;
+        }
         if (req.headers.authorization !== "Bearer mock-access-token") {
           res.writeHead(401, { "Content-Type": "application/json" });
           res.end(JSON.stringify({ error: "invalid_token" }));
@@ -135,9 +147,9 @@ function startMockOIDCProvider() {
       resolve({
         server,
         issuer,
-        issueCode({ codeChallenge, nonce }) {
+        issueCode({ codeChallenge, nonce, unverified = false }) {
           const code = crypto.randomBytes(16).toString("hex");
-          codes.set(code, { codeChallenge, nonce });
+          codes.set(code, { codeChallenge, nonce, unverified });
           return code;
         },
       });
@@ -275,6 +287,29 @@ test("openid-client v6 end-to-end OIDC PKCE authorization, callback, UserInfo, a
     assert.equal(meRes.status, 200);
     const me = await meRes.json();
     assert.equal(me.email, "oidc-user@example.com");
+
+    // Step 4: Verify fail-closed email_verified (omitted email_verified must be rejected)
+    const initUnverified = await fetch(`${appUrl}/login/oidc`, {
+      redirect: "manual",
+      headers: { Accept: "text/html" },
+    });
+    assert.equal(initUnverified.status, 302);
+    const unvAuthUrl = new URL(initUnverified.headers.get("location"));
+    const unvCookie = initUnverified.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
+    const unvCode = mockIdp.issueCode({
+      codeChallenge: unvAuthUrl.searchParams.get("code_challenge"),
+      nonce: unvAuthUrl.searchParams.get("nonce"),
+      unverified: true,
+    });
+    const unvCbUrl = new URL(`${appUrl}/login/oidc`);
+    unvCbUrl.searchParams.set("code", unvCode);
+    if (unvAuthUrl.searchParams.get("state")) unvCbUrl.searchParams.set("state", unvAuthUrl.searchParams.get("state"));
+
+    const unvCbRes = await fetch(unvCbUrl, {
+      redirect: "manual",
+      headers: { Accept: "application/json", Cookie: unvCookie },
+    });
+    assert.equal(unvCbRes.status, 401);
   } finally {
     appProc.kill("SIGTERM");
     await new Promise((resolve) => {

@@ -44,7 +44,7 @@
           id="create-user-verified" 
           name="verified" 
           type="checkbox"
-          onchange="canSendVerificationEmail();" 
+          data-action="toggle-verification-email" 
           hx-preserve="true"
           checked
         />
@@ -55,7 +55,7 @@
           id="create-user-banned" 
           name="banned"
           type="checkbox"
-          onchange="canSendVerificationEmail();" 
+          data-action="toggle-verification-email" 
           hx-preserve="true"
         />
         Banned
@@ -68,7 +68,7 @@
       </label>
     {{/if}}
     <div class="buttons">
-      <button type="button" hx-on:click="closeDialog()">Cancel</button>
+      <button type="button" data-action="close-dialog">Cancel</button>
       <button type="submit" class="primary">
         <span>{{> icons/new_user}}</span>
         Create

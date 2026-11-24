@@ -7,32 +7,60 @@ const redis = require("../redis");
 const knex = require("../knex");
 const env = require("../env");
 
+const ALLOWED_QUERY_OPERATORS = new Set(["=", "!=", "<", ">", "<=", ">=", "is", "is not"]);
+
+function applyMatchConditions(queryBuilder, match) {
+  Object.entries(match).forEach(([key, value]) => {
+    if (Array.isArray(value)) {
+      if (value.length === 2 && ALLOWED_QUERY_OPERATORS.has(String(value[0]).toLowerCase())) {
+        queryBuilder.andWhere(key, value[0], value[1]);
+      } else {
+        throw new Error(`Invalid query condition for ${key}`);
+      }
+    } else {
+      queryBuilder.andWhere(key, value);
+    }
+  });
+}
+
 async function find(match) {
-  if ((match.id || match.apikey) && env.REDIS_ENABLED) {
-    const key = redis.key.user(match.id || match.apikey);
-    const cachedUser = await redis.safeGetJSON(key);
-    if (cachedUser) return cachedUser;
+  const matchKeys = Object.keys(match);
+  const isPureIdLookup = matchKeys.length === 1 && matchKeys[0] === "id" && match.id !== undefined && match.id !== null;
+  const isPureApiKeyLookup =
+    matchKeys.length === 1 &&
+    matchKeys[0] === "apikey" &&
+    typeof match.apikey === "string" &&
+    match.apikey.length > 0;
+
+  if (env.REDIS_ENABLED && (isPureIdLookup || isPureApiKeyLookup)) {
+    const cacheKey = isPureIdLookup
+      ? redis.key.userById(match.id)
+      : redis.key.userByApiKey(match.apikey);
+    const cachedUser = await redis.safeGetJSON(cacheKey);
+    if (cachedUser) {
+      if (isPureIdLookup && String(cachedUser.id) === String(match.id)) {
+        return cachedUser;
+      }
+      if (isPureApiKeyLookup && utils.timingSafeStringEqual(cachedUser.apikey, match.apikey)) {
+        return cachedUser;
+      }
+    }
   }
 
   const query = knex("users");
-  Object.entries(match).forEach(([key, value]) => {
-    query.andWhere(key, ...(Array.isArray(value) ? value : [value]));
-  });
+  applyMatchConditions(query, match);
 
   const user = await query.first();
-  
+
   if (user && env.REDIS_ENABLED) {
-    if (match.id) {
-      const idKey = redis.key.user(user.id);
-      redis.safeSet(idKey, user, 60 * 15);
+    if (isPureIdLookup) {
+      redis.safeSet(redis.key.userById(user.id), user, 60 * 15);
     }
-  
-    if (match.apikey) {
-      const apikeyKey = redis.key.user(user.apikey);
-      redis.safeSet(apikeyKey, user, 60 * 15);
+    if (isPureApiKeyLookup && user.apikey) {
+      redis.safeSet(redis.key.userByApiKey(user.apikey), user, 60 * 15);
     }
   }
-  
+
   return user;
 }
 
@@ -67,9 +95,7 @@ async function add(params, user) {
 async function update(match, update, methods) {
   const { user, updated_user } = await knex.transaction(async function(trx) {
     const query = trx("users");
-    Object.entries(match).forEach(([key, value]) => {
-      query.andWhere(key, ...(Array.isArray(value) ? value : [value]));
-    });
+    applyMatchConditions(query, match);
 
     const user = await query.select("id", "apikey").first();
     if (!user) return {};
@@ -239,6 +265,8 @@ async function create(params) {
     role: params.role ?? ROLES.USER,
     verified: params.verified ?? false,
     banned: params.banned ?? false,
+    ...(params.oidc_issuer && { oidc_issuer: params.oidc_issuer }),
+    ...(params.oidc_sub && { oidc_sub: params.oidc_sub }),
     ...(shouldGenerateVerification && {
       verification_token: randomUUID(),
       verification_expires: utils.dateToUTC(addMinutes(new Date(), 60)),

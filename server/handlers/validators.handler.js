@@ -42,8 +42,8 @@ const createLink = [
     .custom(checkUser)
     .withMessage("Only users can use this field.")
     .isString()
-    .isLength({ min: 3, max: 64 })
-    .withMessage("Password length must be between 3 and 64."),
+    .isLength({ min: 6, max: 64 })
+    .withMessage("Password length must be between 6 and 64."),
   body("customurl")
     .optional({ values: "falsy" })
     .custom(checkUser)
@@ -121,8 +121,8 @@ const editLink = [
   body("password")
     .optional({ values: "falsy" })
     .isString()
-    .isLength({ min: 3, max: 64 })
-    .withMessage("Password length must be between 3 and 64."),
+    .isLength({ min: 6, max: 64 })
+    .withMessage("Password length must be between 6 and 64."),
   body("address")
     .optional({ values: "falsy" })
     .isString()
@@ -157,7 +157,7 @@ const editLink = [
     .withMessage("Description length must be between 0 and 2040."),
   param("id", "ID is invalid.")
     .exists({ values: "falsy" })
-    .isLength({ min: 36, max: 36 })
+    .isUUID()
 ];
 
 const redirectProtected = [
@@ -168,7 +168,7 @@ const redirectProtected = [
     .withMessage("Password length must be between 3 and 64."),
   param("id", "ID is invalid.")
     .exists({ values: "falsy" })
-    .isLength({ min: 36, max: 36 })
+    .isUUID()
 ];
 
 const addDomain = [
@@ -183,11 +183,13 @@ const addDomain = [
       const parsed = URL.parse(value);
       return utils.removeWww(parsed?.hostname || parsed?.href || value);
     })
+    .custom(value => !utils.isPrivateHostname(value))
+    .withMessage("Domain is not valid.")
     .custom(value => value.toLowerCase() !== env.DEFAULT_DOMAIN.toLowerCase())
     .withMessage("You can't use the default domain.")
     .custom(async value => {
-      const domain = await query.domain.find({ address: value });
-      if (domain?.user_id || domain?.banned || domain?.shared) return Promise.reject();
+      const domain = await query.domain.find({ address: value.toLowerCase() });
+      if (domain) return Promise.reject();
     })
     .withMessage("You can't add this domain."),
   body("homepage")
@@ -246,7 +248,7 @@ const toggleShareDomain = [
 const removeDomain = [
   param("id", "ID is invalid.")
     .exists({ values: "falsy" })
-    .isLength({ min: 36, max: 36 })
+    .isUUID()
 ];
 
 const removeDomainAdmin = [
@@ -262,7 +264,7 @@ const removeDomainAdmin = [
 const deleteLink = [
   param("id", "ID is invalid.")
     .exists({ values: "falsy" })
-    .isLength({ min: 36, max: 36 })
+    .isUUID()
 ];
 
 const reportLink = [
@@ -288,7 +290,7 @@ const reportLink = [
 const banLink = [
   param("id", "ID is invalid.")
     .exists({ values: "falsy" })
-    .isLength({ min: 36, max: 36 }),
+    .isUUID(),
   body("host", '"host" should be a boolean.')
     .optional({ values: "null" })
     .customSanitizer(sanitizeCheckbox)
@@ -373,7 +375,7 @@ const createUser = [
 const getStats = [
   param("id", "ID is invalid.")
     .exists({ values: "falsy" })
-    .isLength({ min: 36, max: 36 })
+    .isUUID()
 ];
 
 const signup = [
@@ -478,7 +480,7 @@ const resetPassword = [
 const newPassword = [
   body("reset_password_token", "Reset password token is invalid.")
     .exists({ values: "falsy" })
-    .isLength({ min: 36, max: 36 }),
+    .isUUID(),
   body("new_password", "Password is not valid.")
     .exists({ values: "falsy" })
     .isLength({ min: 8, max: 64 })
@@ -519,23 +521,30 @@ async function bannedDomain(domain) {
 };
 
 async function bannedHost(domain) {
-  let isBanned;
+  if (!domain) return;
 
+  let records = [];
   try {
-    const dnsRes = await dnsLookup(domain);
-
-    if (!dnsRes || !dnsRes.address) return;
-
-    isBanned = await query.host.find({
-      address: dnsRes.address,
-      banned: true
-    });
-  } catch (error) {
-    isBanned = null;
+    records = await dnsLookup(domain, { all: true });
+  } catch {
+    return;
   }
 
-  if (isBanned) {
-    throw new utils.CustomError("URL is containing malware/scam.", 400);
+  if (!Array.isArray(records) || records.length === 0) return;
+
+  for (const entry of records) {
+    const ip = entry?.address;
+    if (!ip) continue;
+    if (utils.isPrivateHostname(ip)) {
+      throw new utils.CustomError("URL is not valid.", 400);
+    }
+    const isBanned = await query.host.find({
+      address: ip,
+      banned: true
+    });
+    if (isBanned) {
+      throw new utils.CustomError("URL is containing malware/scam.", 400);
+    }
   }
 };
 

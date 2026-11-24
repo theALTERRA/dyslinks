@@ -200,9 +200,12 @@ async function ban(req, res) {
   tasks.push(query.domain.update({ id }, { ...update, shared: false }));
   tasks.push(query.user.clearDefaultDomain(domain.id));
   
-  // 3. ban user
-  if (req.body.user && domain.user_id) {
-    tasks.push(query.user.update({ id: domain.user_id }, update));
+  // 3. ban user (guard against banning self or admin accounts)
+  if (req.body.user && domain.user_id && domain.user_id !== req.user.id) {
+    const owner = await query.user.find({ id: domain.user_id });
+    if (owner && !utils.isAdmin(owner)) {
+      tasks.push(query.user.update({ id: domain.user_id }, { ...update, apikey: null }, { increments: ["token_version"] }));
+    }
   }
   
   // 4. ban links

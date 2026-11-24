@@ -1,8 +1,12 @@
 <tr id="tr-{{id}}" {{#if swap_oob}}hx-swap-oob="true"{{/if}}>
   <td class="original-url right-fade">
-    <a href="{{target}}" target="_blank" rel="noopener noreferrer">
-      {{target}}
-    </a>
+    {{#if is_http_target}}
+      <a href="{{target}}" target="_blank" rel="noopener noreferrer">
+        {{target}}
+      </a>
+    {{else}}
+      <span class="non-http-target">{{target}}</span>
+    {{/if}}
     <p class="description">
       by&nbsp;
       {{~#if user_id~}}
@@ -15,7 +19,7 @@
           hx-sync="this:replace"
           hx-indicator="closest table"
           hx-vals='{"search":"{{email}}"}'
-          onclick="setTab(event, 'tab-users')"
+          data-action="set-tab" data-tab-target="tab-users"
         >
           {{email}}
         </a>
@@ -70,7 +74,7 @@
         <button 
           type="button"
           aria-label="Copy" 
-          hx-on:click="handleShortURLCopyLink(this);"
+          data-action="copy-link"
           data-url="{{link.url}}"
         >
           {{> icons/copy}}

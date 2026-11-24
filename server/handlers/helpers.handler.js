@@ -99,34 +99,54 @@ function verifyOrigin(req, res, next) {
   }
 
   const originHeader = req.headers.origin;
+  const refererHeader = req.headers.referer;
   const secFetchSite = req.headers["sec-fetch-site"];
 
   if (secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
     return next(new CustomError("Forbidden cross-origin request.", 403));
   }
 
+  const trustProxyFn = req.app.get("trust proxy fn");
+  const isTrustedProxy = typeof trustProxyFn === "function" && trustProxyFn(req.socket?.remoteAddress, 0);
+  const forwardedHost = isTrustedProxy ? req.headers["x-forwarded-host"] : null;
+  const defaultDomain = env.DEFAULT_DOMAIN.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  const allowedHosts = new Set(
+    [defaultDomain, forwardedHost, req.headers.host]
+      .filter(Boolean)
+      .flatMap(h => String(h).split(","))
+      .map(h => h.trim().toLowerCase())
+      .filter(Boolean)
+  );
+
   if (originHeader) {
     try {
       const originHost = new URL(originHeader).host.toLowerCase();
-      const trustProxyFn = req.app.get("trust proxy fn");
-      const isTrustedProxy = typeof trustProxyFn === "function" && trustProxyFn(req.socket?.remoteAddress, 0);
-      const forwardedHost = isTrustedProxy ? req.headers["x-forwarded-host"] : null;
-      const allowedHosts = new Set(
-        [req.headers.host, forwardedHost, env.DEFAULT_DOMAIN]
-          .filter(Boolean)
-          .flatMap(h => String(h).split(","))
-          .map(h => h.trim().toLowerCase())
-          .filter(Boolean)
-      );
       if (!allowedHosts.has(originHost)) {
         return next(new CustomError("Forbidden cross-origin request.", 403));
       }
+      return next();
     } catch {
       return next(new CustomError("Forbidden cross-origin request.", 403));
     }
   }
 
-  return next();
+  if (refererHeader) {
+    try {
+      const refererHost = new URL(refererHeader).host.toLowerCase();
+      if (!allowedHosts.has(refererHost)) {
+        return next(new CustomError("Forbidden cross-origin request.", 403));
+      }
+      return next();
+    } catch {
+      return next(new CustomError("Forbidden cross-origin request.", 403));
+    }
+  }
+
+  if (secFetchSite === "same-origin") {
+    return next();
+  }
+
+  return next(new CustomError("Forbidden cross-origin request.", 403));
 }
 
 function rateLimit(params) {
@@ -155,6 +175,10 @@ function rateLimit(params) {
       return params.limit;
     },
     keyGenerator: function(req, res) {
+      if (typeof params.keyFn === "function") {
+        const customKey = params.keyFn(req);
+        if (customKey) return "rl:" + customKey;
+      }
       let routeKey = params.key;
       if (!routeKey) {
         const normalizedBase = (req.baseUrl || "")

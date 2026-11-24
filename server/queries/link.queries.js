@@ -180,7 +180,15 @@ async function find(match) {
   if (match.address && match.domain_id !== undefined && env.REDIS_ENABLED) {
     const key = redis.key.link(match.address, match.domain_id);
     const cachedLink = await redis.safeGetJSON(key);
-    if (cachedLink) return cachedLink;
+    if (cachedLink) {
+      const matchesAll = Object.entries(match).every(([k, v]) => {
+        if (typeof v === "boolean") return Boolean(cachedLink[k]) === v;
+        if (v === null) return cachedLink[k] === null || cachedLink[k] === undefined;
+        return cachedLink[k] === v;
+      });
+      if (matchesAll) return cachedLink;
+      return null;
+    }
   }
   
   const link = await knex("links")

@@ -24,7 +24,8 @@ const key = {
   domain: (address) => `d:${address}`,
   stats: (link_id) => `s:${link_id}`,
   host: (address) => `h:${address}`,
-  user: (idOrKey) => `u:${idOrKey}`
+  userById: (id) => `u:id:${id}`,
+  userByApiKey: (apikeyHash) => `u:apikey:${apikeyHash}`
 };
 
 async function safeGetJSON(cacheKey) {
@@ -109,10 +110,10 @@ const remove = {
     if (!user) return Promise.resolve();
     const tasks = [];
     if (user.id !== undefined && user.id !== null) {
-      tasks.push(safeDel(key.user(user.id)));
+      tasks.push(safeDel(key.userById(user.id)));
     }
     if (user.apikey) {
-      tasks.push(safeDel(key.user(user.apikey)));
+      tasks.push(safeDel(key.userByApiKey(user.apikey)));
     }
     return Promise.all(tasks);
   }

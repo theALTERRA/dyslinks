@@ -2,31 +2,36 @@
   <h2>API</h2>
   <p>
     In addition to this website, you can use the API to create, delete and
-    get shortened URLs. If you're not familiar with API, don't generate the key. 
-    DO NOT share this key on the client side of your website. 
+    get shortened URLs. If you're not familiar with API, don't generate the key.
+    DO NOT share this key on the client side of your website.
     <a href="https://github.com/theALTERRA/dyslinks" title="Documentation" target="_blank" rel="noopener noreferrer">
       Read docs.
     </a>
   </p>
-  {{#if user.apikey}}
+  {{#if new_apikey}}
     <div id="apikey">
       <div class="clipboard small">
-        <button 
+        <button
           type="button"
-          aria-label="Copy" 
-          hx-on:click="handleShortURLCopyLink(this);" 
-          data-url="{{user.apikey}}"
+          aria-label="Copy"
+          data-action="copy-link"
+          data-url="{{new_apikey}}"
         >
-        {{> icons/copy}}
+          {{> icons/copy}}
         </button>
         {{> icons/check}}
       </div>
-      <p 
-        hx-on:click="handleShortURLCopyLink(this);" 
-        data-url="{{user.apikey}}"
-      >
-        {{user.apikey}}
+      <p data-action="copy-link" data-url="{{new_apikey}}">
+        {{new_apikey}}
       </p>
+      <p class="success">Copy this API key now — for security, it will not be shown again.</p>
+      {{#if error}}
+        <p class="error">{{error}}</p>
+      {{/if}}
+    </div>
+  {{else if user.apikey}}
+    <div id="apikey">
+      <p>An API key is active. Regenerating will immediately revoke the previous key.</p>
       {{#if error}}
         <p class="error">{{error}}</p>
       {{/if}}
@@ -36,10 +41,10 @@
       <p class="error">{{error}}</p>
     </div>
   {{/if}}
-  <form 
+  <form
     hx-post="/api/auth/apikey"
-    id="generate-apikey" 
-    hx-target="#apikey-wrapper" 
+    id="generate-apikey"
+    hx-target="#apikey-wrapper"
     hx-swap="outerHTML"
   >
     <button type="submit" class="secondary">

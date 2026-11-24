@@ -586,3 +586,41 @@ window.addEventListener("dyslinks:themechange", function () {
     createCharts();
   }
 });
+
+// Strict-CSP HTMX hooks & delegated stats UI listeners
+document.addEventListener("htmx:configRequest", function (evt) {
+  if (evt.target && evt.target.id === "stats-section") {
+    const params = typeof getQueryParams === "function" ? getQueryParams() : {};
+    const id = params.id || "";
+    evt.detail.path = "/api/links/" + encodeURIComponent(id) + "/stats";
+  }
+});
+
+document.addEventListener("htmx:afterSwap", function (evt) {
+  if (evt.target && evt.target.id === "stats-section") {
+    if (typeof trimText === "function") trimText(".stats-info p", 80);
+    if (typeof formatDateHour === "function") formatDateHour("#stats .last-update-value");
+    createCharts();
+  }
+});
+
+document.addEventListener("click", function (evt) {
+  const btn = evt.target && evt.target.closest ? evt.target.closest("[data-action='stats-period']") : null;
+  if (btn) {
+    changeStatsPeriod({ currentTarget: btn, target: evt.target });
+  }
+});
+
+document.addEventListener("mousemove", function (evt) {
+  if (evt.target && evt.target.closest && evt.target.closest("svg.map")) {
+    mapTooltipHoverOver(evt);
+  } else if (activeMapPath) {
+    mapTooltipHoverOut();
+  }
+});
+
+document.addEventListener("pointerdown", function (evt) {
+  if (evt.target && evt.target.closest && evt.target.closest("svg.map")) {
+    mapTooltipHoverOver(evt);
+  }
+});

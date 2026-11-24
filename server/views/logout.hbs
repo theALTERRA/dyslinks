@@ -1,11 +1,23 @@
 {{> auth/header}}
 <section class="auth-page">
   {{> auth/brand}}
-  <div class="login-signup-message" data-redirect="/">
-    <h1>
-      Logged out. Redirecting to homepage...
-    </h1>
-    <script>if (!window.__dyslinksRedirecting) { window.__dyslinksRedirecting = true; setTimeout(function () { window.location.replace("/"); }, 1000); }</script>
-  </div>
+  {{#if logged_out}}
+    <div class="login-signup-message" data-redirect="/">
+      <h1>
+        Logged out. Redirecting to homepage...
+      </h1>
+    </div>
+  {{else}}
+    <div class="login-signup-message">
+      <h1>
+        Log out of {{site_name}}?
+      </h1>
+      <form method="post" action="{{site_url}}/api/auth/logout">
+        <button type="submit" class="primary">
+          Log out
+        </button>
+      </form>
+    </div>
+  {{/if}}
 </section>
 {{> footer}}

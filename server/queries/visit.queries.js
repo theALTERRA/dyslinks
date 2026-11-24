@@ -5,9 +5,11 @@ const redis = require("../redis");
 const knex = require("../knex");
 const env = require("../env");
 
+const MAX_REFERRER_KEYS = 200;
+
 async function add(params) {
-  const rawCountry = String(params.country || "unknown").toLowerCase();
-  const rawReferrer = String(params.referrer || "direct").toLowerCase();
+  const rawCountry = String(params.country || "unknown").toLowerCase().slice(0, 16);
+  const rawReferrer = String(params.referrer || "direct").toLowerCase().slice(0, 128);
   const data = {
     ...params,
     country: utils.isUnsafeObjectKey(rawCountry) ? "unknown" : rawCountry,
@@ -35,8 +37,13 @@ async function add(params) {
     if (visit) {
       const countries = typeof visit.countries === "string" ? JSON.parse(visit.countries) : (visit.countries || {});
       const referrers = typeof visit.referrers === "string" ? JSON.parse(visit.referrers) : (visit.referrers || {});
+      const referrerKey =
+        Object.prototype.hasOwnProperty.call(referrers, data.referrer) ||
+        Object.keys(referrers).length < MAX_REFERRER_KEYS
+          ? data.referrer
+          : "other";
       const currentCountryCount = Object.prototype.hasOwnProperty.call(countries, data.country) ? countries[data.country] : 0;
-      const currentReferrerCount = Object.prototype.hasOwnProperty.call(referrers, data.referrer) ? referrers[data.referrer] : 0;
+      const currentReferrerCount = Object.prototype.hasOwnProperty.call(referrers, referrerKey) ? referrers[referrerKey] : 0;
       await trx("visits")
         .where({ id: visit.id })
         .increment(`br_${data.browser}`, 1)
@@ -50,7 +57,7 @@ async function add(params) {
           }),
           referrers: JSON.stringify({
             ...referrers,
-            [data.referrer]: (currentReferrerCount ?? 0) + 1
+            [referrerKey]: (currentReferrerCount ?? 0) + 1
           })
         });
     } else {

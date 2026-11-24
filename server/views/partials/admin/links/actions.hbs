@@ -22,7 +22,7 @@
     class="action qrcode"
     aria-label="QR Code"
     data-tooltip="QR Code"
-    hx-on:click="handleQRCode(this, 'admin-table-dialog')"
+    data-action="open-qrcode" data-dialog="admin-table-dialog"
     data-url="{{link.url}}"
   >
     {{> icons/qrcode}}
@@ -40,15 +40,7 @@
     hx-target="next tr.edit"
     hx-indicator="next tr.edit"
     hx-sync="this:drop"
-    hx-on::before-request="
-      const tr = event.detail.target;
-      tr.classList.add('show');
-      if (tr.querySelector('.content')) {
-        event.preventDefault();
-        tr.classList.remove('show');
-        tr.removeChild(tr.querySelector('.content'));
-      }
-    "
+    data-action="toggle-edit-row"
   >
     {{> icons/pencil}}
   </button>
@@ -58,7 +50,7 @@
       class="action ban" 
       aria-label="Ban"
       data-tooltip="Ban"
-      hx-on:click='openDialog("admin-table-dialog")' 
+      data-action="open-dialog" data-dialog="admin-table-dialog" 
       hx-get="/confirm-link-ban" 
       hx-target="#admin-table-dialog .content-wrapper" 
       hx-indicator="#admin-table-dialog" 
@@ -72,7 +64,7 @@
     class="action delete" 
     aria-label="Delete"
     data-tooltip="Delete"
-    hx-on:click='openDialog("admin-table-dialog")' 
+    data-action="open-dialog" data-dialog="admin-table-dialog" 
     hx-get="/confirm-link-delete" 
     hx-target="#admin-table-dialog .content-wrapper" 
     hx-indicator="#admin-table-dialog" 

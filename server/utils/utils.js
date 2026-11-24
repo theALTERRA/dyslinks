@@ -26,35 +26,46 @@ class CustomError extends Error {
 
 const urlRegex = /^(?:(?:(?:https?|ftp):)?\/\/)(?:\S+(?::\S*)?@)?(?:(?!(?:10|127)(?:\.\d{1,3}){3})(?!(?:169\.254|192\.168)(?:\.\d{1,3}){2})(?!172\.(?:1[6-9]|2\d|3[0-1])(?:\.\d{1,3}){2})(?:[1-9]\d?|1\d\d|2[01]\d|22[0-3])(?:\.(?:1?\d{1,2}|2[0-4]\d|25[0-5])){2}(?:\.(?:[1-9]\d?|1\d\d|2[0-4]\d|25[0-4]))|(?:(?:[a-z0-9\u00a1-\uffff][a-z0-9\u00a1-\uffff_-]{0,62})?[a-z0-9\u00a1-\uffff]\.)+(?:[a-z\u00a1-\uffff]{2,}\.?))(?::\d{2,5})?(?:[/?#]\S*)?$/i;
 
-const BLOCKED_URL_PROTOCOLS = new Set([
-  "javascript:",
-  "data:",
-  "vbscript:",
-  "file:",
-  "blob:",
-  "about:",
-  "filesystem:",
-  "jar:",
-  "livescript:",
-  "mocha:",
-  "view-source:",
-  "chrome:",
-  "edge:",
-  "moz-extension:",
-  "chrome-extension:",
-  // OS protocol handlers abused for drive-by code execution / phishing
-  "ms-msdt:",
-  "search-ms:",
-  "search:",
-  "ms-officecmd:",
-  "ms-cxh:",
-  "ms-cxh-full:",
-]);
+const ALLOWED_CUSTOM_PROTOCOLS = new Set(
+  String(env.ALLOWED_CUSTOM_PROTOCOLS || "")
+    .split(",")
+    .map(p => p.trim().toLowerCase())
+    .filter(Boolean)
+    .map(p => (p.endsWith(":") ? p : `${p}:`))
+    .filter(p => /^[a-z][a-z0-9+.-]*:$/.test(p))
+    .filter(p => !["javascript:", "data:", "vbscript:", "file:", "blob:", "about:", "filesystem:"].includes(p))
+);
 
 const UNSAFE_OBJECT_KEYS = new Set(["__proto__", "constructor", "prototype"]);
 
 function isUnsafeObjectKey(key) {
   return typeof key !== "string" || UNSAFE_OBJECT_KEYS.has(key);
+}
+
+function hashApiKey(rawKey) {
+  return "sha256:" + crypto.createHash("sha256").update(String(rawKey)).digest("hex");
+}
+
+function isHashedApiKey(value) {
+  return typeof value === "string" && /^sha256:[a-f0-9]{64}$/.test(value);
+}
+
+function timingSafeStringEqual(a, b) {
+  if (typeof a !== "string" || typeof b !== "string") return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
+function isHttpUrl(value) {
+  if (typeof value !== "string") return false;
+  try {
+    const { protocol } = new URL(value);
+    return protocol === "http:" || protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
 function isUniqueConstraintError(err) {
@@ -81,14 +92,20 @@ function escapeHtml(str) {
 }
 
 function isPrivateIPv4(host) {
-  const [a, b] = host.split(".").map(Number);
+  const [a, b, c] = host.split(".").map(Number);
   return (
     a === 0 ||
     a === 10 ||
+    (a === 100 && b >= 64 && b <= 127) || // CGNAT / Tailscale (100.64.0.0/10)
     a === 127 ||
     (a === 169 && b === 254) ||
     (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168)
+    (a === 192 && b === 0 && (c === 0 || c === 2)) || // IETF / TEST-NET-1
+    (a === 192 && b === 168) ||
+    (a === 198 && (b === 18 || b === 19)) || // Benchmarking (198.18.0.0/15)
+    (a === 198 && b === 51 && c === 100) || // TEST-NET-2
+    (a === 203 && b === 0 && c === 113) || // TEST-NET-3
+    a >= 224 // Multicast & reserved/broadcast
   );
 }
 
@@ -106,6 +123,7 @@ function isPrivateHostname(hostname) {
     if (host === "::" || host === "::1") return true;
     if (/^f[cd][0-9a-f]{0,2}:/.test(host)) return true; // fc00::/7 unique local
     if (/^fe[89ab][0-9a-f]?:/.test(host)) return true;  // fe80::/10 link local
+    if (/^ff[0-9a-f]{2}:/.test(host)) return true; // ff00::/8 multicast
     const mapped = host.match(/^::ffff:(?:(\d+\.\d+\.\d+\.\d+)|([0-9a-f]{1,4}):([0-9a-f]{1,4}))$/);
     if (mapped) {
       const v4 = mapped[1] || [
@@ -132,18 +150,16 @@ function isSafeUrl(value, { allowCustomProtocols = false } = {}) {
   }
 
   const protocol = parsed.protocol.toLowerCase();
-  if (BLOCKED_URL_PROTOCOLS.has(protocol)) return false;
 
-  if (protocol === "http:" || protocol === "https:" || protocol === "ftp:") {
-    if (!allowCustomProtocols && protocol === "ftp:") return false;
+  if (protocol === "http:" || protocol === "https:") {
     if (isPrivateHostname(parsed.hostname)) return false;
     return urlRegex.test(value);
   }
 
   if (!allowCustomProtocols) return false;
 
-  // Allow safe non-web app protocols (e.g., mailto:, tel:, tg://) without dangerous schemes
-  return /^[a-z][a-z0-9+.-]*:$/i.test(protocol);
+  // Strict allowlist for non-web schemes (default: mailto:, tel:)
+  return ALLOWED_CUSTOM_PROTOCOLS.has(protocol);
 }
 
 const charsNeedEscapeInRegExp = ".$*+?()[]{}|^-";
@@ -436,6 +452,7 @@ const sanitize = {
       relative_expire_in: expireDiffMs !== null && expireDiffMs > 0 ? ms(expireDiffMs, { long: true }) : null,
       edit_expire_in: expireDiffMs !== null && expireDiffMs >= 60_000 ? ms(expireDiffMs, { long: true }) : "",
       password: !!link.password,
+      is_http_target: isHttpUrl(link.target),
       visit_count: link.visit_count.toLocaleString("en-US"),
       link: getShortURL(link.address, link.domain),
     }
@@ -453,6 +470,7 @@ const sanitize = {
       relative_expire_in: expireDiffMs !== null && expireDiffMs > 0 ? ms(expireDiffMs, { long: true }) : null,
       edit_expire_in: expireDiffMs !== null && expireDiffMs >= 60_000 ? ms(expireDiffMs, { long: true }) : "",
       password: !!link.password,
+      is_http_target: isHttpUrl(link.target),
       visit_count: link.visit_count.toLocaleString("en-US"),
       link: getShortURL(link.address, link.domain)
     }
@@ -602,7 +620,11 @@ module.exports = {
   getStatsPeriods,
   getUseragentBrowser,
   getUseragentOS,
+  hashApiKey,
   isAdmin,
+  isHashedApiKey,
+  isHttpUrl,
+  isPrivateHostname,
   isSafeUrl,
   isUniqueConstraintError,
   isUnsafeObjectKey,
@@ -617,6 +639,7 @@ module.exports = {
   signToken,
   sleep,
   statsObjectToArray,
+  timingSafeStringEqual,
   urlRegex,
   ...knexUtils,
 }

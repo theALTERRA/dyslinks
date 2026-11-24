@@ -39,6 +39,8 @@ async function createUserTable(knex) {
         .integer("token_version")
         .notNullable()
         .defaultTo(0);
+      table.string("oidc_issuer");
+      table.string("oidc_sub");
       table.timestamps(false, true);
     });
   }

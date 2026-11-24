@@ -13,7 +13,7 @@ async function get(req, res) {
   const domains = await query.domain.getForUser(req.user.id, { includeOwn: canUseOwn });
 
   const data = {
-    apikey: req.user.apikey,
+    has_apikey: !!req.user.apikey,
     email: req.user.email,
     default_domain: locals.resolveUserDefaultDomain(req.user, domains),
     domains: domains.map(utils.sanitize.domain)
@@ -178,14 +178,18 @@ async function ban(req, res) {
     throw new utils.CustomError("You cannot ban your own account.", 400);
   }
 
+  if (utils.isAdmin(user)) {
+    throw new CustomError("You cannot ban an admin account.", 400);
+  }
+
   if (user.banned) {
     throw new CustomError("User has been banned already.", 400);
   }
 
   const tasks = [];
 
-  // 2. ban user
-  tasks.push(query.user.update({ id }, update));
+  // 2. ban user (invalidate active sessions and revoke API key)
+  tasks.push(query.user.update({ id }, { ...update, apikey: null }, { increments: ["token_version"] }));
   
   // 3. ban user links
   if (req.body.links) {

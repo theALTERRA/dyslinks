@@ -6,9 +6,13 @@ document.body.addEventListener("htmx:configRequest", function(evt) {
   evt.detail.headers["Accept"] = "text/html,*/*";
 });
 
-// redirect to homepage
+// redirect to homepage (restricted to safe relative same-origin paths)
+function isSafeRedirectPath(destination) {
+  return typeof destination === "string" && destination.startsWith("/") && !destination.startsWith("//");
+}
+
 function schedulePageRedirect(destination, delay) {
-  if (window.__dyslinksRedirecting || !destination) return;
+  if (window.__dyslinksRedirecting || !isSafeRedirectPath(destination)) return;
   window.__dyslinksRedirecting = true;
   setTimeout(() => {
     window.location.replace(destination);
@@ -387,6 +391,102 @@ document.body.addEventListener("htmx:afterSettle", function() {
   onSearchInputLoad();
   updateLinksNav();
   scheduleRedirects(document);
+});
+
+document.body.addEventListener("htmx:afterOnLoad", function(evt) {
+  if (evt.target && evt.target.matches && evt.target.matches("[data-update-nav]")) {
+    updateLinksNav();
+  }
+});
+
+document.body.addEventListener("htmx:beforeRequest", function(evt) {
+  const target = evt.target;
+  if (!target || !target.matches) return;
+
+  if (target.matches("[data-prevent-active-request].active")) {
+    evt.preventDefault();
+    return;
+  }
+
+  if (target.matches("[data-action='toggle-edit-row']")) {
+    const tr = evt.detail && evt.detail.target;
+    if (!tr) return;
+    tr.classList.add("show");
+    const existingContent = tr.querySelector(".content");
+    if (existingContent) {
+      evt.preventDefault();
+      tr.classList.remove("show");
+      tr.removeChild(existingContent);
+    }
+  }
+});
+
+document.body.addEventListener("htmx:afterRequest", function(evt) {
+  const target = evt.target;
+  if (target && target.matches && target.matches("[data-hide-on-success]") && evt.detail && evt.detail.successful) {
+    target.classList.add("hidden");
+  }
+});
+
+// Delegated event handlers (strict CSP — no inline onclick/onchange/hx-on)
+document.addEventListener("click", function(event) {
+  const el = event.target && event.target.closest ? event.target.closest("[data-action]") : null;
+  if (!el) return;
+  const action = el.dataset.action;
+
+  if (action === "copy-link") {
+    handleShortURLCopyLink(el);
+  } else if (action === "open-dialog") {
+    if (el.dataset.dialog) openDialog(el.dataset.dialog);
+  } else if (action === "close-dialog") {
+    closeDialog();
+  } else if (action === "open-qrcode") {
+    if (el.dataset.dialog) handleQRCode(el, el.dataset.dialog);
+  } else if (action === "cancel-add-domain") {
+    const showBtn = document.querySelector(".show-domain-form");
+    if (showBtn) showBtn.classList.remove("hidden");
+    const addDomainForm = document.querySelector("#add-domain");
+    if (addDomainForm) addDomainForm.remove();
+  } else if (action === "close-edit-row") {
+    const tr = el.closest("tr");
+    if (!tr) return;
+    tr.classList.remove("show");
+    const content = tr.querySelector(".content");
+    if (content) tr.removeChild(content);
+  } else if (action === "set-tab") {
+    setTab(event, el.dataset.tabTarget || undefined);
+  } else if (action === "set-limit") {
+    setLinksLimit(event);
+  } else if (action === "set-skip") {
+    setLinksSkip(event, el.dataset.direction);
+  } else if (action === "clear-search") {
+    clearSearchInput(event);
+  }
+});
+
+document.addEventListener("input", function(event) {
+  const el = event.target;
+  if (el && el.dataset && el.dataset.action === "search-input") {
+    onSearchChange(event);
+  }
+});
+
+document.addEventListener("change", function(event) {
+  const el = event.target;
+  if (!el || !el.dataset) return;
+  const action = el.dataset.action;
+
+  if (action === "toggle-advanced") {
+    const opts = document.getElementById("advanced-options");
+    if (opts) opts.classList.toggle("hidden", !el.checked);
+  } else if (action === "update-domain-label") {
+    const span = document.querySelector("#customurl-label span");
+    if (span) span.textContent = el.value + "/";
+  } else if (action === "reset-table-nav") {
+    resetTableNav();
+  } else if (action === "toggle-verification-email") {
+    canSendVerificationEmail();
+  }
 });
 
 // create user checkbox control

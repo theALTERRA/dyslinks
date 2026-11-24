@@ -25,6 +25,20 @@
     />
     {{#if errors.password}}<p class="error">{{errors.password}}</p>{{/if}}
   </label>
+  {{#if admin_bootstrap_required}}
+    <label class="{{#if errors.bootstrap_secret}}error{{/if}}">
+      Bootstrap secret
+      <input
+        name="bootstrap_secret"
+        id="bootstrap_secret"
+        type="password"
+        placeholder="Bootstrap secret..."
+        autocomplete="off"
+        required
+      />
+      {{#if errors.bootstrap_secret}}<p class="error">{{errors.bootstrap_secret}}</p>{{/if}}
+    </label>
+  {{/if}}
   <div class="buttons-wrapper admin-form">
     <button type="submit" class="secondary full">
       <span>{{> icons/new_user}}</span>

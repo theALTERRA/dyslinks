@@ -3,6 +3,7 @@ const { nanoid } = require("nanoid");
 const passport = require("passport");
 const { randomUUID } = require("node:crypto");
 const bcrypt = require("bcryptjs");
+const JWT = require("jsonwebtoken");
 
 const { ROLES } = require("../consts");
 const passportConfig = require("../passport");
@@ -54,6 +55,10 @@ function authenticate(type, error, isStrict, redirect) {
         }
       }
       
+      if (!user && type === "localapikey" && req.headers["x-api-key"] !== undefined) {
+        return next(new CustomError(error, 401));
+      }
+
       if (!user && isStrict) {
         return next(new CustomError(error, 401));
       }
@@ -159,6 +164,18 @@ async function signup(req, res) {
 }
 
 async function createAdminUser(req, res) {
+  if (env.ADMIN_BOOTSTRAP_SECRET) {
+    const provided =
+      typeof req.body.bootstrap_secret === "string"
+        ? req.body.bootstrap_secret
+        : typeof req.headers["x-bootstrap-secret"] === "string"
+          ? req.headers["x-bootstrap-secret"]
+          : "";
+    if (!utils.timingSafeStringEqual(provided, env.ADMIN_BOOTSTRAP_SECRET)) {
+      throw new CustomError("Invalid bootstrap secret.", 403);
+    }
+  }
+
   const isThereAUser = await query.user.findAny();
   if (isThereAUser) {
     throw new CustomError("Can not create the admin user because a user already exists.", 400);
@@ -168,6 +185,9 @@ async function createAdminUser(req, res) {
   const password = await bcrypt.hash(req.body.password, salt);
 
   const user = await knex.transaction(async (trx) => {
+    if (!knex.isSQLite) {
+      await trx.raw("SET TRANSACTION ISOLATION LEVEL SERIALIZABLE");
+    }
     const existing = await trx("users").select("id").first();
     if (existing) {
       throw new CustomError("Can not create the admin user because a user already exists.", 400);
@@ -203,6 +223,10 @@ async function createAdminUser(req, res) {
 }
 
 function login(req, res) {
+  if (req.session) {
+    req.session = null;
+  }
+
   const token = utils.signToken(req.user);
 
   if (req.isHTML) {
@@ -213,6 +237,42 @@ function login(req, res) {
   }
   
   return res.status(200).send({ token });
+}
+
+async function logout(req, res) {
+  const token = req.cookies?.token;
+  if (token) {
+    try {
+      const payload = JWT.verify(token, env.JWT_SECRET, { algorithms: ["HS256"] });
+      if (typeof payload?.sub === "number") {
+        await query.user.update(
+          { id: payload.sub, token_version: payload.ver ?? 0 },
+          {},
+          { increments: ["token_version"] }
+        );
+      }
+    } catch {
+      // ignore invalid/expired token on logout
+    }
+  }
+  if (req.session) {
+    req.session = null;
+  }
+  utils.deleteCurrentToken(res);
+
+  if (req.isHTML) {
+    if (req.headers["hx-request"]) {
+      res.setHeader("HX-Redirect", "/");
+      return res.status(200).send("");
+    }
+    return res.render("logout", {
+      layout: "layout",
+      title: "Logging out...",
+      logged_out: true,
+    });
+  }
+
+  return res.status(200).send({ message: "Logged out." });
 }
 
 async function verify(req, res, next) {
@@ -280,26 +340,28 @@ async function changePassword(req, res) {
 }
 
 async function generateApiKey(req, res) {
-  const apikey = nanoid(40);
-  
+  const rawApiKey = nanoid(40);
+  const hashedApiKey = utils.hashApiKey(rawApiKey);
+
   if (env.REDIS_ENABLED) {
     redis.remove.user(req.user);
   }
-  
-  const user = await query.user.update({ id: req.user.id }, { apikey });
-  
+
+  const user = await query.user.update({ id: req.user.id }, { apikey: hashedApiKey });
+
   if (!user) {
     throw new CustomError("Couldn't generate API key. Please try again later.");
   }
 
   if (req.isHTML) {
     res.render("partials/settings/apikey", {
-      user: { apikey },
+      user: { apikey: true },
+      new_apikey: rawApiKey,
     });
     return;
   }
-  
-  return res.status(201).send({ apikey });
+
+  return res.status(201).send({ apikey: rawApiKey });
 }
 
 async function resetPassword(req, res) {
@@ -404,25 +466,40 @@ async function changeEmail(req, res, next) {
   const changeEmailToken = req.params.changeEmailToken;
   
   if (changeEmailToken) {
+    const nowUTC = utils.dateToUTC(new Date());
     const foundUser = await query.user.find({
       change_email_token: changeEmailToken,
-      change_email_expires: [">", utils.dateToUTC(new Date())]
+      change_email_expires: [">", nowUTC],
+      banned: false,
     });
   
-    if (!foundUser) return next();
+    if (!foundUser || !foundUser.change_email_address) return next();
   
+    const previousEmail = foundUser.email;
+    const newEmail = foundUser.change_email_address;
+
     const user = await query.user.update(
-      { id: foundUser.id },
+      {
+        id: foundUser.id,
+        change_email_token: changeEmailToken,
+        change_email_expires: [">", nowUTC],
+        banned: false,
+      },
       {
         change_email_token: null,
         change_email_expires: null,
         change_email_address: null,
-        email: foundUser.change_email_address
+        email: newEmail
       },
       { increments: ["token_version"] }
     );
   
     if (user) {
+      if (env.MAIL_ENABLED) {
+        mail.emailChangedNotice(previousEmail, newEmail).catch((err) => {
+          console.error("Send email-changed notice error:", err?.message || err);
+        });
+      }
       const token = utils.signToken(user);
       utils.deleteCurrentToken(res);
       utils.setToken(res, token);
@@ -469,6 +546,7 @@ module.exports = {
   jwtPage,
   local,
   login,
+  logout,
   newPassword,
   oidc,
   resetPassword,

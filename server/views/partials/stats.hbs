@@ -23,10 +23,10 @@
         Total views: <span class="total-number">{{link.visit_count}}</span>
       </p>
       <nav class="stats-nav">
-        <button type="button" class="nav" data-period="year" onclick="changeStatsPeriod(event)">Year</button>
-        <button type="button" class="nav" data-period="month" onclick="changeStatsPeriod(event)">Month</button>
-        <button type="button" class="nav" data-period="week" onclick="changeStatsPeriod(event)">Week</button>
-        <button type="button" class="nav" data-period="day" onclick="changeStatsPeriod(event)" disabled="true">Day</button>
+        <button type="button" class="nav" data-period="year" data-action="stats-period">Year</button>
+        <button type="button" class="nav" data-period="month" data-action="stats-period">Month</button>
+        <button type="button" class="nav" data-period="week" data-action="stats-period">Week</button>
+        <button type="button" class="nav" data-period="day" data-action="stats-period" disabled="true">Day</button>
       </nav>
     </div>
 
@@ -77,9 +77,6 @@
             data-week="{{json stats.lastWeek.stats.country}}"
             data-month="{{json stats.lastMonth.stats.country}}"
             data-year="{{json stats.lastYear.stats.country}}"
-            onmouseleave="mapTooltipHoverOut()"
-            onmousemove="mapTooltipHoverOver(event)"
-            onpointerdown="mapTooltipHoverOver(event)"
           >
             {{#each map.layers}}
               <path data-id="{{id}}" aria-label="{{name}}" d="{{d}}"></path>

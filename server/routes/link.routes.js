@@ -49,6 +49,7 @@ router.patch(
   locals.viewTemplate("partials/links/edit"),
   asyncHandler(auth.apikey),
   asyncHandler(auth.jwt),
+  helpers.rateLimit({ window: 60, limit: 60 }),
   locals.editLink,
   validators.editLink,
   asyncHandler(helpers.verify),
@@ -93,6 +94,7 @@ router.get(
   locals.viewTemplate("partials/stats"),
   asyncHandler(auth.apikey),
   asyncHandler(auth.jwt),
+  helpers.rateLimit({ window: 60, limit: 30 }),
   validators.getStats,
   asyncHandler(helpers.verify),
   asyncHandler(link.stats)
@@ -102,7 +104,7 @@ router.post(
   "/:id/protected",
   locals.viewTemplate("partials/protected/form"),
   locals.protected,
-  helpers.rateLimit({ window: 60, limit: 10 }),
+  helpers.rateLimit({ window: 60, limit: 10, key: "protected-link" }),
   validators.redirectProtected,
   asyncHandler(helpers.verify),
   asyncHandler(link.redirectProtected)

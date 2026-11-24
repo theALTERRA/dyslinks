@@ -42,7 +42,9 @@ router.get(
 );
 
 router.get(
-  "/logout", 
+  "/logout",
+  asyncHandler(auth.jwtLoosePage),
+  asyncHandler(locals.user),
   asyncHandler(renders.logout)
 );
 
@@ -241,9 +243,10 @@ router.get(
 );
 
 router.get(
-  "/get-support-email", 
+  "/get-support-email",
   locals.noLayout,
   locals.viewTemplate("partials/support_email"),
+  helpers.rateLimit({ window: 60, limit: 10 }),
   asyncHandler(renders.getSupportEmail)
 );
 

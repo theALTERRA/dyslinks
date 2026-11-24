@@ -18,8 +18,7 @@
     input changed from:[name='banned'],
     input changed from:[name='anonymous'],
     input changed from:[name='has_domain']"
-  hx-on:htmx:after-on-load="updateLinksNav();"
-  hx-on:htmx:after-settle="onSearchInputLoad();"
+  data-update-nav="true"
 >
   {{> admin/links/thead}}
   {{> admin/links/tbody}}

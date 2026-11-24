@@ -1,8 +1,12 @@
 <tr id="tr-{{id}}" {{#if swap_oob}}hx-swap-oob="true"{{/if}}>
   <td class="original-url right-fade">
-    <a href="{{target}}" target="_blank" rel="noopener noreferrer">
-      {{target}}
-    </a>
+    {{#if is_http_target}}
+      <a href="{{target}}" target="_blank" rel="noopener noreferrer">
+        {{target}}
+      </a>
+    {{else}}
+      <span class="non-http-target">{{target}}</span>
+    {{/if}}
     {{#if description}}
       <p class="description">
         {{description}}
@@ -26,7 +30,7 @@
       <button 
         type="button"
         aria-label="Copy" 
-        hx-on:click="handleShortURLCopyLink(this);"
+        data-action="copy-link"
         data-url="{{link.url}}"
       >
         {{> icons/copy}}

@@ -26,6 +26,7 @@ router.post(
   asyncHandler(auth.apikey),
   asyncHandler(auth.jwt),
   auth.customDomainAccess,
+  helpers.rateLimit({ window: 60, limit: 10 }),
   validators.addDomain,
   asyncHandler(helpers.verify),
   asyncHandler(domains.add)
