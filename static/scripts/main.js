@@ -7,14 +7,20 @@ document.body.addEventListener("htmx:configRequest", function(evt) {
 });
 
 // redirect to homepage
-document.body.addEventListener("redirectToHomepage", function() {
+function schedulePageRedirect(destination, delay) {
+  if (window.__dyslinksRedirecting || !destination) return;
+  window.__dyslinksRedirecting = true;
   setTimeout(() => {
-    window.location.replace("/");
-  }, 1500);
+    window.location.replace(destination);
+  }, delay);
+}
+
+document.body.addEventListener("redirectToHomepage", function() {
+  schedulePageRedirect("/", 1000);
 });
 
 function scheduleRedirects(root) {
-  if (!root) return;
+  if (!root || window.__dyslinksRedirecting) return;
   const targets = [];
   if (root.matches && root.matches("[data-redirect]")) {
     targets.push(root);
@@ -27,9 +33,7 @@ function scheduleRedirects(root) {
     const destination = el.dataset.redirect;
     if (!destination) return;
     el.dataset.redirectScheduled = "true";
-    setTimeout(() => {
-      window.location.replace(destination);
-    }, 1000);
+    schedulePageRedirect(destination, 1000);
   });
 }
 
@@ -375,13 +379,18 @@ onSearchInputLoad();
 updateLinksNav();
 scheduleRedirects(document);
 
-document.body.addEventListener("htmx:afterSwap", function(evt) {
-  scheduleRedirects(evt.target || document);
+document.body.addEventListener("htmx:load", function(evt) {
+  scheduleRedirects(evt.detail && evt.detail.elt ? evt.detail.elt : document);
+});
+
+document.body.addEventListener("htmx:afterSwap", function() {
+  scheduleRedirects(document);
 });
 
 document.body.addEventListener("htmx:afterSettle", function() {
   onSearchInputLoad();
   updateLinksNav();
+  scheduleRedirects(document);
 });
 
 // create user checkbox control

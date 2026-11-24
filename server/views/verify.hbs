@@ -4,6 +4,7 @@
     <h2 data-redirect="/">
       Your account has been verified. Redirecting to homepage...
     </h2>
+    <script>if (!window.__dyslinksRedirecting) { window.__dyslinksRedirecting = true; setTimeout(function () { window.location.replace("/"); }, 1000); }</script>
   {{else}}
     <h2>
       {{> icons/x}}

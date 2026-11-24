@@ -1,3 +1,4 @@
+const pkg = require("../../package.json");
 const query = require("../queries");
 const utils = require("../utils");
 const env = require("../env");
@@ -46,6 +47,7 @@ function config(req, res, next) {
   res.locals.mail_enabled = env.MAIL_ENABLED;
   res.locals.report_email = env.REPORT_EMAIL;
   res.locals.custom_styles = utils.getCustomCSSFileNames();
+  res.locals.app_version = pkg.version;
   next();
 }
 

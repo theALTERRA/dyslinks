@@ -110,6 +110,7 @@ async function signup(req, res) {
 
     if (req.isHTML) {
       utils.setToken(res, token);
+      res.setHeader("HX-Trigger-After-Swap", "redirectToHomepage");
       res.render("partials/auth/welcome");
       return;
     }
@@ -168,6 +169,7 @@ async function createAdminUser(req, res) {
 
   if (req.isHTML) {
     utils.setToken(res, token);
+    res.setHeader("HX-Trigger-After-Swap", "redirectToHomepage");
     res.render("partials/auth/welcome");
     return;
   }
@@ -180,6 +182,7 @@ function login(req, res) {
 
   if (req.isHTML) {
     utils.setToken(res, token);
+    res.setHeader("HX-Trigger-After-Swap", "redirectToHomepage");
     res.render("partials/auth/welcome");
     return;
   }

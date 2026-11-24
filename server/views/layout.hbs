@@ -19,8 +19,8 @@
   <meta name="twitter:description" content="Free & Open Source Modern URL Shortener" />
   <meta name="description" content="{{site_name}} is a free and open source URL shortener with custom domains and stats." />
   <title>{{site_name}} | {{title}}</title>
-  <script src="/scripts/theme.js"></script>
-  <link rel="stylesheet" href="/css/styles.css">
+  <script src="/scripts/theme.js?v={{app_version}}"></script>
+  <link rel="stylesheet" href="/css/styles.css?v={{app_version}}">
   {{#each custom_styles}}
     <link rel="stylesheet" href="/css/{{this}}">
   {{/each}}
@@ -34,6 +34,6 @@
   {{{block "scripts"}}}
   <script src="/libs/htmx.min.js"></script>
   <script src="/libs/qrcode.min.js"></script>
-  <script src="/scripts/main.js"></script>
+  <script src="/scripts/main.js?v={{app_version}}"></script>
 </body>
 </html>
