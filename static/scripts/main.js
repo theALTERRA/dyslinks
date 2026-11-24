@@ -238,8 +238,13 @@ function setLinksLimit(event) {
   const buttons = Array.from(document.querySelectorAll("table .nav .limit button"));
   const limitInput = document.querySelector("#limit");
   if (!limitInput || !buttons || !buttons.length) return;
-  const button = event.currentTarget || closest("button", event.target) || event.target;
+  const button =
+    (event && event.currentTarget && event.currentTarget.nodeType === 1 ? event.currentTarget : null) ||
+    closest("button", event && event.target) ||
+    (event && event.target);
+  if (!button || typeof button.textContent !== "string") return;
   const nextLimit = button.textContent.trim();
+  if (!nextLimit) return;
   limitInput.value = nextLimit;
   const skipInput = document.querySelector("#skip");
   if (skipInput) skipInput.value = 0;
@@ -335,7 +340,11 @@ function resetTableNav() {
 function setTab(event, targetId) {
   const target = targetId
     ? document.getElementById(targetId)
-    : (event.currentTarget || closest("a", event.target) || event.target);
+    : (
+        (event && event.currentTarget && event.currentTarget.nodeType === 1 ? event.currentTarget : null) ||
+        closest("a", event && event.target) ||
+        (event && event.target)
+      );
   const nav = target ? closest("nav", target) : null;
   if (!nav) return;
   Array.from(nav.children).forEach(function (tab) {
@@ -454,11 +463,11 @@ document.addEventListener("click", function(event) {
     const content = tr.querySelector(".content");
     if (content) tr.removeChild(content);
   } else if (action === "set-tab") {
-    setTab(event, el.dataset.tabTarget || undefined);
+    setTab({ currentTarget: el, target: event.target }, el.dataset.tabTarget || undefined);
   } else if (action === "set-limit") {
-    setLinksLimit(event);
+    setLinksLimit({ currentTarget: el, target: event.target });
   } else if (action === "set-skip") {
-    setLinksSkip(event, el.dataset.direction);
+    setLinksSkip({ currentTarget: el, target: event.target }, el.dataset.direction);
   } else if (action === "clear-search") {
     clearSearchInput(event);
   }
