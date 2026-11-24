@@ -2472,7 +2472,8 @@ table .short-link-wrapper {
   margin: 0 0.85rem;
 }
 
-#main-table-wrapper table tbody tr {
+#main-table-wrapper table tbody tr,
+#domains-table tbody tr {
   transition: background-color 0.12s ease;
 }
 
@@ -2490,12 +2491,15 @@ table .short-link-wrapper {
   height: 100%;
   width: 28px;
   pointer-events: none;
-  background: linear-gradient(to left, var(--surface-color), transparent);
+  background-color: var(--surface-color);
+  transition: background-color 0.12s ease;
+  -webkit-mask-image: linear-gradient(to left, #000, transparent);
+  mask-image: linear-gradient(to left, #000, transparent);
 }
 
 #main-table-wrapper table tbody tr:hover td.right-fade:after,
 #domains-table tbody tr:hover td.right-fade:after {
-  background: linear-gradient(to left, var(--table-tr-hover-bg-color), transparent);
+  background-color: var(--table-tr-hover-bg-color);
 }
 
 #main-table-wrapper table .clipboard { margin-right: 0.55rem; }
