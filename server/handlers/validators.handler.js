@@ -14,7 +14,11 @@ const env = require("../env");
 const dnsLookup = promisify(dns.lookup);
 
 const checkUser = (value, { req }) => !!req.user;
-const sanitizeCheckbox = value => value === true || value === "on" || value;
+const sanitizeCheckbox = value => {
+  if (value === true || value === "on" || value === "true" || value === "1") return true;
+  if (value === false || value === "false" || value === "0" || value === "") return false;
+  return value;
+};
 
 const createLink = [
   body("target")
@@ -355,7 +359,7 @@ const banDomain = [
     })
     .customSanitizer(sanitizeCheckbox)
     .isBoolean(),
-  body("domains", '"domains" should be a boolean.')
+  body("user", '"user" should be a boolean.')
     .optional({
       nullable: true
     })

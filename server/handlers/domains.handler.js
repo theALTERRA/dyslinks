@@ -18,6 +18,7 @@ async function add(req, res) {
   if (req.isHTML) {
     const domains = (await query.domain.get({ user_id: req.user.id })).map(sanitize.domain);
     res.setHeader("HX-Reswap", "none");
+    res.setHeader("HX-Trigger-After-Swap", "closeAddDomainForm");
     res.render("partials/settings/domain/table", {
       domains
     });
@@ -160,7 +161,6 @@ async function ban(req, res) {
   const update = {
     banned_by_id: req.user.id,
     banned: true,
-    shared: false
   };
 
   // 1. check if domain exists
@@ -177,7 +177,7 @@ async function ban(req, res) {
   const tasks = [];
 
   // 2. ban domain
-  tasks.push(query.domain.update({ id }, update));
+  tasks.push(query.domain.update({ id }, { ...update, shared: false }));
   
   // 3. ban user
   if (req.body.user && domain.user_id) {

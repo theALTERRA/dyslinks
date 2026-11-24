@@ -185,6 +185,7 @@ router.get(
 router.get(
   "/confirm-domain-ban", 
   locals.noLayout,
+  locals.viewTemplate("partials/admin/dialog/message"),
   asyncHandler(auth.jwt),
   asyncHandler(auth.admin), 
   asyncHandler(renders.confirmDomainBan)
@@ -194,6 +195,7 @@ router.get(
 router.get(
   "/confirm-domain-delete-admin", 
   locals.noLayout,
+  locals.viewTemplate("partials/admin/dialog/message"),
   asyncHandler(auth.jwt),
   asyncHandler(auth.admin), 
   asyncHandler(renders.confirmDomainDeleteAdmin)

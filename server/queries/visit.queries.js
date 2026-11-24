@@ -112,7 +112,6 @@ async function find(match, total) {
       const diffFunction = utils.getDifferenceFunction(type);
       const diff = diffFunction(now, utils.parseDatetime(visit.created_at));
       const index = stats[type].views.length - diff - 1;
-      const view = stats[type].views[index];
       const period = stats[type].stats;
       const countries = typeof visit.countries === "string" ? JSON.parse(visit.countries) : visit.countries;
       const referrers = typeof visit.referrers === "string" ? JSON.parse(visit.referrers) : visit.referrers;
@@ -153,7 +152,9 @@ async function find(match, total) {
           Object.assign(Object.create(null), period.referrer)
         )
       };
-      stats[type].views[index] += visit.total;
+      if (index >= 0 && index < stats[type].views.length) {
+        stats[type].views[index] += visit.total;
+      }
       stats[type].total += visit.total;
     });
   }

@@ -39,10 +39,11 @@ function getTooltipOptions(theme, enabled = true) {
 // create views chart label
 function createViewsChartLabel(ctx) {
   const period = ctx.dataset.period;
+  const now = new Date();
   let labels = [];
 
   if (period === "day") {
-    const nowHour = new Date().getHours();
+    const nowHour = now.getHours();
     for (let i = 23; i >= 0; --i) {
       let h = nowHour - i;
       if (h < 0) h = 24 + h;
@@ -51,25 +52,22 @@ function createViewsChartLabel(ctx) {
   }
 
   if (period === "week") {
-    const nowDay = new Date().getDate();
     for (let i = 6; i >= 0; --i) {
-      const date = new Date(new Date().setDate(nowDay - i));
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
       labels.push(`${date.getDate()} ${date.toLocaleString("default", { month: "short" })}`);
     }
   }
 
   if (period === "month") {
-    const nowDay = new Date().getDate();
     for (let i = 29; i >= 0; --i) {
-      const date = new Date(new Date().setDate(nowDay - i));
+      const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
       labels.push(`${date.getDate()} ${date.toLocaleString("default", { month: "short" })}`);
     }
   }
 
   if (period === "year") {
-    const nowMonth = new Date().getMonth();
     for (let i = 11; i >= 0; --i) {
-      const date = new Date(new Date().setMonth(nowMonth - i));
+      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       labels.push(`${date.toLocaleString("default", { month: "short" })} ${date.toLocaleString("default", { year: "numeric" })}`);
     }
   }
@@ -79,13 +77,15 @@ function createViewsChartLabel(ctx) {
 
 // change stats period for showing charts and data
 function changeStatsPeriod(event) {
-  const period = event.target.dataset.period;
+  const btn = event.currentTarget || (event.target.closest ? event.target.closest("button[data-period]") : event.target);
+  const period = btn && btn.dataset ? btn.dataset.period : null;
   if (!period) return;
   const periodItems = document.querySelectorAll("#stats .stats-period [data-period]");
   const buttons = document.querySelectorAll("#stats .stats-nav .nav");
   if (!buttons || !periodItems) return;
+  mapTooltipHoverOut();
   buttons.forEach(b => { b.disabled = false; });
-  event.target.disabled = true;
+  btn.disabled = true;
   periodItems.forEach(el => {
     if (el.dataset.period === period) {
       el.classList.remove("hidden");
@@ -272,7 +272,7 @@ function createReferrersChart() {
 
   canvases.forEach(ctx => {
     const data = JSON.parse(ctx.dataset.data);
-    let max = Array.from(data).sort((a, b) => a.value > b.value ? -1 : 1)[0];
+    let max = Array.from(data).sort((a, b) => b.value - a.value)[0];
 
     let tooltipEnabled = true;
     let hoverBackgroundColor = `rgba(${theme.accentRgb}, 0.95)`;
@@ -287,6 +287,8 @@ function createReferrersChart() {
       borderColor = `rgba(${theme.accentRgb}, 0.25)`;
     }
 
+    const maxVal = max && max.value > 0 ? max.value : 1;
+
     const chart = new Chart(ctx, {
       type: "doughnut",
       data: {
@@ -294,7 +296,7 @@ function createReferrersChart() {
         datasets: [{
           label: "Views",
           data: data.map(d => d.value),
-          backgroundColor: data.map(d => `rgba(${theme.accentRgb}, ${Math.max((d.value / max.value) - 0.15, 0.14).toFixed(2)})`),
+          backgroundColor: data.map(d => `rgba(${theme.accentRgb}, ${Math.max((d.value / maxVal) - 0.15, 0.14).toFixed(2)})`),
           borderWidth: 1,
           borderColor,
           hoverBackgroundColor,
@@ -307,7 +309,7 @@ function createReferrersChart() {
         cutout: "62%",
         plugins: {
           legend: {
-            position: "left",
+            position: window.innerWidth <= 640 ? "bottom" : "left",
             labels: {
               boxWidth: 14,
               boxHeight: 14,
@@ -493,7 +495,8 @@ function feedMapData(period) {
     }
   }
 
-  renderMapCountriesList(raw, nameById);
+  const aggregatedEntries = Object.entries(countsById).map(([name, value]) => ({ name, value }));
+  renderMapCountriesList(aggregatedEntries, nameById);
 }
 
 // handle map tooltip hover
@@ -540,6 +543,13 @@ function mapTooltipHoverOut() {
     activeMapPath = null;
   }
 }
+
+window.addEventListener("scroll", mapTooltipHoverOut, { passive: true });
+document.addEventListener("pointerdown", function (evt) {
+  if (activeMapPath && (!evt.target || !evt.target.closest || !evt.target.closest("svg.map"))) {
+    mapTooltipHoverOut();
+  }
+});
 
 function destroyCharts() {
   dyslinksCharts.forEach(chart => {

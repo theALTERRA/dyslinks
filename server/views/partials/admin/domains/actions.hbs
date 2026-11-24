@@ -1,8 +1,8 @@
 <td class="actions domains-actions">
   {{#if banned}}
-    <button class="action banned" disabled="true" data-tooltip="Banned">
+    <span class="action banned" role="img" aria-label="Banned" data-tooltip="Banned">
       {{> icons/stop}}
-    </button>
+    </span>
   {{/if}}
   {{#unless banned}}
     <button

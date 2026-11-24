@@ -147,6 +147,7 @@ async function create(req, res) {
   
   if (req.isHTML) {
     res.setHeader("HX-Trigger", "reloadMainTable");
+    res.setHeader("HX-Trigger-After-Swap", "resetShortenerForm");
     const shortURL = utils.getShortURL(link.address, link.domain);
     return res.render("partials/shortener", {
       link: shortURL.link, 
@@ -171,32 +172,51 @@ async function edit(req, res) {
 
   let isChanged = false;
   [
-    [req.body.address, "address"], 
-    [req.body.target, "target"], 
-    [req.body.description, "description"], 
-    [req.body.expire_in, "expire_in"], 
+    [req.body.address, "address"],
+    [req.body.target, "target"],
+    [req.body.description, "description"],
+    [req.body.expire_in, "expire_in"],
     [req.body.password, "password"]
   ].forEach(([value, name]) => {
-    if (!value) {
-      if (name === "password" && link.password) 
+    if (value === undefined) {
+      delete req.body[name];
+      return;
+    }
+    if (value === "" || value === null) {
+      if (name === "password" && link.password) {
         req.body.password = null;
-      else {
+        isChanged = true;
+      } else if (name === "description" && link.description) {
+        req.body.description = null;
+        isChanged = true;
+      } else if (
+        name === "expire_in" &&
+        link.expire_in &&
+        differenceInSeconds(utils.parseDatetime(link.expire_in), new Date()) >= 60
+      ) {
+        req.body.expire_in = null;
+        isChanged = true;
+      } else {
         delete req.body[name];
-        return;
       }
+      return;
     }
     if (value === link[name] && name !== "password") {
       delete req.body[name];
       return;
     }
-    if (name === "expire_in" && link.expire_in)
-      if (Math.abs(differenceInSeconds(utils.parseDatetime(value), utils.parseDatetime(link.expire_in))) < 60)
-          return;
-    if (name === "password")
+    if (name === "expire_in" && link.expire_in) {
+      if (Math.abs(differenceInSeconds(utils.parseDatetime(value), utils.parseDatetime(link.expire_in))) < 60) {
+        delete req.body.expire_in;
+        return;
+      }
+    }
+    if (name === "password") {
       if (value && value.replace(/•/ig, "").length === 0) {
         delete req.body.password;
         return;
       }
+    }
     isChanged = true;
   });
 
@@ -233,9 +253,9 @@ async function edit(req, res) {
     },
     {
       ...(address && { address }),
-      ...(description && { description }),
+      ...((description || description === null) && { description }),
       ...(target && { target }),
-      ...(expire_in && { expire_in }),
+      ...((expire_in || expire_in === null) && { expire_in }),
       ...((password || password === null) && { password })
     }
   );
@@ -264,32 +284,51 @@ async function editAdmin(req, res) {
 
   let isChanged = false;
   [
-    [req.body.address, "address"], 
-    [req.body.target, "target"], 
-    [req.body.description, "description"], 
-    [req.body.expire_in, "expire_in"], 
+    [req.body.address, "address"],
+    [req.body.target, "target"],
+    [req.body.description, "description"],
+    [req.body.expire_in, "expire_in"],
     [req.body.password, "password"]
   ].forEach(([value, name]) => {
-    if (!value) {
-      if (name === "password" && link.password) 
+    if (value === undefined) {
+      delete req.body[name];
+      return;
+    }
+    if (value === "" || value === null) {
+      if (name === "password" && link.password) {
         req.body.password = null;
-      else {
+        isChanged = true;
+      } else if (name === "description" && link.description) {
+        req.body.description = null;
+        isChanged = true;
+      } else if (
+        name === "expire_in" &&
+        link.expire_in &&
+        differenceInSeconds(utils.parseDatetime(link.expire_in), new Date()) >= 60
+      ) {
+        req.body.expire_in = null;
+        isChanged = true;
+      } else {
         delete req.body[name];
-        return;
       }
+      return;
     }
     if (value === link[name] && name !== "password") {
       delete req.body[name];
       return;
     }
-    if (name === "expire_in" && link.expire_in)
-      if (Math.abs(differenceInSeconds(utils.parseDatetime(value), utils.parseDatetime(link.expire_in))) < 60)
-          return;
-    if (name === "password")
+    if (name === "expire_in" && link.expire_in) {
+      if (Math.abs(differenceInSeconds(utils.parseDatetime(value), utils.parseDatetime(link.expire_in))) < 60) {
+        delete req.body.expire_in;
+        return;
+      }
+    }
+    if (name === "password") {
       if (value && value.replace(/•/ig, "").length === 0) {
         delete req.body.password;
         return;
       }
+    }
     isChanged = true;
   });
 
@@ -326,9 +365,9 @@ async function editAdmin(req, res) {
     },
     {
       ...(address && { address }),
-      ...(description && { description }),
+      ...((description || description === null) && { description }),
       ...(target && { target }),
-      ...(expire_in && { expire_in }),
+      ...((expire_in || expire_in === null) && { expire_in }),
       ...((password || password === null) && { password })
     }
   );

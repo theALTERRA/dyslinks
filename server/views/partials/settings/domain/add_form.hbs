@@ -3,10 +3,6 @@
   hx-post="/api/domains"
   hx-sync="this:abort"
   hx-swap="outerHTML"
-  hx-on::after-request="
-    document.querySelector('.show-domain-form').classList.remove('hidden');
-    document.querySelector('#add-domain').remove();
-  "
 >
   <div class="inputs">
     <label class="{{#if errors.address}}error{{/if}}">

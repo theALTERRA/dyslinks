@@ -15,7 +15,7 @@
           hx-sync="this:replace"
           hx-indicator="closest table"
           hx-vals='{"user":"{{email}}"}'
-          onclick="setTab(event, 'tab-links')"
+          onclick="setTab(event, 'tab-domains')"
         >
           {{domains}}
         </a>
@@ -61,9 +61,4 @@
     {{/ifEquals}}
   </td>
   {{> admin/users/actions}}
-</tr>
-<tr class="edit">
-  <td class="loading">
-    {{> icons/spinner}}
-  </td>
 </tr>

@@ -11,14 +11,13 @@
             placeholder="Search link..." 
             class="table-input search admin" 
             hx-on:input="onSearchChange(event)" 
-            hx-on:keyup="resetTableNav()"
             value="{{query.search}}"
           />
           <button 
             type="button" 
             aria-label="Clear search" 
             class="clear" 
-            onclick="clearSeachInput(event)"
+            onclick="clearSearchInput(event)"
           >
             {{> icons/x}}
           </button>
@@ -31,14 +30,13 @@
             placeholder="Search domain..." 
             class="table-input search admin" 
             hx-on:input="onSearchChange(event)" 
-            hx-on:keyup="resetTableNav()"
             value="{{query.domain}}"
           />
           <button 
             type="button" 
-            aria-label="Clear user search" 
+            aria-label="Clear domain search"
             class="clear" 
-            onclick="clearSeachInput(event)"
+            onclick="clearSearchInput(event)"
           >
             {{> icons/x}}
           </button>
@@ -51,14 +49,13 @@
             placeholder="Search user..." 
             class="table-input search admin" 
             hx-on:input="onSearchChange(event)" 
-            hx-on:keyup="resetTableNav()"
             value="{{query.user}}"
           />
           <button 
             type="button" 
             aria-label="Clear user search" 
             class="clear" 
-            onclick="clearSeachInput(event)"
+            onclick="clearSearchInput(event)"
           >
             {{> icons/x}}
           </button>
@@ -71,9 +68,9 @@
           class="table-input ban"
           hx-on:change="resetTableNav()"
         >
-          <option value="" selected>Banned...</option>
-          <option value="true">Banned</option>
-          <option value="false">Not banned</option>
+          <option value="">Banned...</option>
+          <option value="true" {{#ifEquals query.banned 'true'}}selected{{/ifEquals}}>Banned</option>
+          <option value="false" {{#ifEquals query.banned 'false'}}selected{{/ifEquals}}>Not banned</option>
         </select>
         <select 
           id="links-select-anonymous"

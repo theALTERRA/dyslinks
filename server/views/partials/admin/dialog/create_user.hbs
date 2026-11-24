@@ -1,4 +1,4 @@
-<div class="content create-user">
+<div class="content admin-create">
   <h2>Create user</h2>
   <form
     id="create-user-form"
@@ -61,10 +61,12 @@
         Banned
       </label>
     </div>
-    <label id="send-email-label" class="checkbox hidden" hx-preserve="true">
-      <input id="create-user-send-email" name="verification_email" type="checkbox" />
-      Send verification email
-    </label>
+    {{#if mail_enabled}}
+      <label id="send-email-label" class="checkbox hidden" hx-preserve="true">
+        <input id="create-user-send-email" name="verification_email" type="checkbox" />
+        Send verification email
+      </label>
+    {{/if}}
     <div class="buttons">
       <button type="button" hx-on:click="closeDialog()">Cancel</button>
       <button type="submit" class="primary">

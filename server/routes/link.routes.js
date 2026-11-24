@@ -57,7 +57,7 @@ router.patch(
 
 router.patch(
   "/admin/:id",
-  locals.viewTemplate("partials/links/edit"),
+  locals.viewTemplate("partials/admin/links/edit"),
   asyncHandler(auth.apikey),
   asyncHandler(auth.jwt),
   asyncHandler(auth.admin),

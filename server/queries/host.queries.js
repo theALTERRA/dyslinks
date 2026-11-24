@@ -6,7 +6,13 @@ const env = require("../env");
 async function find(match) {
   if (match.address && env.REDIS_ENABLED) {
     const cachedHost = await redis.client.get(redis.key.host(match.address));
-    if (cachedHost) return JSON.parse(cachedHost);
+    if (cachedHost) {
+      const parsed = JSON.parse(cachedHost);
+      const matchesAll = Object.entries(match).every(([k, v]) =>
+        typeof v === "boolean" ? Boolean(parsed[k]) === v : parsed[k] === v
+      );
+      return matchesAll ? parsed : null;
+    }
   }
 
   const host = await knex("hosts")
@@ -46,7 +52,7 @@ async function add(params) {
   }
 
   // Query domain instead of using returning as sqlite and mysql don't support it
-  const host = await knex("hosts").where("id", id);
+  const host = await knex("hosts").where("id", id).first();
 
   if (env.REDIS_ENABLED) {
     redis.remove.host(host);

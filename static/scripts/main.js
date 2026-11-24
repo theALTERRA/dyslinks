@@ -13,6 +13,26 @@ document.body.addEventListener("redirectToHomepage", function() {
   }, 1500);
 });
 
+function scheduleRedirects(root) {
+  if (!root) return;
+  const targets = [];
+  if (root.matches && root.matches("[data-redirect]")) {
+    targets.push(root);
+  }
+  if (root.querySelectorAll) {
+    root.querySelectorAll("[data-redirect]").forEach(el => targets.push(el));
+  }
+  targets.forEach(el => {
+    if (el.dataset.redirectScheduled === "true") return;
+    const destination = el.dataset.redirect;
+    if (!destination) return;
+    el.dataset.redirectScheduled = "true";
+    setTimeout(() => {
+      window.location.replace(destination);
+    }, 1000);
+  });
+}
+
 // reset form if event is sent from the backend
 function resetForm(id) {
   return function() {
@@ -23,6 +43,23 @@ function resetForm(id) {
 }
 document.body.addEventListener("resetChangePasswordForm", resetForm("change-password"));
 document.body.addEventListener("resetChangeEmailForm", resetForm("change-email"));
+document.body.addEventListener("resetShortenerForm", function() {
+  ["target", "customurl", "password", "expire_in", "description"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  const domainEl = document.getElementById("domain");
+  const labelVal = document.getElementById("customurl-label-value");
+  if (domainEl && labelVal) {
+    labelVal.textContent = domainEl.value + "/";
+  }
+});
+document.body.addEventListener("closeAddDomainForm", function() {
+  const showBtn = document.querySelector(".show-domain-form");
+  if (showBtn) showBtn.classList.remove("hidden");
+  const addDomainForm = document.getElementById("add-domain");
+  if (addDomainForm) addDomainForm.remove();
+});
 
 // an htmx extension to use the specifed params in the path instead of the query or body
 htmx.defineExtension("path-params", {
@@ -106,18 +143,39 @@ function handleQRCode(element, id) {
   });
 }
 
-// copy the link to clipboard
-function handleCopyLink(element) {
-  const url = element.dataset.url;
-  if (!url) return;
+// copy the link to clipboard (with fallback for non-HTTPS contexts)
+async function handleCopyLink(element) {
+  const url = element && element.dataset ? element.dataset.url : null;
+  if (!url) return false;
   if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(url).catch(() => {});
+    try {
+      await navigator.clipboard.writeText(url);
+      return true;
+    } catch (_) {
+      // fall through to textarea copy fallback
+    }
+  }
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = url;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const copied = document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return !!copied;
+  } catch (_) {
+    return false;
   }
 }
 
 // copy the link and toggle copy button style
-function handleShortURLCopyLink(element) {
-  handleCopyLink(element);
+async function handleShortURLCopyLink(element) {
+  const copied = await handleCopyLink(element);
+  if (!copied) return;
   const clipboard = element.parentNode.querySelector(".clipboard") || closest(".clipboard", element);
   if (!clipboard || clipboard.classList.contains("copied")) return;
   clipboard.classList.add("copied");
@@ -136,26 +194,34 @@ function openDialog(id, name) {
   }
 }
 
-function closeDialog() {
-  const dialog = document.querySelector(".dialog");
+function closeDialog(targetDialog) {
+  const dialog = targetDialog || document.querySelector(".dialog.open") || document.querySelector(".dialog");
   if (!dialog) return;
   while (dialog.classList.length > 0) {
     dialog.classList.remove(dialog.classList[0]);
   }
   dialog.classList.add("dialog");
+  const wrapper = dialog.querySelector(".content-wrapper");
+  if (wrapper) {
+    wrapper.textContent = "";
+  }
 }
 
 window.addEventListener("click", function(event) {
-  const dialog = document.querySelector(".dialog");
-  if (dialog && event.target === dialog) {
-    closeDialog();
+  if (
+    event.target &&
+    event.target.classList &&
+    event.target.classList.contains("dialog") &&
+    event.target.classList.contains("open")
+  ) {
+    closeDialog(event.target);
   }
 });
 
 window.addEventListener("keydown", function(event) {
   if (event.key === "Escape") {
     const dialog = document.querySelector(".dialog.open");
-    if (dialog) closeDialog();
+    if (dialog) closeDialog(dialog);
   }
 });
 
@@ -164,27 +230,34 @@ function setLinksLimit(event) {
   const buttons = Array.from(document.querySelectorAll("table .nav .limit button"));
   const limitInput = document.querySelector("#limit");
   if (!limitInput || !buttons || !buttons.length) return;
-  limitInput.value = event.target.textContent;
+  const button = event.currentTarget || closest("button", event.target) || event.target;
+  const nextLimit = button.textContent.trim();
+  limitInput.value = nextLimit;
+  const skipInput = document.querySelector("#skip");
+  if (skipInput) skipInput.value = 0;
   buttons.forEach(b => {
-    b.disabled = b.textContent === event.target.textContent;
+    b.disabled = b.textContent.trim() === nextLimit;
   });
+  updateLinksNav();
 }
 
 function setLinksSkip(event, action) {
-  const buttons = Array.from(document.querySelectorAll("table .nav .pagination button"));
   const limitElm = document.querySelector("#limit");
   const totalElm = document.querySelector("#total");
   const skipElm = document.querySelector("#skip");
-  if (!buttons || !limitElm || !totalElm || !skipElm) return;
-  const skip = parseInt(skipElm.value);
-  const limit = parseInt(limitElm.value);
-  const total = parseInt(totalElm.value);
-  skipElm.value = action === "next" ? skip + limit : Math.max(skip - limit, 0);
+  if (!limitElm || !totalElm || !skipElm) return;
+  const skip = parseInt(skipElm.value, 10) || 0;
+  const limit = parseInt(limitElm.value, 10) || 10;
+  const total = parseInt(totalElm.value, 10) || 0;
+  if (action === "next" && skip + limit >= total) return;
+  if (action === "prev" && skip <= 0) return;
+  const nextSkip = action === "next" ? skip + limit : Math.max(skip - limit, 0);
+  skipElm.value = nextSkip;
   document.querySelectorAll(".pagination .next").forEach(elm => {
-    elm.disabled = total <= parseInt(skipElm.value) + limit;
+    elm.disabled = total <= nextSkip + limit;
   });
   document.querySelectorAll(".pagination .prev").forEach(elm => {
-    elm.disabled = parseInt(skipElm.value) <= 0;
+    elm.disabled = nextSkip <= 0;
   });
 }
 
@@ -193,14 +266,42 @@ function updateLinksNav() {
   const skipElm = document.querySelector("#skip");
   const limitElm = document.querySelector("#limit");
   if (!totalElm || !skipElm || !limitElm) return;
-  const total = parseInt(totalElm.value);
-  const skip = parseInt(skipElm.value);
-  const limit = parseInt(limitElm.value);
+  const parsedTotal = parseInt(totalElm.value, 10);
+  const parsedSkip = parseInt(skipElm.value, 10);
+  const parsedLimit = parseInt(limitElm.value, 10);
+  const total = Number.isNaN(parsedTotal) ? 0 : parsedTotal;
+  let skip = Number.isNaN(parsedSkip) ? 0 : Math.max(parsedSkip, 0);
+  const limit = Number.isNaN(parsedLimit) || parsedLimit <= 0 ? 10 : parsedLimit;
+
+  if (total > 0 && skip >= total) {
+    skip = Math.max(0, Math.floor((total - 1) / limit) * limit);
+    skipElm.value = skip;
+    document.querySelectorAll(".pagination .next").forEach(elm => {
+      elm.disabled = total <= skip + limit;
+    });
+    document.querySelectorAll(".pagination .prev").forEach(elm => {
+      elm.disabled = skip <= 0;
+    });
+    document.querySelectorAll("table .nav .limit button").forEach(b => {
+      b.disabled = b.textContent.trim() === String(limit);
+    });
+    htmx.trigger("body", "reloadMainTable");
+    return;
+  }
+
+  if (total === 0 && skip > 0) {
+    skip = 0;
+    skipElm.value = 0;
+  }
+
   document.querySelectorAll(".pagination .next").forEach(elm => {
     elm.disabled = total <= skip + limit;
   });
   document.querySelectorAll(".pagination .prev").forEach(elm => {
     elm.disabled = skip <= 0;
+  });
+  document.querySelectorAll("table .nav .limit button").forEach(b => {
+    b.disabled = b.textContent.trim() === String(limit);
   });
 }
 
@@ -210,49 +311,53 @@ function resetTableNav() {
   const limitElm = document.querySelector("#limit");
   if (!totalElm || !skipElm || !limitElm) return;
   skipElm.value = 0;
-  limitElm.value = 10;
-  const total = parseInt(totalElm.value);
-  const skip = parseInt(skipElm.value);
-  const limit = parseInt(limitElm.value);
+  const parsedTotal = parseInt(totalElm.value, 10);
+  const parsedLimit = parseInt(limitElm.value, 10);
+  const total = Number.isNaN(parsedTotal) ? 0 : parsedTotal;
+  const limit = Number.isNaN(parsedLimit) || parsedLimit <= 0 ? 10 : parsedLimit;
   document.querySelectorAll(".pagination .next").forEach(elm => {
-    elm.disabled = total <= skip + limit;
+    elm.disabled = total <= limit;
   });
   document.querySelectorAll(".pagination .prev").forEach(elm => {
-    elm.disabled = skip <= 0;
-  });
-  document.querySelectorAll("table .nav .limit button").forEach(b => {
-    b.disabled = b.textContent === limit.toString();
+    elm.disabled = true;
   });
 }
 
 // tab click
 function setTab(event, targetId) {
-  const tabs = Array.from(closest("nav", event.target).children);
-  tabs.forEach(function (tab) {
+  const target = targetId
+    ? document.getElementById(targetId)
+    : (event.currentTarget || closest("a", event.target) || event.target);
+  const nav = target ? closest("nav", target) : null;
+  if (!nav) return;
+  Array.from(nav.children).forEach(function (tab) {
     tab.classList.remove("active");
   });
-  if (targetId) {
-    document.getElementById(targetId).classList.add("active");
-  } else {
-    event.target.classList.add("active");
-  }
+  target.classList.add("active");
 }
 
 // show clear search button
 function onSearchChange(event) {
   const clearButton = event.target.parentElement.querySelector("button.clear");
-  if (!clearButton) return;
-  clearButton.style.display = event.target.value.length > 0 ? "flex" : "none";
+  if (clearButton) {
+    clearButton.style.display = event.target.value.length > 0 ? "flex" : "none";
+  }
+  resetTableNav();
 }
 
-function clearSeachInput(event) {
+function clearSearchInput(event) {
   event.preventDefault();
   const button = closest("button", event.target);
-  const input = button.parentElement.querySelector("input");
+  const input = button && button.parentElement ? button.parentElement.querySelector("input") : null;
   if (!input) return;
   input.value = "";
   button.style.display = "none";
+  resetTableNav();
   htmx.trigger("body", "reloadMainTable");
+}
+
+function clearSeachInput(event) {
+  return clearSearchInput(event);
 }
 
 // detect if search inputs have value on load to show clear button
@@ -267,15 +372,26 @@ function onSearchInputLoad() {
 }
 
 onSearchInputLoad();
+updateLinksNav();
+scheduleRedirects(document);
+
+document.body.addEventListener("htmx:afterSwap", function(evt) {
+  scheduleRedirects(evt.target || document);
+});
+
+document.body.addEventListener("htmx:afterSettle", function() {
+  onSearchInputLoad();
+  updateLinksNav();
+});
 
 // create user checkbox control
 function canSendVerificationEmail() {
-  const canSendVerificationEmail = !document.getElementById("create-user-verified").checked && !document.getElementById("create-user-banned").checked;
+  const verified = document.getElementById("create-user-verified");
+  const banned = document.getElementById("create-user-banned");
   const checkbox = document.getElementById("send-email-label");
-  if (canSendVerificationEmail)
-    checkbox.classList.remove("hidden");
-  if (!canSendVerificationEmail && !checkbox.classList.contains("hidden"))
-    checkbox.classList.add("hidden");
+  if (!verified || !banned || !checkbox) return;
+  const canSend = !verified.checked && !banned.checked;
+  checkbox.classList.toggle("hidden", !canSend);
 }
 
 // htmx prefetch extension

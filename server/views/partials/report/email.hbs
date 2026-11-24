@@ -1,6 +1,7 @@
 <div id="report-email">
   {{#unless report_email_address}}
     <button 
+      type="button"
       class="link"
       hx-get="/get-report-email"
       hx-sync="this:abort"

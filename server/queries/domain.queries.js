@@ -6,7 +6,13 @@ const env = require("../env");
 async function find(match) {
   if (match.address && env.REDIS_ENABLED) {
     const cachedDomain = await redis.client.get(redis.key.domain(match.address));
-    if (cachedDomain) return JSON.parse(cachedDomain);
+    if (cachedDomain) {
+      const parsed = JSON.parse(cachedDomain);
+      const matchesAll = Object.entries(match).every(([k, v]) =>
+        typeof v === "boolean" ? Boolean(parsed[k]) === v : parsed[k] === v
+      );
+      return matchesAll ? parsed : null;
+    }
   }
 
   const domain = await knex("domains").where(match).first();
@@ -160,11 +166,11 @@ async function getAdmin(match, params) {
     .groupBy("users.email");
 
   if (params?.user) {
-    const id = parseInt(params?.user);
-    if (Number.isNaN(id)) {
+    const isNumericId = /^\d+$/.test(String(params.user).trim());
+    if (!isNumericId) {
       query[knex.compatibleILIKE]("users.email", "%" + params.user + "%");
     } else {
-      query.andWhere("domains.user_id", id);
+      query.andWhere("domains.user_id", parseInt(params.user, 10));
     }
   }
 
@@ -198,11 +204,11 @@ async function totalAdmin(match, params) {
   });
   
   if (params?.user) {
-    const id = parseInt(params?.user);
-    if (Number.isNaN(id)) {
+    const isNumericId = /^\d+$/.test(String(params.user).trim());
+    if (!isNumericId) {
       query[knex.compatibleILIKE]("users.email", "%" + params.user + "%");
-      } else {
-      query.andWhere("domains.user_id", id);
+    } else {
+      query.andWhere("domains.user_id", parseInt(params.user, 10));
     }
   }
 

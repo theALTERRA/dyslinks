@@ -142,11 +142,11 @@ async function getAdmin(match, params) {
     .groupBy("d.domains");
   
   if (params?.search) {
-    const id = parseInt(params?.search);
-    if (Number.isNaN(id)) {
-      query[knex.compatibleILIKE]("users.email", "%" + params?.search + "%");
+    const isNumericId = /^\d+$/.test(String(params.search).trim());
+    if (!isNumericId) {
+      query[knex.compatibleILIKE]("users.email", "%" + params.search + "%");
     } else {
-      query.andWhere("users.id", params?.search);
+      query.andWhere("users.id", parseInt(params.search, 10));
     }
   }
 
@@ -184,11 +184,11 @@ async function totalAdmin(match, params) {
     .where(normalizeMatch(match));
 
   if (params?.search) {
-    const id = parseInt(params?.search);
-    if (Number.isNaN(id)) {
-      query[knex.compatibleILIKE]("users.email", "%" + params?.search + "%");
+    const isNumericId = /^\d+$/.test(String(params.search).trim());
+    if (!isNumericId) {
+      query[knex.compatibleILIKE]("users.email", "%" + params.search + "%");
     } else {
-      query.andWhere("users.id", params?.search);
+      query.andWhere("users.id", parseInt(params.search, 10));
     }
   }
 
@@ -221,12 +221,17 @@ async function totalAdmin(match, params) {
 }
 
 async function create(params) {
+  const shouldGenerateVerification = env.MAIL_ENABLED && params.verification_email && !params.banned && !params.verified;
   let [user] = await knex("users").insert({
     email: params.email,
     password: params.password,
     role: params.role ?? ROLES.USER,
     verified: params.verified ?? false,
     banned: params.banned ?? false,
+    ...(shouldGenerateVerification && {
+      verification_token: randomUUID(),
+      verification_expires: utils.dateToUTC(addMinutes(new Date(), 60)),
+    }),
   }, "*");
 
   // mysql doesn't return the whole user, but rather the id number only

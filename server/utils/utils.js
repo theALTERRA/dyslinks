@@ -226,8 +226,10 @@ function getDifferenceFunction(type) {
 }
 
 function parseDatetime(date) {
+  if (date instanceof Date) return date;
+  const str = String(date);
   // because postgres and mysql return date, sqlite returns formatted iso 8601 string in utc
-  return date instanceof Date ? date : new Date(date + "Z");
+  return new Date(/[zZ]|[+-]\d{2}:?\d{2}$/.test(str) ? str : str + "Z");
 }
 
 function parseTimestamps(item) {
@@ -346,7 +348,7 @@ const MINUTE = 60,
       YEAR = DAY * 365;
 function getTimeAgo(dateString) {
   const date = new Date(dateString);
-  const secondsAgo = Math.round((Date.now() - Number(date)) / 1000);
+  const secondsAgo = Math.max(0, Math.round((Date.now() - Number(date)) / 1000));
 
   if (secondsAgo < MINUTE) {
     return `${secondsAgo} second${secondsAgo !== 1 ? "s" : ""} ago`;
@@ -391,6 +393,7 @@ const sanitize = {
     return {
       ...link,
       ...timestamps,
+      email: undefined,
       banned_by_id: undefined,
       domain_id: undefined,
       user_id: undefined,
@@ -403,9 +406,11 @@ const sanitize = {
   },
   link_html: link => {
     const timestamps = parseTimestamps(link);
+    const expireDiffMs = link.expire_in ? differenceInMilliseconds(parseDatetime(link.expire_in), new Date()) : null;
     return {
       ...link,
       ...timestamps,
+      email: undefined,
       banned_by_id: undefined,
       domain_id: undefined,
       user_id: undefined,
@@ -413,7 +418,9 @@ const sanitize = {
       banned: !!link.banned,
       id: link.uuid,
       relative_created_at: getTimeAgo(timestamps.created_at),
-      relative_expire_in: link.expire_in && ms(differenceInMilliseconds(parseDatetime(link.expire_in), new Date()), { long: true }),
+      is_expired: expireDiffMs !== null && expireDiffMs <= 0,
+      relative_expire_in: expireDiffMs !== null && expireDiffMs > 0 ? ms(expireDiffMs, { long: true }) : null,
+      edit_expire_in: expireDiffMs !== null && expireDiffMs >= 60_000 ? ms(expireDiffMs, { long: true }) : "",
       password: !!link.password,
       visit_count: link.visit_count.toLocaleString("en-US"),
       link: getShortURL(link.address, link.domain),
@@ -421,13 +428,16 @@ const sanitize = {
   },
   link_admin: link => {
     const timestamps = parseTimestamps(link);
+    const expireDiffMs = link.expire_in ? differenceInMilliseconds(parseDatetime(link.expire_in), new Date()) : null;
     return {
       ...link,
       ...timestamps,
       domain: link.domain || env.DEFAULT_DOMAIN,
       id: link.uuid,
       relative_created_at: getTimeAgo(timestamps.created_at),
-      relative_expire_in: link.expire_in && ms(differenceInMilliseconds(parseDatetime(link.expire_in), new Date()), { long: true }),
+      is_expired: expireDiffMs !== null && expireDiffMs <= 0,
+      relative_expire_in: expireDiffMs !== null && expireDiffMs > 0 ? ms(expireDiffMs, { long: true }) : null,
+      edit_expire_in: expireDiffMs !== null && expireDiffMs >= 60_000 ? ms(expireDiffMs, { long: true }) : "",
       password: !!link.password,
       visit_count: link.visit_count.toLocaleString("en-US"),
       link: getShortURL(link.address, link.domain)
@@ -471,14 +481,16 @@ function removeWww(host) {
 function getUseragentBrowser(agent) {
   if (agent.isIE) 
     return "ie";
+  else if (agent.isEdge)
+    return "edge";
+  else if (agent.isOpera)
+    return "opera";
   else if (agent.isFirefox)
     return "firefox";
   else if (agent.isChrome)
     return "chrome";
-  else if (agent.isOpera)
-    return "opera";
-  else if (agent.isEdge)
-    return "edge";
+  else if (agent.isSafari)
+    return "safari";
   else
     return "other";
 }

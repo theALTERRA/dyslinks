@@ -47,7 +47,7 @@ async function signup(req, res) {
 function logout(req, res) {
   utils.deleteCurrentToken(res);
   res.render("logout", {
-    title: "Logging out.."
+    title: "Logging out..."
   });
 }
 
@@ -240,7 +240,9 @@ async function confirmDomainDelete(req, res) {
     user_id: req.user.id
   });
   if (!domain) {
-    throw new utils.CustomError("Could not find the domain.", 400);
+    return res.render("partials/settings/domain/delete", {
+      error: "Could not find the domain."
+    });
   }
   res.render("partials/settings/domain/delete", {
     ...utils.sanitize.domain(domain)
@@ -252,7 +254,10 @@ async function confirmDomainBan(req, res) {
     id: req.query.id
   });
   if (!domain) {
-    throw new utils.CustomError("Could not find the domain.", 400);
+    return res.render("partials/admin/dialog/message", {
+      layout: false,
+      message: "Could not find the domain."
+    });
   }
   const hasUser = !!domain.user_id;
   const hasLink = await query.link.find({ domain_id: domain.id });
@@ -269,7 +274,10 @@ async function confirmDomainDeleteAdmin(req, res) {
     id: req.query.id
   });
   if (!domain) {
-    throw new utils.CustomError("Could not find the domain.", 400);
+    return res.render("partials/admin/dialog/message", {
+      layout: false,
+      message: "Could not find the domain."
+    });
   }
   const hasLink = await query.link.find({ domain_id: domain.id });
   res.render("partials/admin/dialog/delete_domain", {

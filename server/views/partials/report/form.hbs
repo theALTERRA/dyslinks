@@ -8,7 +8,7 @@
     <p class="success">{{message}}</p>
   {{else}}
     <div class="inputs-wrapper">
-      <label>
+      <label class="{{#if errors.link}}error{{/if}}">
         URL containing malware/scam:
         <input 
           type="text" 
@@ -16,7 +16,6 @@
           name="link" 
           placeholder="{{default_domain}}/example"
           hx-preserve="true"
-          class="{{#if errors.link}}error{{/if}}"
           required 
         />
       </label>

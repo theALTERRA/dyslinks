@@ -40,6 +40,7 @@ async function removeByAdmin(req, res) {
   if (!user) {
     const message = "Could not find the user.";
     if (req.isHTML) {
+      res.setHeader("HX-Reswap", "outerHTML");
       return res.render("partials/admin/dialog/message", {
         layout: false,
         message
@@ -52,6 +53,7 @@ async function removeByAdmin(req, res) {
   if (user.id === req.user.id) {
     const message = "You cannot delete your own account from the admin panel.";
     if (req.isHTML) {
+      res.setHeader("HX-Reswap", "outerHTML");
       return res.render("partials/admin/dialog/message", {
         layout: false,
         message
@@ -178,7 +180,7 @@ async function create(req, res) {
 
   const user = await query.user.create(req.body);
 
-  if (req.body.verification_email && !user.banned && !user.verified) {
+  if (env.MAIL_ENABLED && req.body.verification_email && !user.banned && !user.verified) {
     await mail.verification(user);
   }
 

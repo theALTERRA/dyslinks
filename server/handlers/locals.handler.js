@@ -90,9 +90,12 @@ function protected(req, res, next) {
 function adminTable(req, res, next) {
   res.locals.query = {
     anonymous: req.query.anonymous,
+    banned: req.query.banned,
     domain: req.query.domain,
     domains: req.query.domains,
+    has_domain: req.query.has_domain,
     links: req.query.links,
+    owner: req.query.owner,
     role: req.query.role,
     search: req.query.search,
     user: req.query.user,

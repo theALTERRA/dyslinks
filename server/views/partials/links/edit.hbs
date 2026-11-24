@@ -70,7 +70,7 @@
             name="expire_in" 
             type="text" 
             placeholder="2 minutes/hours/days"
-            value="{{relative_expire_in}}"
+            value="{{edit_expire_in}}"
             hx-preserve="true"
           />
           {{#if errors.expire_in}}<p class="error">{{errors.expire_in}}</p>{{/if}}
@@ -80,7 +80,7 @@
         <button 
           type="button"
           onclick="
-            const tr = closest('tr');
+            const tr = this.closest('tr');
             if (!tr) return;
             tr.classList.remove('show');
             tr.removeChild(tr.querySelector('.content'));

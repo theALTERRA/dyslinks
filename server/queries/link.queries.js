@@ -90,11 +90,11 @@ async function totalAdmin(match, params) {
   });
   
   if (params?.user) {
-    const id = parseInt(params?.user);
-    if (Number.isNaN(id)) {
+    const isNumericId = /^\d+$/.test(String(params.user).trim());
+    if (!isNumericId) {
       query[knex.compatibleILIKE]("users.email", "%" + params.user + "%");
-      } else {
-      query.andWhere("links.user_id", params.user);
+    } else {
+      query.andWhere("links.user_id", parseInt(params.user, 10));
     }
   }
 
@@ -151,11 +151,11 @@ async function getAdmin(match, params) {
     .limit(params.limit)
   
   if (params?.user) {
-    const id = parseInt(params?.user);
-    if (Number.isNaN(id)) {
+    const isNumericId = /^\d+$/.test(String(params.user).trim());
+    if (!isNumericId) {
       query[knex.compatibleILIKE]("users.email", "%" + params.user + "%");
     } else {
-      query.andWhere("links.user_id", params.user);
+      query.andWhere("links.user_id", parseInt(params.user, 10));
     }
   }
 
@@ -230,7 +230,11 @@ async function create(params) {
 }
 
 async function remove(match) {
-  const link = await knex("links").where(match).first();
+  const link = await knex("links")
+    .select(...selectable)
+    .where(normalizeMatch(match))
+    .leftJoin("domains", "links.domain_id", "domains.id")
+    .first();
   
   if (!link) {
     return { isRemoved: false, error: "Could not find the link.", link: null }
@@ -279,9 +283,10 @@ async function update(match, update) {
     .update({ ...update, updated_at: utils.dateToUTC(new Date()) });
 
   const updated_links = await knex("links")
-    .select(selectable)
+    .select(selectable_admin)
     .where(normalizeMatch(match))
-    .leftJoin("domains", "links.domain_id", "domains.id");
+    .leftJoin("domains", "links.domain_id", "domains.id")
+    .leftJoin("users", "links.user_id", "users.id");
     
   if (env.REDIS_ENABLED) {
     links.forEach(redis.remove.link);

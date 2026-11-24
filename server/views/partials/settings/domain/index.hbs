@@ -40,7 +40,7 @@
     hx-get="/add-domain-form"
     hx-target="#domain-form-wrapper"
     hx-swap="innerHTML"
-    hx-on::after-request="event.srcElement.classList.add('hidden')"
+    hx-on::after-request="if (event.detail.successful) this.classList.add('hidden')"
   >
     <span>{{> icons/plus}}</span>
     Add domain

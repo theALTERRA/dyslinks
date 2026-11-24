@@ -1,10 +1,10 @@
-module.exports.verifyMailText = `You're attempting to change your email address on {{site_name}}.
+module.exports.verifyMailText = `Thanks for creating an account on {{site_name}}.
 
 Please verify your email address using the link below.
 
 https://{{domain}}/verify/{{verification}}`;
 
-module.exports.changeEmailText = `Thanks for creating an account on {{site_name}}.
+module.exports.changeEmailText = `You're attempting to change your email address on {{site_name}}.
 
 Please verify your email address using the link below.
 

@@ -1,13 +1,13 @@
 <td class="actions">
   {{#if password}}
-    <button class="action password" disabled="true" data-tooltip="Password protected">
+    <span class="action password" role="img" aria-label="Password protected" data-tooltip="Password protected">
       {{> icons/key}}
-    </button>
+    </span>
   {{/if}}
   {{#if banned}}
-    <button class="action banned" disabled="true" data-tooltip="Banned">
+    <span class="action banned" role="img" aria-label="Banned" data-tooltip="Banned">
       {{> icons/stop}}
-    </button>
+    </span>
   {{/if}}
   <a
     class="button action stats"

@@ -15,7 +15,7 @@
           hx-sync="this:replace"
           hx-indicator="closest table"
           hx-vals='{"search":"{{email}}"}'
-          onclick="setTab(event, 'tab-links')"
+          onclick="setTab(event, 'tab-users')"
         >
           {{email}}
         </a>
@@ -54,7 +54,11 @@
   </td>
   <td class="created-at">
     {{relative_created_at}}
-    {{#if relative_expire_in}}
+    {{#if is_expired}}
+      <p class="description">
+        Expired
+      </p>
+    {{else if relative_expire_in}}
       <p class="description">
         Expires in {{relative_expire_in}}
       </p>
@@ -64,6 +68,7 @@
     <div class="short-link-wrapper">
       <div class="clipboard small">
         <button 
+          type="button"
           aria-label="Copy" 
           hx-on:click="handleShortURLCopyLink(this);"
           data-url="{{link.url}}"
@@ -72,7 +77,7 @@
         </button>
         {{> icons/check}}
       </div>
-      <a href="{{link.url}}">/{{link.address}}</a>
+      <a href="{{link.url}}" target="_blank" rel="noopener noreferrer">/{{link.address}}</a>
     </div>
     <p class="description">
       <a 

@@ -58,7 +58,7 @@
       <input 
         name="show_advanced" 
         type="checkbox" 
-        hx-on:change="htmx.toggleClass('#advanced-options', 'hidden')"
+        hx-on:change="document.getElementById('advanced-options')?.classList.toggle('hidden', !this.checked)"
         {{#if show_advanced}}checked="true"{{/if}}
       />
       Show advanced options
