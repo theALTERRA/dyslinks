@@ -96,7 +96,16 @@ async function getAdmin(req, res) {
 };
 
 async function create(req, res) {
-  const { reuse, password, customurl, description, target, fetched_domain, expire_in } = req.body;
+  const { reuse, password, customurl, description, target, expire_in } = req.body;
+  let fetched_domain = req.body.fetched_domain;
+
+  if (!fetched_domain && !req.body._domain_explicit && req.user?.default_domain_id) {
+    const defaultDomain = await query.domain.find({ id: req.user.default_domain_id });
+    if (defaultDomain && !defaultDomain.banned && (defaultDomain.shared || defaultDomain.user_id === req.user.id)) {
+      fetched_domain = defaultDomain;
+    }
+  }
+
   const domain_id = fetched_domain ? fetched_domain.id : null;
   
   const targetDomain = utils.removeWww(URL.parse(target)?.hostname);

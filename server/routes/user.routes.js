@@ -16,6 +16,28 @@ router.get(
   asyncHandler(user.get)
 );
 
+router.post(
+  "/default-domain",
+  locals.viewTemplate("partials/settings/domain/default_domain"),
+  asyncHandler(auth.apikey),
+  asyncHandler(auth.jwt),
+  asyncHandler(locals.user),
+  validators.setDefaultDomain,
+  asyncHandler(helpers.verify),
+  asyncHandler(user.setDefaultDomain)
+);
+
+router.patch(
+  "/default-domain",
+  locals.viewTemplate("partials/settings/domain/default_domain"),
+  asyncHandler(auth.apikey),
+  asyncHandler(auth.jwt),
+  asyncHandler(locals.user),
+  validators.setDefaultDomain,
+  asyncHandler(helpers.verify),
+  asyncHandler(user.setDefaultDomain)
+);
+
 router.get(
   "/admin",
   locals.viewTemplate("partials/admin/users/table"),

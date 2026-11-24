@@ -2734,6 +2734,25 @@ h1.settings-welcome span {
 
 #domains-table { margin-top: 1rem; box-shadow: none; }
 #domains-table .domain { flex: 2 2 0; font-weight: 500; }
+#domains-table .domain-address-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: 100%;
+}
+#domains-table .domain-default-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  line-height: 1;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background-color: var(--table-status-green-bg-color);
+  color: var(--table-status-green-fg-color);
+}
 #domains-table .homepage { flex: 2 2 0; color: var(--text-secondary); }
 #domains-table .actions { flex: 1 1 0; justify-content: flex-end; padding-right: 0.75rem; }
 #domains-table .no-entry { flex: 1 1 0; opacity: 0.85; color: var(--secondary-text-color); }
@@ -2764,6 +2783,50 @@ form#add-domain .spinner { width: 20px; display: none; stroke: var(--color-prima
 form#add-domain.htmx-request .buttons-wrapper { display: none; }
 form#add-domain.htmx-request .spinner { display: block; }
 form#add-domain .error { font-size: 13px; }
+
+/* SETTINGS - DEFAULT DOMAIN */
+
+#default-domain-wrapper {
+  width: 100%;
+  margin-bottom: 0.25rem;
+}
+
+form#default-domain-form {
+  margin-top: 1rem;
+}
+
+form#default-domain-form .default-domain-controls {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+form#default-domain-form label {
+  flex: 1 1 240px;
+  max-width: 340px;
+  margin-bottom: 0;
+}
+
+form#default-domain-form select {
+  width: 100%;
+  min-width: 0;
+}
+
+form#default-domain-form button[type="submit"] {
+  flex-shrink: 0;
+  height: 40px;
+}
+
+form#default-domain-form .spinner { display: none; }
+form#default-domain-form.htmx-request svg { display: none; }
+form#default-domain-form.htmx-request .spinner { display: block; }
+
+#default-domain-wrapper p.default-domain-hint {
+  font-size: 13px;
+  color: var(--secondary-text-color);
+  margin: 0.65rem 0 0;
+}
 
 /* SETTINGS - API */
 
@@ -3578,6 +3641,8 @@ a.back-to-home {
   .add-domain-wrapper { margin: 1rem 0 0.5rem; }
   .add-domain-wrapper > .spinner { width: 18px; margin: 0.5rem 0 0 0.5rem; }
   form#add-domain { margin-top: 0.75rem; }
+  form#default-domain-form label { max-width: 100%; }
+  form#default-domain-form button[type="submit"] { height: 38px; }
 
   #stats-section { padding: 0 1rem; }
   .stats-info { flex-direction: column; align-items: flex-start; justify-content: flex-start; gap: 0.25rem; }

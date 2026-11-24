@@ -11,7 +11,12 @@
       {{#each domains}}
         <tr>
           <td class="domain right-fade">
-            {{address}}
+            <span class="domain-address-line">
+              {{address}}
+              {{#ifEquals address ../user_default_domain}}
+                <span class="domain-default-badge">Default</span>
+              {{/ifEquals}}
+            </span>
           </td>
           <td class="homepage right-fade">
             {{homepage}}
@@ -40,3 +45,6 @@
     {{/if}}
   </tbody>
 </table>
+{{#if swap_oob_default}}
+  {{> settings/domain/default_domain swap_oob=true}}
+{{/if}}

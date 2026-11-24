@@ -1,0 +1,48 @@
+<section id="default-domain-wrapper" {{#if swap_oob}}hx-swap-oob="true"{{/if}}>
+  <h2>Default domain</h2>
+  <p>Choose which domain is selected by default when creating new short links.</p>
+  <form
+    id="default-domain-form"
+    hx-post="/api/users/default-domain"
+    hx-target="#default-domain-wrapper"
+    hx-swap="outerHTML"
+    hx-sync="this:abort"
+  >
+    <div class="default-domain-controls">
+      <label class="{{#if errors.domain}}error{{/if}}">
+        Default domain:
+        <select id="default-domain" name="domain">
+          <option value="{{default_domain}}" {{#ifEquals user_default_domain default_domain}}selected{{/ifEquals}}>
+            {{default_domain}} (Site default)
+          </option>
+          {{#each shortener_domains}}
+            <option value="{{address}}" {{#ifEquals ../user_default_domain address}}selected{{/ifEquals}}>
+              {{address}}{{#if shared}} (Shared){{/if}}
+            </option>
+          {{/each}}
+        </select>
+      </label>
+      <button type="submit" class="primary">
+        <span>{{> icons/check}}</span>
+        <span>{{> icons/spinner}}</span>
+        Save
+      </button>
+    </div>
+    {{#if errors.domain}}
+      <p class="error">{{errors.domain}}</p>
+    {{/if}}
+    {{#unless shortener_domains}}
+      <p class="default-domain-hint">Add a custom domain above to select a different default domain.</p>
+    {{/unless}}
+    {{#if error}}
+      {{#unless errors}}
+        <p class="error">{{error}}</p>
+      {{/unless}}
+    {{else if success}}
+      <p class="success">{{success}}</p>
+    {{/if}}
+  </form>
+</section>
+{{#if swap_oob_table}}
+  {{> settings/domain/table}}
+{{/if}}

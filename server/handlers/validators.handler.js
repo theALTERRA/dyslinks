@@ -82,12 +82,15 @@ const createLink = [
     .customSanitizer(value => utils.dateToUTC(addMilliseconds(new Date(), value))),
   body("domain")
     .optional({ nullable: true, checkFalsy: true })
-    .customSanitizer(value => value === env.DEFAULT_DOMAIN ? null : value)
+    .customSanitizer((value, { req }) => {
+      req.body._domain_explicit = true;
+      return String(value).trim().toLowerCase() === env.DEFAULT_DOMAIN.toLowerCase() ? null : value;
+    })
     .custom(checkUser)
     .withMessage("Only users can use this field.")
     .isString()
     .withMessage("Domain should be string.")
-    .customSanitizer(value => value.toLowerCase())
+    .customSanitizer(value => value.trim().toLowerCase())
     .custom(async (address, { req }) => {
       const domain = await query.domain.find({ address });
       const allowed = domain && !domain.banned && (domain.shared || domain.user_id === req.user.id);
@@ -563,6 +566,29 @@ async function bannedHost(domain) {
   }
 };
 
+const setDefaultDomain = [
+  body("domain")
+    .optional({ nullable: true, checkFalsy: true })
+    .isString()
+    .withMessage("Domain should be string.")
+    .customSanitizer(value => {
+      const normalized = value.trim().toLowerCase();
+      return !normalized || normalized === env.DEFAULT_DOMAIN.toLowerCase() ? null : normalized;
+    })
+    .custom(async (address, { req }) => {
+      if (!address) {
+        req.body.fetched_domain = null;
+        return;
+      }
+      const domain = await query.domain.find({ address });
+      const allowed = domain && !domain.banned && (domain.shared || domain.user_id === req.user.id);
+      req.body.fetched_domain = allowed ? domain : null;
+
+      if (!allowed) return Promise.reject();
+    })
+    .withMessage("You can't use this domain.")
+];
+
 module.exports = {
   addDomain,
   addDomainAdmin,
@@ -589,6 +615,7 @@ module.exports = {
   removeDomainAdmin,
   reportLink,
   resetPassword,
+  setDefaultDomain,
   signup,
   signupEmailTaken,
   toggleShareDomain,

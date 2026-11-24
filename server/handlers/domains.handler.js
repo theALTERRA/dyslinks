@@ -1,6 +1,7 @@
 const { Handler } = require("express");
 
 const { CustomError, sanitize } = require("../utils");
+const locals = require("./locals.handler");
 const query = require("../queries");
 const redis = require("../redis");
 const utils = require("../utils");
@@ -16,11 +17,17 @@ async function add(req, res) {
   });
 
   if (req.isHTML) {
-    const domains = (await query.domain.get({ user_id: req.user.id })).map(sanitize.domain);
+    const [ownDomains, availableDomains] = await Promise.all([
+      query.domain.get({ user_id: req.user.id }),
+      query.domain.getForUser(req.user.id)
+    ]);
     res.setHeader("HX-Reswap", "none");
     res.setHeader("HX-Trigger-After-Swap", "closeAddDomainForm");
     res.render("partials/settings/domain/table", {
-      domains
+      domains: ownDomains.map(sanitize.domain),
+      shortener_domains: availableDomains.map(sanitize.domain),
+      user_default_domain: locals.resolveUserDefaultDomain(req.user, availableDomains),
+      swap_oob_default: true,
     });
     return;
   }
@@ -69,15 +76,27 @@ async function remove(req, res) {
     throw new CustomError("Could not delete the domain.", 500);
   }
 
+  if (!domain.shared) {
+    await query.user.clearDefaultDomain(domain.id);
+    if (req.user.default_domain_id === domain.id) {
+      req.user.default_domain_id = null;
+    }
+  }
+
   if (env.REDIS_ENABLED) {
     redis.remove.domain(updatedDomain);
   }
 
   if (req.isHTML) {
-    const domains = (await query.domain.get({ user_id: req.user.id })).map(sanitize.domain);
+    const [ownDomains, availableDomains] = await Promise.all([
+      query.domain.get({ user_id: req.user.id }),
+      query.domain.getForUser(req.user.id)
+    ]);
     res.setHeader("HX-Reswap", "outerHTML");
     res.render("partials/settings/domain/delete_success", {
-      domains,
+      domains: ownDomains.map(sanitize.domain),
+      shortener_domains: availableDomains.map(sanitize.domain),
+      user_default_domain: locals.resolveUserDefaultDomain(req.user, availableDomains),
       address: domain.address,
     });
     return;
@@ -100,6 +119,7 @@ async function removeAdmin(req, res) {
     await query.link.batchRemove({ domain_id: id });
   }
   
+  await query.user.clearDefaultDomain(domain.id);
   await query.domain.remove(domain);
 
   if (req.isHTML) {
@@ -178,6 +198,7 @@ async function ban(req, res) {
 
   // 2. ban domain
   tasks.push(query.domain.update({ id }, { ...update, shared: false }));
+  tasks.push(query.user.clearDefaultDomain(domain.id));
   
   // 3. ban user
   if (req.body.user && domain.user_id) {
@@ -222,6 +243,9 @@ async function toggleShare(req, res) {
 
   const nextShared = !domain.shared;
   await query.domain.update({ id }, { shared: nextShared });
+  if (!nextShared) {
+    await query.user.clearDefaultDomain(domain.id, domain.user_id);
+  }
 
   if (req.isHTML) {
     res.setHeader("HX-Trigger", "reloadMainTable");

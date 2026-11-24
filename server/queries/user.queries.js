@@ -259,8 +259,30 @@ async function findAny() {
   return !!anyuser;
 }
 
+async function clearDefaultDomain(domainId, keepUserId) {
+  const matchQuery = knex("users").where("default_domain_id", domainId);
+  if (keepUserId) {
+    matchQuery.andWhereNot("id", keepUserId);
+  }
+
+  let affectedUsers = [];
+  if (env.REDIS_ENABLED) {
+    affectedUsers = await matchQuery.clone().select("id", "apikey");
+  }
+
+  await matchQuery.update({
+    default_domain_id: null,
+    updated_at: utils.dateToUTC(new Date()),
+  });
+
+  if (env.REDIS_ENABLED && affectedUsers.length) {
+    affectedUsers.forEach(redis.remove.user);
+  }
+}
+
 module.exports = {
   add,
+  clearDefaultDomain,
   create,
   find,
   findAny,

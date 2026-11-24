@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 
+const locals = require("./locals.handler");
 const query = require("../queries");
 const utils = require("../utils");
 const mail = require("../mail");
@@ -13,10 +14,49 @@ async function get(req, res) {
   const data = {
     apikey: req.user.apikey,
     email: req.user.email,
+    default_domain: locals.resolveUserDefaultDomain(req.user, domains),
     domains: domains.map(utils.sanitize.domain)
   };
 
   return res.status(200).send(data);
+};
+
+async function setDefaultDomain(req, res) {
+  const domain = req.body.fetched_domain || null;
+
+  const updatedUser = await query.user.update(
+    { id: req.user.id },
+    { default_domain_id: domain ? domain.id : null }
+  );
+
+  if (!updatedUser) {
+    throw new CustomError("Couldn't update default domain. Try again later.");
+  }
+
+  req.user.default_domain_id = updatedUser.default_domain_id;
+
+  const [ownDomains, availableDomains] = await Promise.all([
+    query.domain.get({ user_id: req.user.id }),
+    query.domain.getForUser(req.user.id)
+  ]);
+
+  const user_default_domain = locals.resolveUserDefaultDomain(updatedUser, availableDomains);
+
+  if (req.isHTML) {
+    res.render("partials/settings/domain/default_domain", {
+      domains: ownDomains.map(utils.sanitize.domain),
+      shortener_domains: availableDomains.map(utils.sanitize.domain),
+      user_default_domain,
+      swap_oob_table: true,
+      success: "Default domain has been updated."
+    });
+    return;
+  }
+
+  return res.status(200).send({
+    default_domain: user_default_domain,
+    message: "Default domain has been updated."
+  });
 };
 
 async function remove(req, res) {
@@ -202,4 +242,5 @@ module.exports = {
   getAdmin,
   remove,
   removeByAdmin,
+  setDefaultDomain,
 }

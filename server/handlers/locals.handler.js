@@ -51,6 +51,14 @@ function config(req, res, next) {
   next();
 }
 
+function resolveUserDefaultDomain(user, availableDomains) {
+  if (user?.default_domain_id && Array.isArray(availableDomains)) {
+    const matched = availableDomains.find(d => d.id === user.default_domain_id);
+    if (matched) return matched.address;
+  }
+  return env.DEFAULT_DOMAIN;
+}
+
 async function user(req, res, next) {
   const user = req.user;
   res.locals.user = user;
@@ -61,9 +69,11 @@ async function user(req, res, next) {
     ]);
     res.locals.domains = ownDomains.map(utils.sanitize.domain);
     res.locals.shortener_domains = availableDomains.map(utils.sanitize.domain);
+    res.locals.user_default_domain = resolveUserDefaultDomain(user, availableDomains);
   } else {
     res.locals.domains = null;
     res.locals.shortener_domains = null;
+    res.locals.user_default_domain = env.DEFAULT_DOMAIN;
   }
   next();
 }
@@ -116,6 +126,7 @@ module.exports = {
   newPassword,
   noLayout,
   protected,
+  resolveUserDefaultDomain,
   user,
   viewTemplate,
 }
