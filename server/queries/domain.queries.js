@@ -41,6 +41,14 @@ function getForUser(user_id, { includeOwn = true } = {}) {
     .orderBy("address", "asc");
 }
 
+function getUsedByUser(user_id) {
+  return knex("domains")
+    .distinct("domains.address")
+    .innerJoin("links", "links.domain_id", "domains.id")
+    .where("links.user_id", user_id)
+    .orderBy("domains.address", "asc");
+}
+
 async function add(params) {
   params.address = params.address.toLowerCase();
 
@@ -251,6 +259,7 @@ module.exports = {
   get,
   getAdmin,
   getForUser,
+  getUsedByUser,
   remove,
   totalAdmin,
   update,

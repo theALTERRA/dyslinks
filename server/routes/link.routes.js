@@ -68,6 +68,17 @@ router.patch(
   asyncHandler(link.editAdmin)
 );
 
+router.post(
+  "/bulk-delete",
+  locals.viewTemplate("partials/links/dialog/bulk_delete"),
+  asyncHandler(auth.apikey),
+  asyncHandler(auth.jwt),
+  helpers.rateLimit({ window: 60, limit: 30 }),
+  validators.bulkDeleteLinks,
+  asyncHandler(helpers.verify),
+  asyncHandler(link.bulkRemove)
+);
+
 router.delete(
   "/:id",
   locals.viewTemplate("partials/links/dialog/delete"),

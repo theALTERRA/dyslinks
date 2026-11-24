@@ -191,6 +191,47 @@ async function confirmLinkDelete(req, res) {
   });
 }
 
+async function confirmLinksDelete(req, res) {
+  const body = req.body || {};
+  const all = body.all === true || body.all === "true" || body.all === "1" || body.all === "on";
+  const domain = typeof body.domain === "string" ? body.domain.trim() : "";
+  const search = typeof body.search === "string" ? body.search.trim() : "";
+
+  const rawIds = Array.isArray(body.ids)
+    ? body.ids
+    : (typeof body.ids === "string" && body.ids.trim() ? [body.ids.trim()] : []);
+  const ids = [...new Set(rawIds.filter(id => typeof id === "string" && UUID_REGEX.test(id.trim())).map(id => id.trim()))].slice(0, 500);
+
+  if (!all && ids.length === 0) {
+    return res.render("partials/links/dialog/message", {
+      layout: false,
+      message: "No links selected to delete."
+    });
+  }
+
+  const match = { user_id: req.user.id };
+  const params = all ? { domain, search } : { uuids: ids };
+  const count = await query.link.total(match, params);
+
+  if (!count) {
+    return res.render("partials/links/dialog/message", {
+      layout: false,
+      message: "Could not find any matching links to delete."
+    });
+  }
+
+  res.render("partials/links/dialog/bulk_delete", {
+    layout: false,
+    count,
+    count_formatted: count.toLocaleString("en-US"),
+    is_plural: count !== 1,
+    all,
+    ids,
+    domain,
+    search,
+  });
+}
+
 async function confirmLinkBan(req, res) {
   const uuid = getQueryUUID(req);
   const link = uuid
@@ -361,6 +402,7 @@ module.exports = {
   confirmDomainDeleteAdmin,
   confirmLinkBan,
   confirmLinkDelete,
+  confirmLinksDelete,
   confirmUserBan,
   confirmUserDelete,
   createAdmin,

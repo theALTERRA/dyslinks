@@ -1,4 +1,13 @@
 <tr id="tr-{{id}}" {{#if swap_oob}}hx-swap-oob="true"{{/if}}>
+  <td class="select-col">
+    <input
+      type="checkbox"
+      class="link-select-checkbox"
+      value="{{id}}"
+      aria-label="Select {{link.link}}"
+      data-action="toggle-select-link"
+    />
+  </td>
   <td class="original-url right-fade">
     {{#if is_http_target}}
       <a href="{{target}}" target="_blank" rel="noopener noreferrer">

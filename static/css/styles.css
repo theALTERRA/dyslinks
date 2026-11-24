@@ -133,6 +133,7 @@
   --table-bg-color: #fafafa;
   --table-tr-border-color: #f4f4f5;
   --table-tr-hover-bg-color: #fafafa;
+  --table-tr-selected-bg-color: #eef2ff;
   --table-head-tr-border-color: #e4e4e7;
   --table-status-gray-bg-color: #f4f4f5;
   --table-status-gray-fg-color: #52525b;
@@ -279,6 +280,7 @@
   --table-bg-color: #141418;
   --table-tr-border-color: rgba(255, 255, 255, 0.06);
   --table-tr-hover-bg-color: #17171b;
+  --table-tr-selected-bg-color: #181a28;
   --table-head-tr-border-color: rgba(255, 255, 255, 0.085);
   --table-status-gray-bg-color: rgba(255, 255, 255, 0.08);
   --table-status-gray-fg-color: #d4d4d8;
@@ -1061,6 +1063,29 @@ input[type="checkbox"]::after {
 input[type="checkbox"]:checked::after {
   opacity: 1;
   transform: translateY(-1px) rotate(45deg) scale(1);
+}
+
+input[type="checkbox"]:indeterminate {
+  background-color: var(--checkbox-bg-color);
+  border-color: var(--checkbox-bg-color);
+}
+
+input[type="checkbox"]:indeterminate::after {
+  width: 8px;
+  height: 0;
+  border: none;
+  border-top: 2px solid #ffffff;
+  transform: scale(1);
+  opacity: 1;
+}
+
+input[type="checkbox"]:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+input[type="checkbox"]:disabled:hover {
+  border-color: var(--input-border);
 }
 
 input.table-input,
@@ -2271,6 +2296,13 @@ main form label#advanced:hover {
   font-size: 14px;
 }
 
+#main-table-wrapper table .select-col {
+  flex: 0 0 42px;
+  justify-content: center;
+  align-items: center;
+  padding-left: 0.75rem;
+  padding-right: 0.35rem;
+}
 #main-table-wrapper table .original-url { flex: 7 7 0; }
 #main-table-wrapper table .created-at { flex: 2.5 2.5 0; }
 #main-table-wrapper table .short-link { flex: 3.2 3.2 0; }
@@ -2446,6 +2478,42 @@ table .short-link-wrapper {
 #main-table-wrapper table th.search {
   flex: 1 1 auto;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+#main-table-wrapper table select.table-input.domain-filter {
+  width: auto;
+  min-width: 150px;
+  max-width: 220px;
+}
+
+#main-table-wrapper table select.table-input.domain-filter:has(option[value=""]:checked) {
+  color: var(--text-secondary);
+}
+
+#main-table-wrapper table button.select-all-btn.active {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+#main-table-wrapper table tr.bulk-select-banner {
+  background-color: var(--color-primary-soft);
+  border-bottom: 1px solid var(--table-head-tr-border-color);
+}
+
+#main-table-wrapper table tr.bulk-select-banner th.bulk-select-banner-cell {
+  flex: 1 1 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.9rem;
+  font-size: 13px;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--text-secondary);
 }
 
 #main-table-wrapper table th.filters {
@@ -2499,6 +2567,10 @@ table .short-link-wrapper {
   background-color: var(--table-tr-hover-bg-color);
 }
 
+#main-table-wrapper table tbody tr.selected {
+  background-color: var(--table-tr-selected-bg-color);
+}
+
 #main-table-wrapper table tbody td.right-fade:after,
 #domains-table tbody td.right-fade:after {
   content: "";
@@ -2517,6 +2589,10 @@ table .short-link-wrapper {
 #main-table-wrapper table tbody tr:hover td.right-fade:after,
 #domains-table tbody tr:hover td.right-fade:after {
   background-color: var(--table-tr-hover-bg-color);
+}
+
+#main-table-wrapper table tbody tr.selected td.right-fade:after {
+  background-color: var(--table-tr-selected-bg-color);
 }
 
 #main-table-wrapper table .clipboard { margin-right: 0.55rem; }
@@ -3615,6 +3691,7 @@ a.back-to-home {
   #main-table-wrapper tr { padding: 0 0.25rem; }
   #main-table-wrapper th,
   #main-table-wrapper td { padding: 0.7rem; }
+  #main-table-wrapper table .select-col { flex: 0 0 38px; padding-left: 0.6rem; padding-right: 0.25rem; }
   #main-table-wrapper table .views { flex: 0 0 74px; }
   #main-table-wrapper table .actions { flex: 0 0 214px; }
   #main-table-wrapper table .users-id { flex: 0 0 64px; }
@@ -3636,6 +3713,7 @@ a.back-to-home {
   #main-table-wrapper table th select { padding-right: 26px; background-position: right 0.55em top 50%; }
   #main-table-wrapper table th input.search.admin { max-width: 155px; }
   #main-table-wrapper table th select.table-input { max-width: 125px; }
+  #main-table-wrapper table th select.table-input.domain-filter { min-width: 125px; max-width: 175px; }
   #main-table-wrapper table th button.table { height: 32px; }
   #main-table-wrapper table th input::placeholder { font-size: 12px; }
   #main-table-wrapper table tr.controls .checkbox { font-size: 12.5px; }

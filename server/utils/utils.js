@@ -314,6 +314,7 @@ const preservedURLs = [
   "verify",
   "terms",
   "confirm-link-delete",
+  "confirm-links-delete",
   "confirm-link-ban",
   "confirm-user-delete",
   "confirm-user-ban",

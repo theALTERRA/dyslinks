@@ -1,0 +1,44 @@
+<div class="content">
+  <h2>Delete {{#if is_plural}}links{{else}}link{{/if}}?</h2>
+  <p>
+    {{#if all}}
+      Are you sure you want to delete all <b>{{count_formatted}}</b> {{#if is_plural}}links{{else}}link{{/if}}{{#if domain}} for domain &quot;<b>{{domain}}</b>&quot;{{/if}}{{#if search}} matching &quot;<b>{{search}}</b>&quot;{{/if}}?
+    {{else}}
+      Are you sure you want to delete <b>{{count_formatted}}</b> selected {{#if is_plural}}links{{else}}link{{/if}}?
+    {{/if}}
+  </p>
+  <form
+    hx-post="/api/links/bulk-delete"
+    hx-target="closest .content"
+    hx-swap="none"
+    hx-indicator="closest .content"
+    hx-select-oob="#dialog-error"
+  >
+    {{#if all}}
+      <input type="hidden" name="all" value="true" />
+      {{#if domain}}
+        <input type="hidden" name="domain" value="{{domain}}" />
+      {{/if}}
+      {{#if search}}
+        <input type="hidden" name="search" value="{{search}}" />
+      {{/if}}
+    {{else}}
+      {{#each ids}}
+        <input type="hidden" name="ids" value="{{this}}" />
+      {{/each}}
+    {{/if}}
+    <div class="buttons">
+      <button type="button" data-action="close-dialog">Cancel</button>
+      <button type="submit" class="danger confirm">
+        <span>{{> icons/trash}}</span>
+        Delete{{#if is_plural}} ({{count_formatted}}){{/if}}
+      </button>
+      {{> icons/spinner}}
+    </div>
+  </form>
+  <div id="dialog-error">
+    {{#if error}}
+      <p class="error">{{error}}</p>
+    {{/if}}
+  </div>
+</div>

@@ -18,6 +18,7 @@ const dnsLookup = promisify(dns.lookup);
 async function get(req, res) {
   const { limit, skip } = req.context;
   const search = req.query.search;
+  const domain = req.query.domain;
   const userId = req.user.id;
 
   const match = {
@@ -25,8 +26,8 @@ async function get(req, res) {
   };
 
   const [data, total] = await Promise.all([
-    query.link.get(match, { limit, search, skip }),
-    query.link.total(match, { search })
+    query.link.get(match, { limit, search, domain, skip }),
+    query.link.total(match, { search, domain })
   ]);
 
   if (req.isHTML) {
@@ -338,7 +339,7 @@ async function remove(req, res) {
 
   if (req.isHTML) {
     res.setHeader("HX-Reswap", "outerHTML");
-    res.setHeader("HX-Trigger", "reloadMainTable");
+    res.setHeader("HX-Trigger", JSON.stringify({ reloadMainTable: true, linkDeleted: link.uuid }));
     res.render("partials/links/dialog/delete_success", {
       link: utils.getShortURL(link.address, link.domain).link,
     });
@@ -348,6 +349,41 @@ async function remove(req, res) {
   return res
     .status(200)
     .send({ message: "Link has been deleted successfully." });
+};
+
+async function bulkRemove(req, res) {
+  const { all, domain, search, ids } = req.body;
+  const match = {
+    user_id: req.user.id
+  };
+
+  const params = all
+    ? { domain, search }
+    : { uuids: ids };
+
+  const { count } = await query.link.batchRemoveFiltered(match, params);
+
+  if (!count) {
+    throw new CustomError("Could not find any matching links to delete.", 404);
+  }
+
+  if (req.isHTML) {
+    res.setHeader("HX-Reswap", "outerHTML");
+    res.setHeader("HX-Trigger", "reloadMainTable, clearLinkSelection");
+    res.render("partials/links/dialog/bulk_delete_success", {
+      count,
+      count_formatted: count.toLocaleString("en-US"),
+      is_plural: count !== 1,
+    });
+    return;
+  }
+
+  return res.status(200).send({
+    message: count === 1
+      ? "1 link has been deleted successfully."
+      : `${count} links have been deleted successfully.`,
+    count,
+  });
 };
 
 async function report(req, res) {
@@ -718,6 +754,7 @@ async function stats(req, res) {
 
 module.exports = {
   ban,
+  bulkRemove,
   create,
   edit,
   editAdmin,

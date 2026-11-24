@@ -267,6 +267,59 @@ const deleteLink = [
     .isUUID()
 ];
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+const bulkDeleteLinks = [
+  body("all")
+    .optional({ values: "null" })
+    .customSanitizer(sanitizeCheckbox)
+    .isBoolean()
+    .withMessage('"all" should be a boolean.'),
+  body("domain")
+    .optional({ values: "falsy" })
+    .isString()
+    .withMessage("Domain should be a string.")
+    .trim()
+    .isLength({ max: 255 })
+    .withMessage("Domain is too long."),
+  body("search")
+    .optional({ values: "falsy" })
+    .isString()
+    .withMessage("Search should be a string.")
+    .trim()
+    .isLength({ max: 2040 })
+    .withMessage("Search is too long."),
+  body("ids")
+    .customSanitizer(value => {
+      if (value === undefined || value === null || value === "") return [];
+      if (typeof value === "string") {
+        const trimmed = value.trim();
+        return trimmed ? [trimmed] : [];
+      }
+      if (Array.isArray(value)) {
+        const seen = new Set();
+        const result = [];
+        for (const item of value) {
+          if (typeof item !== "string") return value;
+          const trimmed = item.trim();
+          if (trimmed && !seen.has(trimmed)) {
+            seen.add(trimmed);
+            result.push(trimmed);
+          }
+        }
+        return result;
+      }
+      return value;
+    })
+    .custom((value, { req }) => {
+      if (req.body.all === true) return true;
+      if (!Array.isArray(value) || value.length === 0) return false;
+      if (value.length > 500) return false;
+      return value.every(id => typeof id === "string" && UUID_REGEX.test(id));
+    })
+    .withMessage("Please select between 1 and 500 valid links to delete.")
+];
+
 const reportLink = [
   body("link", "No link has been provided.")
     .exists({ values: "falsy" })
@@ -584,6 +637,7 @@ module.exports = {
   banUser,
   bannedDomain,
   bannedHost,
+  bulkDeleteLinks,
   changeEmail,
   changePassword,
   checkUser,

@@ -142,6 +142,14 @@ router.get(
   asyncHandler(renders.confirmLinkDelete)
 );
 
+router.post(
+  "/confirm-links-delete",
+  helpers.verifyOrigin,
+  locals.noLayout,
+  asyncHandler(auth.jwt),
+  asyncHandler(renders.confirmLinksDelete)
+);
+
 router.get(
   "/confirm-link-ban", 
   locals.noLayout,

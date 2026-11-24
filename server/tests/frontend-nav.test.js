@@ -35,7 +35,7 @@ function createClassList(initial = []) {
   };
 }
 
-function createElement({ tagName, id = "", textContent = "", dataset = {}, classes = [], value = "", disabled = false, parentNode = null, children = [] }) {
+function createElement({ tagName, id = "", textContent = "", dataset = {}, classes = [], value = "", disabled = false, checked = false, indeterminate = false, parentNode = null, children = [] }) {
   const el = {
     nodeType: 1,
     tagName: tagName.toUpperCase(),
@@ -45,6 +45,8 @@ function createElement({ tagName, id = "", textContent = "", dataset = {}, class
     classList: createClassList(classes),
     value,
     disabled,
+    checked,
+    indeterminate,
     parentNode,
     children,
     matches(selector) {
@@ -52,7 +54,17 @@ function createElement({ tagName, id = "", textContent = "", dataset = {}, class
       if (selector === "button") return this.tagName === "BUTTON";
       if (selector === "a") return this.tagName === "A";
       if (selector === "nav") return this.tagName === "NAV";
+      if (selector === "tr") return this.tagName === "TR";
+      if (selector === ".bulk-delete-label") return this.classList.contains("bulk-delete-label");
       return false;
+    },
+    querySelector(selector) {
+      for (const child of this.children) {
+        if (child.matches(selector)) return child;
+        const found = child.querySelector ? child.querySelector(selector) : null;
+        if (found) return found;
+      }
+      return null;
     },
     closest(selector) {
       let cur = this;
@@ -69,10 +81,12 @@ function createElement({ tagName, id = "", textContent = "", dataset = {}, class
   return el;
 }
 
-function loadMainScript() {
+function loadMainScript(options = {}) {
   const listeners = { document: {}, body: {}, window: {} };
+  const htmxTriggers = [];
+  const htmxAjaxCalls = [];
 
-  const totalInput = createElement({ tagName: "input", id: "total", value: "23" });
+  const totalInput = createElement({ tagName: "input", id: "total", value: String(options.total ?? 23) });
   const limitInput = createElement({ tagName: "input", id: "limit", value: "10" });
   const skipInput = createElement({ tagName: "input", id: "skip", value: "10" });
 
@@ -96,10 +110,42 @@ function loadMainScript() {
   const tabDomains = createElement({ tagName: "a", id: "tab-domains", dataset: { action: "set-tab" } });
   const tabNav = createElement({ tagName: "nav", children: [tabLinks, tabUsers, tabDomains] });
 
+  const searchInput = createElement({ tagName: "input", id: "search", value: "" });
+  const filterDomainSelect = createElement({ tagName: "select", id: "filter-domain", value: "", dataset: { action: "filter-domain" } });
+  const selectAllBtn = createElement({ tagName: "button", id: "select-all-links-btn", textContent: "Select all", dataset: { action: "toggle-select-all-links-btn" }, disabled: true });
+  const selectAllCheckbox = createElement({ tagName: "input", id: "select-all-links-checkbox", dataset: { action: "toggle-select-all-links-checkbox" }, disabled: true });
+  const bulkDeleteLabel = createElement({ tagName: "span", textContent: "Delete selected", classes: ["bulk-delete-label"] });
+  const bulkDeleteBtn = createElement({ tagName: "button", id: "bulk-delete-links-btn", classes: ["hidden"], dataset: { action: "open-bulk-delete" }, children: [bulkDeleteLabel] });
+  const bannerText = createElement({ tagName: "span", id: "bulk-select-banner-text" });
+  const bannerAction = createElement({ tagName: "button", id: "bulk-select-banner-action", dataset: { action: "select-all-matching" } });
+  const banner = createElement({ tagName: "tr", id: "bulk-select-banner", classes: ["hidden"], children: [bannerText, bannerAction] });
+  const linkDialog = createElement({ tagName: "div", id: "link-dialog", classes: ["dialog"] });
+
+  let linkCheckboxes = [];
+  function setVisibleLinkIds(ids) {
+    linkCheckboxes = ids.map((uuid) => {
+      const cb = createElement({ tagName: "input", value: uuid, classes: ["link-select-checkbox"], dataset: { action: "toggle-select-link" } });
+      createElement({ tagName: "tr", id: `tr-${uuid}`, children: [cb] });
+      return cb;
+    });
+  }
+  if (options.visibleLinkIds) {
+    setVisibleLinkIds(options.visibleLinkIds);
+  }
+
   const byId = {
     total: totalInput,
     limit: limitInput,
     skip: skipInput,
+    search: searchInput,
+    "filter-domain": filterDomainSelect,
+    "select-all-links-btn": selectAllBtn,
+    "select-all-links-checkbox": selectAllCheckbox,
+    "bulk-delete-links-btn": bulkDeleteBtn,
+    "bulk-select-banner": banner,
+    "bulk-select-banner-text": bannerText,
+    "bulk-select-banner-action": bannerAction,
+    "link-dialog": linkDialog,
     "tab-links": tabLinks,
     "tab-users": tabUsers,
     "tab-domains": tabDomains,
@@ -129,6 +175,7 @@ function loadMainScript() {
       if (selector === "table .nav .limit button") return limitButtons;
       if (selector === ".pagination .prev") return prevButtons;
       if (selector === ".pagination .next") return nextButtons;
+      if (selector === "input.link-select-checkbox") return linkCheckboxes;
       return [];
     },
   };
@@ -145,7 +192,12 @@ function loadMainScript() {
     window: win,
     htmx: {
       defineExtension() {},
-      trigger() {},
+      trigger(target, eventName) {
+        htmxTriggers.push({ target, eventName });
+      },
+      ajax(method, url, opts) {
+        htmxAjaxCalls.push({ method, url, opts });
+      },
     },
     setTimeout,
     clearTimeout,
@@ -158,9 +210,23 @@ function loadMainScript() {
     context,
     doc,
     listeners,
+    htmxTriggers,
+    htmxAjaxCalls,
     totalInput,
     limitInput,
     skipInput,
+    searchInput,
+    filterDomainSelect,
+    selectAllBtn,
+    selectAllCheckbox,
+    bulkDeleteBtn,
+    bulkDeleteLabel,
+    banner,
+    bannerText,
+    bannerAction,
+    linkDialog,
+    getLinkCheckboxes: () => linkCheckboxes,
+    setVisibleLinkIds,
     headNav,
     footNav,
     tabLinks,
@@ -221,4 +287,99 @@ test("delegated set-tab click switches active tab when event.currentTarget is do
 
   assert.equal(env.tabLinks.classList.contains("active"), false);
   assert.equal(env.tabDomains.classList.contains("active"), true);
+});
+
+test("bulk link selection, select all, domain filter reset, and select-all-matching banner work", () => {
+  const env = loadMainScript({
+    total: 5,
+    visibleLinkIds: ["id-1", "id-2", "id-3"],
+  });
+
+  const dispatchClick = (target) => {
+    const evt = { target, currentTarget: env.doc, preventDefault() {} };
+    for (const fn of env.listeners.document.click) fn(evt);
+  };
+  const dispatchChange = (target) => {
+    const evt = { target, currentTarget: env.doc, preventDefault() {} };
+    for (const fn of env.listeners.document.change) fn(evt);
+  };
+  const dispatchBodyEvent = (type, detail = {}) => {
+    for (const fn of env.listeners.body[type] || []) fn({ detail });
+  };
+
+  // Initially 0 selected
+  assert.equal(env.selectAllBtn.disabled, false);
+  assert.equal(env.selectAllBtn.textContent, "Select all");
+  assert.equal(env.bulkDeleteBtn.classList.contains("hidden"), true);
+  assert.equal(env.banner.classList.contains("hidden"), true);
+
+  // Select single link -> indeterminate header checkbox, bulk delete visible with count 1
+  const [cb1, cb2, cb3] = env.getLinkCheckboxes();
+  cb1.checked = true;
+  dispatchChange(cb1);
+  assert.equal(env.selectAllCheckbox.indeterminate, true);
+  assert.equal(env.selectAllCheckbox.checked, false);
+  assert.equal(env.bulkDeleteBtn.classList.contains("hidden"), false);
+  assert.equal(env.bulkDeleteLabel.textContent, "Delete (1)");
+  assert.equal(cb1.parentNode.classList.contains("selected"), true);
+
+  // Click Select all button -> selects all 3 visible links and shows banner (total=5 > visible=3)
+  dispatchClick(env.selectAllBtn);
+  assert.equal(cb1.checked, true);
+  assert.equal(cb2.checked, true);
+  assert.equal(cb3.checked, true);
+  assert.equal(env.selectAllBtn.textContent, "Deselect all");
+  assert.equal(env.selectAllCheckbox.checked, true);
+  assert.equal(env.selectAllCheckbox.indeterminate, false);
+  assert.equal(env.bulkDeleteLabel.textContent, "Delete (3)");
+  assert.equal(env.banner.classList.contains("hidden"), false);
+  assert.match(env.bannerAction.textContent, /Select all 5 links/);
+
+  // Filter by domain -> clears selection, resets skip to 0, triggers reloadMainTable
+  env.filterDomainSelect.value = "dysto.cc";
+  dispatchChange(env.filterDomainSelect);
+  assert.equal(env.skipInput.value, 0);
+  assert.equal(env.bulkDeleteBtn.classList.contains("hidden"), true);
+  assert.equal(env.banner.classList.contains("hidden"), true);
+  assert.equal(env.htmxTriggers.some((t) => t.eventName === "reloadMainTable"), true);
+
+  // Simulate filtered reload returning 2 visible links out of 4 matching in dysto.cc
+  env.totalInput.value = "4";
+  env.setVisibleLinkIds(["dysto-1", "dysto-2"]);
+  dispatchBodyEvent("htmx:afterSettle");
+
+  // Click Select all -> only selects the 2 filtered links, banner scopes to dysto.cc
+  dispatchClick(env.selectAllBtn);
+  assert.equal(env.bulkDeleteLabel.textContent, "Delete (2)");
+  assert.equal(env.banner.classList.contains("hidden"), false);
+  assert.equal(env.bannerAction.textContent, "Select all 4 links in dysto.cc");
+
+  // Click "Select all 4 links in dysto.cc" -> opens bulk delete with all=true + domain=dysto.cc
+  dispatchClick(env.bannerAction);
+  assert.equal(env.bulkDeleteLabel.textContent, "Delete (4)");
+  dispatchClick(env.bulkDeleteBtn);
+  assert.equal(env.htmxAjaxCalls.length, 1);
+  assert.equal(env.htmxAjaxCalls[0].url, "/confirm-links-delete");
+  assert.deepEqual(JSON.parse(JSON.stringify(env.htmxAjaxCalls[0].opts.values)), {
+    all: "true",
+    domain: "dysto.cc",
+    search: "",
+  });
+
+  // Unchecking one row drops selectAllMatching and keeps only the remaining visible row selected
+  const [d1, d2] = env.getLinkCheckboxes();
+  d1.checked = false;
+  dispatchChange(d1);
+  assert.equal(env.bulkDeleteLabel.textContent, "Delete (1)");
+  assert.equal(d2.checked, true);
+
+  // Opening bulk delete now sends explicit ids array with only ["dysto-2"]
+  dispatchClick(env.bulkDeleteBtn);
+  assert.equal(env.htmxAjaxCalls.length, 2);
+  assert.deepEqual(JSON.parse(JSON.stringify(env.htmxAjaxCalls[1].opts.values)), { ids: ["dysto-2"] });
+
+  // clearLinkSelection event clears everything
+  dispatchBodyEvent("clearLinkSelection");
+  assert.equal(env.bulkDeleteBtn.classList.contains("hidden"), true);
+  assert.equal(d2.checked, false);
 });

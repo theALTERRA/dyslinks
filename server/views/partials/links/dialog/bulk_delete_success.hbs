@@ -1,0 +1,11 @@
+<div class="content">
+  <div class="icon success">
+    {{> icons/check}}
+  </div>
+  <p>
+    <b>{{count_formatted}}</b> {{#if is_plural}}links have{{else}}link has{{/if}} been deleted.
+  </p>
+  <div class="buttons">
+    <button type="button" data-action="close-dialog">Close</button>
+  </div>
+</div>

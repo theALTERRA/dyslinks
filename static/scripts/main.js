@@ -360,6 +360,7 @@ function onSearchChange(event) {
     clearButton.style.display = event.target.value.length > 0 ? "flex" : "none";
   }
   resetTableNav();
+  clearLinkSelection();
 }
 
 function clearSearchInput(event) {
@@ -370,8 +371,199 @@ function clearSearchInput(event) {
   input.value = "";
   button.style.display = "none";
   resetTableNav();
+  clearLinkSelection();
   htmx.trigger("body", "reloadMainTable");
 }
+
+// bulk selection & domain filtering for user links table
+const selectedLinkIds = new Set();
+let selectAllMatching = false;
+
+function getVisibleLinkCheckboxes() {
+  return Array.from(document.querySelectorAll("input.link-select-checkbox"));
+}
+
+function getActiveLinkFilters() {
+  const domainEl = document.getElementById("filter-domain");
+  const searchEl = document.getElementById("search");
+  return {
+    domain: domainEl && typeof domainEl.value === "string" ? domainEl.value.trim() : "",
+    search: searchEl && typeof searchEl.value === "string" ? searchEl.value.trim() : "",
+  };
+}
+
+function getLinksTotal() {
+  const totalElm = document.querySelector("#total");
+  const parsed = totalElm ? parseInt(totalElm.value, 10) : 0;
+  return Number.isNaN(parsed) || parsed < 0 ? 0 : parsed;
+}
+
+function syncLinkSelectionUI() {
+  const selectAllBtn = document.getElementById("select-all-links-btn");
+  const selectAllCheckbox = document.getElementById("select-all-links-checkbox");
+  const bulkDeleteBtn = document.getElementById("bulk-delete-links-btn");
+  if (!selectAllBtn && !selectAllCheckbox && !bulkDeleteBtn) return;
+
+  const checkboxes = getVisibleLinkCheckboxes();
+  const total = getLinksTotal();
+  if (total === 0 || checkboxes.length === 0) {
+    selectAllMatching = false;
+  }
+
+  let checkedVisibleCount = 0;
+  checkboxes.forEach(function (cb) {
+    const isChecked = selectAllMatching || selectedLinkIds.has(cb.value);
+    cb.checked = isChecked;
+    if (isChecked) checkedVisibleCount++;
+    const row = closest("tr", cb);
+    if (row && row.classList) {
+      row.classList.toggle("selected", isChecked);
+    }
+  });
+
+  const visibleCount = checkboxes.length;
+  const allVisibleSelected = visibleCount > 0 && checkedVisibleCount === visibleCount;
+  const selectedCount = selectAllMatching ? total : selectedLinkIds.size;
+
+  if (selectAllCheckbox) {
+    selectAllCheckbox.disabled = visibleCount === 0;
+    selectAllCheckbox.checked = allVisibleSelected;
+    selectAllCheckbox.indeterminate = !allVisibleSelected && checkedVisibleCount > 0;
+  }
+
+  if (selectAllBtn) {
+    selectAllBtn.disabled = visibleCount === 0;
+    selectAllBtn.textContent = allVisibleSelected ? "Deselect all" : "Select all";
+    if (selectAllBtn.classList) {
+      selectAllBtn.classList.toggle("active", allVisibleSelected);
+    }
+  }
+
+  if (bulkDeleteBtn) {
+    if (bulkDeleteBtn.classList) {
+      bulkDeleteBtn.classList.toggle("hidden", selectedCount === 0);
+    }
+    bulkDeleteBtn.disabled = selectedCount === 0;
+    const label = bulkDeleteBtn.querySelector ? bulkDeleteBtn.querySelector(".bulk-delete-label") : null;
+    if (label) {
+      label.textContent = selectedCount > 0 ? "Delete (" + selectedCount + ")" : "Delete selected";
+    }
+  }
+
+  const banner = document.getElementById("bulk-select-banner");
+  const bannerText = document.getElementById("bulk-select-banner-text");
+  const bannerAction = document.getElementById("bulk-select-banner-action");
+  if (banner && bannerText && bannerAction) {
+    const showBanner = visibleCount > 0 && total > visibleCount && (allVisibleSelected || selectAllMatching);
+    if (banner.classList) {
+      banner.classList.toggle("hidden", !showBanner);
+    }
+    if (showBanner) {
+      const filters = getActiveLinkFilters();
+      let suffix = "";
+      if (filters.domain && filters.search) {
+        suffix = ' in ' + filters.domain + ' matching "' + filters.search + '"';
+      } else if (filters.domain) {
+        suffix = " in " + filters.domain;
+      } else if (filters.search) {
+        suffix = ' matching "' + filters.search + '"';
+      }
+
+      if (selectAllMatching) {
+        bannerText.textContent = "All " + total + " links" + suffix + " are selected.";
+        bannerAction.textContent = "Clear selection";
+        bannerAction.dataset.action = "clear-link-selection";
+      } else {
+        bannerText.textContent = "All " + visibleCount + " links on this page are selected.";
+        bannerAction.textContent = "Select all " + total + " links" + suffix;
+        bannerAction.dataset.action = "select-all-matching";
+      }
+    }
+  }
+}
+
+function clearLinkSelection() {
+  selectedLinkIds.clear();
+  selectAllMatching = false;
+  syncLinkSelectionUI();
+}
+
+function toggleSelectLink(checkbox) {
+  if (!checkbox || !checkbox.value) return;
+  if (selectAllMatching) {
+    selectAllMatching = false;
+    selectedLinkIds.clear();
+    getVisibleLinkCheckboxes().forEach(function (cb) {
+      if (cb.checked && cb.value) {
+        selectedLinkIds.add(cb.value);
+      }
+    });
+  } else if (checkbox.checked) {
+    selectedLinkIds.add(checkbox.value);
+  } else {
+    selectedLinkIds.delete(checkbox.value);
+  }
+  syncLinkSelectionUI();
+}
+
+function toggleSelectAllLinks(forceChecked) {
+  const checkboxes = getVisibleLinkCheckboxes();
+  if (!checkboxes.length) return;
+  const shouldSelect = typeof forceChecked === "boolean"
+    ? forceChecked
+    : !(selectAllMatching || checkboxes.every(function (cb) { return selectedLinkIds.has(cb.value); }));
+
+  if (shouldSelect) {
+    checkboxes.forEach(function (cb) {
+      if (cb.value) selectedLinkIds.add(cb.value);
+    });
+  } else {
+    selectAllMatching = false;
+    checkboxes.forEach(function (cb) {
+      if (cb.value) selectedLinkIds.delete(cb.value);
+    });
+  }
+  syncLinkSelectionUI();
+}
+
+function selectAllMatchingLinks() {
+  if (getLinksTotal() <= 0) return;
+  selectAllMatching = true;
+  getVisibleLinkCheckboxes().forEach(function (cb) {
+    if (cb.value) selectedLinkIds.add(cb.value);
+  });
+  syncLinkSelectionUI();
+}
+
+function openBulkDeleteDialog(button) {
+  const total = getLinksTotal();
+  const count = selectAllMatching ? total : selectedLinkIds.size;
+  if (count <= 0) return;
+
+  const filters = getActiveLinkFilters();
+  const values = selectAllMatching
+    ? { all: "true", domain: filters.domain, search: filters.search }
+    : { ids: Array.from(selectedLinkIds) };
+
+  openDialog("link-dialog");
+  htmx.ajax("POST", "/confirm-links-delete", {
+    target: "#link-dialog .content-wrapper",
+    source: button,
+    values: values,
+  });
+}
+
+document.body.addEventListener("clearLinkSelection", function() {
+  clearLinkSelection();
+});
+
+document.body.addEventListener("linkDeleted", function(evt) {
+  const id = evt && evt.detail ? evt.detail.value : null;
+  if (id) {
+    selectedLinkIds.delete(id);
+    syncLinkSelectionUI();
+  }
+});
 
 // detect if search inputs have value on load to show clear button
 function onSearchInputLoad() {
@@ -386,6 +578,7 @@ function onSearchInputLoad() {
 
 onSearchInputLoad();
 updateLinksNav();
+syncLinkSelectionUI();
 scheduleRedirects(document);
 
 document.body.addEventListener("htmx:load", function(evt) {
@@ -393,18 +586,21 @@ document.body.addEventListener("htmx:load", function(evt) {
 });
 
 document.body.addEventListener("htmx:afterSwap", function() {
+  syncLinkSelectionUI();
   scheduleRedirects(document);
 });
 
 document.body.addEventListener("htmx:afterSettle", function() {
   onSearchInputLoad();
   updateLinksNav();
+  syncLinkSelectionUI();
   scheduleRedirects(document);
 });
 
 document.body.addEventListener("htmx:afterOnLoad", function(evt) {
   if (evt.target && evt.target.matches && evt.target.matches("[data-update-nav]")) {
     updateLinksNav();
+    syncLinkSelectionUI();
   }
 });
 
@@ -470,6 +666,14 @@ document.addEventListener("click", function(event) {
     setLinksSkip({ currentTarget: el, target: event.target }, el.dataset.direction);
   } else if (action === "clear-search") {
     clearSearchInput(event);
+  } else if (action === "toggle-select-all-links-btn") {
+    toggleSelectAllLinks();
+  } else if (action === "select-all-matching") {
+    selectAllMatchingLinks();
+  } else if (action === "clear-link-selection") {
+    clearLinkSelection();
+  } else if (action === "open-bulk-delete") {
+    openBulkDeleteDialog(el);
   }
 });
 
@@ -495,6 +699,14 @@ document.addEventListener("change", function(event) {
     resetTableNav();
   } else if (action === "toggle-verification-email") {
     canSendVerificationEmail();
+  } else if (action === "toggle-select-link") {
+    toggleSelectLink(el);
+  } else if (action === "toggle-select-all-links-checkbox") {
+    toggleSelectAllLinks(el.checked);
+  } else if (action === "filter-domain") {
+    resetTableNav();
+    clearLinkSelection();
+    htmx.trigger("body", "reloadMainTable");
   }
 });
 

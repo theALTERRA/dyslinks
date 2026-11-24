@@ -66,18 +66,33 @@ async function user(req, res, next) {
   res.locals.user = user;
   if (user) {
     const canUseCustomDomains = !env.DISALLOW_CUSTOM_DOMAINS || utils.isAdmin(user);
-    const [ownDomains, availableDomains] = await Promise.all([
+    const [ownDomains, availableDomains, usedDomains] = await Promise.all([
       canUseCustomDomains ? query.domain.get({ user_id: user.id }) : Promise.resolve([]),
-      query.domain.getForUser(user.id, { includeOwn: canUseCustomDomains })
+      query.domain.getForUser(user.id, { includeOwn: canUseCustomDomains }),
+      query.domain.getUsedByUser(user.id)
     ]);
+    const defaultDomainLower = env.DEFAULT_DOMAIN.toLowerCase();
+    const filterDomainsMap = new Map();
+    [...availableDomains, ...usedDomains].forEach(d => {
+      if (!d?.address) return;
+      const key = String(d.address).toLowerCase();
+      if (key === defaultDomainLower) return;
+      if (!filterDomainsMap.has(key)) {
+        filterDomainsMap.set(key, d.address);
+      }
+    });
     res.locals.can_use_custom_domains = canUseCustomDomains;
     res.locals.domains = ownDomains.map(utils.sanitize.domain);
     res.locals.shortener_domains = availableDomains.map(utils.sanitize.domain);
+    res.locals.filter_domains = Array.from(filterDomainsMap.values()).sort((a, b) =>
+      a.localeCompare(b, undefined, { sensitivity: "base" })
+    );
     res.locals.user_default_domain = resolveUserDefaultDomain(user, availableDomains);
   } else {
     res.locals.can_use_custom_domains = false;
     res.locals.domains = null;
     res.locals.shortener_domains = null;
+    res.locals.filter_domains = null;
     res.locals.user_default_domain = env.DEFAULT_DOMAIN;
   }
   next();

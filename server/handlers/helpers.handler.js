@@ -74,6 +74,13 @@ function parseQuery(req, res, next) {
     return res.status(400).json({ error: "search query is not valid." });
   }
 
+  if (
+    typeof req.query.domain !== "undefined" &&
+    typeof req.query.domain !== "string"
+  ) {
+    return res.status(400).json({ error: "domain query is not valid." });
+  }
+
   const parsedLimit = parseInt(req.query.limit, 10);
   const parsedSkip = parseInt(req.query.skip, 10);
   const limit = Number.isNaN(parsedLimit) ? 10 : Math.min(Math.max(parsedLimit, 1), 50);

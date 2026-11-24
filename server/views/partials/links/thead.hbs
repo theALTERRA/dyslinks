@@ -19,13 +19,65 @@
           {{> icons/x}}
         </button>
       </div>
+      <select
+        id="filter-domain"
+        name="domain"
+        class="table-input domain-filter"
+        aria-label="Filter by domain"
+        data-action="filter-domain"
+      >
+        <option value="">All domains</option>
+        <option value="{{default_domain}}">{{default_domain}}</option>
+        {{#each filter_domains}}
+          <option value="{{this}}">{{this}}</option>
+        {{/each}}
+      </select>
+      <button
+        type="button"
+        id="select-all-links-btn"
+        class="table select-all-btn"
+        data-action="toggle-select-all-links-btn"
+        disabled
+      >
+        Select all
+      </button>
+      <button
+        type="button"
+        id="bulk-delete-links-btn"
+        class="table danger bulk-delete-btn hidden"
+        data-action="open-bulk-delete"
+        hx-indicator="#link-dialog"
+      >
+        <span>{{> icons/trash}}</span>
+        <span class="bulk-delete-label">Delete selected</span>
+      </button>
       <input id="total" name="total" type="hidden" value="{{total}}" />
       <input id="limit" name="limit" type="hidden" value="10" />
       <input id="skip" name="skip" type="hidden" value="0" />
     </th>
     {{> links/nav}}
   </tr>
+  <tr id="bulk-select-banner" class="bulk-select-banner hidden">
+    <th class="bulk-select-banner-cell">
+      <span id="bulk-select-banner-text"></span>
+      <button
+        type="button"
+        id="bulk-select-banner-action"
+        class="link"
+        data-action="select-all-matching"
+      ></button>
+    </th>
+  </tr>
   <tr>
+    <th class="select-col">
+      <input
+        type="checkbox"
+        id="select-all-links-checkbox"
+        aria-label="Select all links"
+        data-action="toggle-select-all-links-checkbox"
+        disabled
+      />
+    </th>
     <th class="original-url">Original URL</th>
     <th class="created-at">Created at</th>
     <th class="short-link">Short link</th>

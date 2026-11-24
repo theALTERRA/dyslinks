@@ -57,16 +57,49 @@ function normalizeMatch(match) {
     delete newMatch.banned;
   }
 
+  if (newMatch.domain_id !== undefined) {
+    newMatch["links.domain_id"] = newMatch.domain_id;
+    delete newMatch.domain_id;
+  }
+
   return newMatch;
 }
 
-async function total(match, params) {
+function applyMatch(query, match) {
   const normalizedMatch = normalizeMatch(match);
-  const query = knex("links");
-  
   Object.entries(normalizedMatch).forEach(([key, value]) => {
-    query.andWhere(key, ...(Array.isArray(value) ? value : [value]));
+    if (value === null) {
+      query.whereNull(key);
+    } else if (Array.isArray(value)) {
+      query.andWhere(key, ...value);
+    } else {
+      query.andWhere(key, value);
+    }
   });
+}
+
+function applyDomainFilter(query, domain) {
+  if (!domain) return;
+  const normalized = String(domain).trim().toLowerCase();
+  if (!normalized) return;
+
+  if (normalized === env.DEFAULT_DOMAIN.toLowerCase()) {
+    query.whereNull("links.domain_id");
+  } else {
+    query.andWhereRaw("LOWER(domains.address) = ?", [normalized]);
+  }
+}
+
+function applyUserLinkFilters(query, match, params) {
+  applyMatch(query, match);
+
+  if (Array.isArray(params?.uuids)) {
+    query.whereIn("links.uuid", params.uuids);
+  }
+
+  if (params?.domain) {
+    applyDomainFilter(query, params.domain);
+  }
 
   if (params?.search) {
     query[knex.compatibleILIKE](
@@ -74,7 +107,14 @@ async function total(match, params) {
       "%" + params.search + "%"
     );
   }
+
   query.leftJoin("domains", "links.domain_id", "domains.id");
+}
+
+async function total(match, params) {
+  const query = knex("links");
+
+  applyUserLinkFilters(query, match, params);
   query.count("* as count");
   
   const [{ count }] = await query;
@@ -121,19 +161,11 @@ async function totalAdmin(match, params) {
 async function get(match, params) {
   const query = knex("links")
     .select(...selectable)
-    .where(normalizeMatch(match))
     .offset(params.skip)
     .limit(params.limit)
     .orderBy("links.id", "desc");
-  
-  if (params?.search) {
-    query[knex.compatibleILIKE](
-      knex.raw("concat_ws(' ', description, links.address, target, domains.address)"), 
-      "%" + params.search + "%"
-    );
-  }
-  
-  query.leftJoin("domains", "links.domain_id", "domains.id");
+
+  applyUserLinkFilters(query, match, params);
 
   return query;
 }
@@ -273,6 +305,31 @@ async function batchRemove(match) {
   }
 }
 
+async function batchRemoveFiltered(match, params) {
+  const query = knex("links").select("links.id", "links.address", "links.domain_id");
+  applyUserLinkFilters(query, match, params);
+
+  const links = await query;
+  if (!links.length) {
+    return { count: 0, links: [] };
+  }
+
+  const ids = links.map(link => link.id);
+  const CHUNK_SIZE = 500;
+  let count = 0;
+
+  for (let i = 0; i < ids.length; i += CHUNK_SIZE) {
+    const chunk = ids.slice(i, i + CHUNK_SIZE);
+    count += await knex("links").whereIn("id", chunk).delete();
+  }
+
+  if (env.REDIS_ENABLED) {
+    links.forEach(redis.remove.link);
+  }
+
+  return { count, links };
+}
+
 async function update(match, update) {
   if (update.password) {
     const salt = await bcrypt.genSalt(12);
@@ -311,6 +368,7 @@ function incrementVisit(match) {
 module.exports = {
   normalizeMatch,
   batchRemove,
+  batchRemoveFiltered,
   create,
   find,
   get,
