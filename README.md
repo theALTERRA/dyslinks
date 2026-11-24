@@ -5,12 +5,15 @@
 <h1 align="center">Dyslinks</h1>
 
 <p align="center">
-  A clean, self-hosted URL shortener with refined light &amp; dark themes, self-hosted Inter typography, custom domains, analytics, and production security hardening.
+  A clean, self-hosted URL shortener with light &amp; dark themes, custom &amp; shared domains, visit analytics, OIDC SSO, and production security hardening.
 </p>
 
 <p align="center">
   <a href="https://github.com/theALTERRA/dyslinks/actions/workflows/docker-publish.yaml">
-    <img src="https://github.com/theALTERRA/dyslinks/actions/workflows/docker-publish.yaml/badge.svg" alt="Docker Build & Publish" />
+    <img src="https://github.com/theALTERRA/dyslinks/actions/workflows/docker-publish.yaml/badge.svg" alt="Docker Build &amp; Publish" />
+  </a>
+  <a href="https://github.com/theALTERRA/dyslinks/releases/latest">
+    <img src="https://img.shields.io/github/v/release/theALTERRA/dyslinks" alt="Latest Release" />
   </a>
   <a href="./LICENSE">
     <img src="https://img.shields.io/github/license/theALTERRA/dyslinks.svg" alt="MIT License" />
@@ -21,17 +24,18 @@
 
 ## Features
 
-- **Modern UI & Dark Mode** — Crisp neutral light/dark themes with self-hosted Inter typography, sticky frosted topbar, automatic system preference detection, header toggle, zero-FOUC loading, and live-themed analytics charts.
-- **Link Management** — Custom slugs, password-protected links, link expiration, descriptions, QR codes, and private visit analytics (views, referrers, browsers, OS, country map).
-- **Custom Domains & Multi-User Admin** — Bind custom domains, manage users/links/domains in the admin panel, or authenticate via OIDC and REST API keys.
-- **Security Hardened** — Strict URL validation (blocks `javascript:`/`data:` XSS and private/metadata IPs), Helmet CSP headers, CSRF Origin verification, default rate limiting, strong production `JWT_SECRET` enforcement, and non-root Docker images.
-- **Flexible Storage** — Works out of the box with SQLite, or scale with PostgreSQL / MariaDB and Redis.
+- **Modern UI & Dark Mode** — Neutral light/dark themes, self-hosted Inter typography, zero-FOUC theme loading, and live-themed analytics charts.
+- **Link Management & Analytics** — Custom slugs, password-protected links, link expiration, descriptions, QR codes, and private visit stats (views, referrers, browsers, OS, country map).
+- **Custom & Shared Domains** — Personal custom domains, admin-shared domains, per-user default domain selection, and an optional lock (`DISALLOW_CUSTOM_DOMAINS`) restricting custom domains to admins.
+- **Auth & API** — Multi-user admin panel, OpenID Connect (OIDC) SSO with PKCE, and REST API keys (`/api/v2`).
+- **Production Hardened** — Safe URL validation (blocks dangerous schemes and private/metadata IPs), Helmet CSP, CSRF Origin checks, rate limiting, JWT revocation (`token_version`), SQLite WAL mode, graceful shutdown, and non-root Docker images.
+- **Flexible Storage** — Runs out of the box with SQLite, or scales with PostgreSQL / MariaDB and Redis (caching, rate limiting, and BullMQ visit queue).
 
 ---
 
 ## Quick Start (Docker Compose)
 
-Pre-built multi-arch images (`linux/amd64`, `linux/arm64`) are published to GitHub Container Registry at `ghcr.io/thealterra/dyslinks:latest`.
+Multi-arch images (`linux/amd64`, `linux/arm64`) are published to `ghcr.io/thealterra/dyslinks:latest` (and semver tags such as `:1.3.0`).
 
 ### 1. Download `docker-compose.yml` & create `.env`
 
@@ -44,7 +48,7 @@ JWT_SECRET=$(openssl rand -hex 32)
 EOF
 ```
 
-> Want to customize mail, OIDC, or other options? Copy [`.example.env`](./.example.env) to `.env`. For PostgreSQL or MariaDB, also add `DB_PASSWORD=...` to `.env`.
+> Copy [`.example.env`](./.example.env) to `.env` for all options. PostgreSQL and MariaDB stacks also require `DB_PASSWORD=...`.
 
 ### 2. Start Dyslinks
 
@@ -52,7 +56,7 @@ EOF
 docker compose up -d
 ```
 
-Other stacks (clone the repo or download the matching compose file):
+Available stacks:
 
 | Stack | Command |
 | --- | --- |
@@ -61,11 +65,11 @@ Other stacks (clone the repo or download the matching compose file):
 | **PostgreSQL + Redis** *(recommended)* | `docker compose -f docker-compose.postgres.yml up -d` |
 | **MariaDB + Redis** | `docker compose -f docker-compose.mariadb.yml up -d` |
 
-Database migrations run automatically on startup. Set `HOST_PORT=8080` in `.env` if port `3000` is already in use.
+Database migrations run automatically on startup. Set `HOST_PORT=8080` in `.env` if port `3000` is in use.
 
-### 3. Serve over HTTPS & create admin
+### 3. Put behind HTTPS & create admin
 
-Put `localhost:3000` behind a reverse proxy with HTTPS (Caddy, Nginx, Traefik, or Cloudflare Tunnel)—production auth cookies require HTTPS. Example `Caddyfile`:
+Production auth cookies require HTTPS. Proxy `127.0.0.1:3000` with Caddy, Nginx, Traefik, or Cloudflare Tunnel:
 
 ```caddy
 links.yourdomain.com {
@@ -73,9 +77,30 @@ links.yourdomain.com {
 }
 ```
 
-Open `https://links.yourdomain.com` in your browser and you'll be guided to `/create-admin` to create your admin account.
+<details>
+<summary>Nginx example</summary>
+
+```nginx
+server {
+    listen 443 ssl http2;
+    server_name links.yourdomain.com;
+
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
+
+</details>
+
+Open `https://links.yourdomain.com` and you will be guided to `/create-admin` to create the first admin account.
 
 ### Updating
+
+Back up your database volume, then pull and restart (migrations run automatically):
 
 ```bash
 docker compose pull && docker compose up -d
@@ -83,56 +108,134 @@ docker compose pull && docker compose up -d
 
 ---
 
-## Running Locally (Node.js)
-
-Requires Node.js 22+ (Node 26 LTS recommended).
-
-```bash
-npm install
-cp .example.env .env
-npm run migrate
-npm run dev       # development (or: npm start for production)
-```
-
----
-
 ## Configuration
 
-All settings are configured via environment variables (or `.env`). Any variable also supports Docker secrets via `<VAR>_FILE=/path/to/secret`. See [`.example.env`](./.example.env) for the full list.
+Configured via environment variables or `.env`. Any variable also supports Docker secrets via `<VAR>_FILE=/path/to/secret`. See [`.example.env`](./.example.env) for the full template.
+
+### Core & Security
 
 | Variable | Description | Default |
 | --- | --- | --- |
-| `JWT_SECRET` | **Required in production.** Random string (min 32 chars) used to sign tokens. | — |
-| `PORT` | Port the server listens on | `3000` |
-| `SITE_NAME` | Site name displayed in the UI and emails | `Dyslinks` |
-| `DEFAULT_DOMAIN` | Public domain where the app is hosted | `localhost:3000` |
-| `TRUST_PROXY` | Read client IPs from `X-Forwarded-For`: `true` trusts proxies on loopback/private networks only, `false` disables, or set a hop count / comma-separated proxy IPs | `true` |
-| `ENABLE_RATE_LIMIT` | Enable API and auth rate limiting | `true` |
+| `JWT_SECRET` | **Required in production.** Strong random string (min 32 chars). | — |
+| `DEFAULT_DOMAIN` | Public domain where Dyslinks is hosted (no protocol) | `localhost:3000` |
+| `SITE_NAME` | Site name shown in the UI and emails | `Dyslinks` |
+| `PORT` | HTTP port the server listens on | `3000` |
+| `TRUST_PROXY` | Reverse proxy trust: `true` (loopback/private networks), `false`, hop count, or IPs/CIDRs | `true` |
+| `ENABLE_RATE_LIMIT` | Enable rate limiting on auth, API, and protected-link routes | `true` |
 | `DISALLOW_ANONYMOUS_LINKS` | Require login to shorten links | `true` |
-| `DISALLOW_REGISTRATION` | Disable public signups (uses email verification when `MAIL_ENABLED=true`) | `true` |
+| `DISALLOW_REGISTRATION` | Disable public signups | `true` |
 | `DISALLOW_LOGIN_FORM` | Hide email/password login (use with `OIDC_ENABLED=true`) | `false` |
-| `DISALLOW_CUSTOM_DOMAINS` | Disable adding/using personal custom domains for non-admin users | `false` |
-| `LINK_LENGTH` | Length of randomly generated short slugs | `6` |
+| `DISALLOW_CUSTOM_DOMAINS` | Restrict adding/using personal custom domains to admins | `false` |
+
+<details>
+<summary><strong>Database &amp; Redis</strong></summary>
+
+| Variable | Description | Default |
+| --- | --- | --- |
 | `DB_CLIENT` | `better-sqlite3`, `pg`, or `mysql2` | `better-sqlite3` |
 | `DB_FILENAME` | SQLite database file path | `db/data` |
-| `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_SSL` | PostgreSQL / MySQL connection settings | `localhost` / `5432` / `dyslinks` / `postgres` |
-| `REDIS_ENABLED` / `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_DB` | Redis cache & rate-limit store | `false` / `127.0.0.1` / `6379` |
-| `MAIL_ENABLED` / `MAIL_HOST` / `MAIL_PORT` / `MAIL_SECURE` / `MAIL_USER` / `MAIL_PASSWORD` / `MAIL_FROM` | SMTP settings for verification, password resets, and abuse reports | `false` |
-| `OIDC_ENABLED` / `OIDC_ISSUER` / `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` / `OIDC_SCOPE` / `OIDC_EMAIL_CLAIM` / `OIDC_BUTTON_TEXT` / `OIDC_ALLOW_REGISTRATION` | OpenID Connect SSO login (set `OIDC_ALLOW_REGISTRATION=true` to auto-register new OIDC users while `DISALLOW_REGISTRATION=true`) | `false` |
-| `SERVER_IP_ADDRESS` / `SERVER_CNAME_ADDRESS` / `CUSTOM_DOMAIN_USE_HTTPS` | Custom domain instructions & HTTPS toggle | `""` / `""` / `false` |
-| `REPORT_EMAIL` / `CONTACT_EMAIL` | Abuse report recipient and support email shown in footer | `""` |
+| `DB_HOST` / `DB_PORT` | PostgreSQL / MySQL host and port | `localhost` / `5432` |
+| `DB_NAME` / `DB_USER` / `DB_PASSWORD` | Database name and credentials | `dyslinks` / `postgres` / `""` |
+| `DB_SSL` | Enable SSL for database connections | `false` |
+| `DB_POOL_MIN` / `DB_POOL_MAX` | Connection pool bounds | `0` / `10` |
+| `REDIS_ENABLED` | Enable Redis caching, rate-limit store, and BullMQ visit queue | `false` |
+| `REDIS_HOST` / `REDIS_PORT` / `REDIS_DB` | Redis server address and DB index (`0`–`15`) | `127.0.0.1` / `6379` / `0` |
+| `REDIS_PASSWORD` | Redis password (optional) | `""` |
+
+</details>
+
+<details>
+<summary><strong>OIDC / SSO</strong></summary>
+
+Register this Redirect URI with your identity provider:
+
+```text
+https://<DEFAULT_DOMAIN>/login/oidc
+```
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `OIDC_ENABLED` | Enable OpenID Connect login | `false` |
+| `OIDC_ISSUER` | Issuer discovery URL (e.g., `https://auth.example.com`) | `""` |
+| `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` | OAuth client credentials | `""` |
+| `OIDC_SCOPE` | Requested scopes | `openid profile email` |
+| `OIDC_EMAIL_CLAIM` | Claim used to match/create user email | `email` |
+| `OIDC_PROMPT` | Optional OIDC `prompt` parameter (e.g., `login`, `select_account`) | `""` |
+| `OIDC_BUTTON_TEXT` | Login button label | `Log in with OIDC` |
+| `OIDC_ALLOW_REGISTRATION` | Auto-provision new OIDC users even when `DISALLOW_REGISTRATION=true` | `false` |
+
+</details>
+
+<details>
+<summary><strong>Email (SMTP) &amp; Abuse Reports</strong></summary>
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `MAIL_ENABLED` | Enable email verification, password resets, and abuse reports | `false` |
+| `MAIL_HOST` / `MAIL_PORT` / `MAIL_SECURE` | SMTP server, port, and TLS (`true` for port `465`) | `""` / `587` / `false` |
+| `MAIL_USER` / `MAIL_PASSWORD` | SMTP credentials | `""` |
+| `MAIL_FROM` | Sender address (falls back to `MAIL_USER`) | `""` |
+| `REPORT_EMAIL` | Recipient address for submitted abuse reports | `""` |
+| `CONTACT_EMAIL` | Support email shown in the footer | `""` |
+
+</details>
+
+<details>
+<summary><strong>Links &amp; Custom Domains</strong></summary>
+
+| Variable | Description | Default |
+| --- | --- | --- |
+| `LINK_LENGTH` | Length of randomly generated short slugs | `6` |
+| `LINK_CUSTOM_ALPHABET` | Characters used for generated slugs | `abcdefghk...23456789` |
+| `CUSTOM_DOMAIN_USE_HTTPS` | Generate `https://` short links for custom domains | `false` |
+| `SERVER_IP_ADDRESS` / `SERVER_CNAME_ADDRESS` | DNS instructions displayed on the Settings page (display only) | `""` |
+
+</details>
+
+---
+
+## REST API & Health Check
+
+Generate an API key under **Settings → API** and pass it in the `X-API-KEY` header:
+
+```bash
+curl -X POST https://links.yourdomain.com/api/v2/links \
+  -H "X-API-KEY: your-api-key" \
+  -H "Content-Type: application/json" \
+  -d '{"target": "https://example.com", "customurl": "hello"}'
+```
+
+Generate the full static OpenAPI reference (`docs/api/static/index.html`) with `npm run docs:build`.
+
+**Health check:** `GET /api/health` verifies database connectivity and returns `200 OK` (or `503` if the database is unreachable). Append `?strict=true` to also return `503` when `REDIS_ENABLED=true` and Redis is unreachable.
 
 ---
 
 ## Customization
 
-Override CSS, images, or Handlebars views by placing files inside the mounted `/custom` volume:
+Override assets, styles, or templates by placing files in the mounted `/dyslinks/custom` volume:
 
 ```text
 custom/
-├── css/       # Extra .css files (or styles.css to override default styles)
-├── images/    # Custom logo.svg, favicons, etc.
-└── views/     # Custom .hbs templates matching server/views/
+├── css/       # Extra .css files loaded automatically (styles.css overrides defaults)
+├── images/    # Custom logo.svg (used as browser favicon & app icon)
+└── views/     # Custom .hbs pages or partials/ matching server/views/
+```
+
+> The in-page header/login brand mark is an inline SVG in `partials/header.hbs` and `partials/auth/brand.hbs`; override those partials under `custom/views/partials/` to replace it.
+
+---
+
+## Local Development
+
+Requires **Node.js 22.12+** (Node 26 LTS recommended).
+
+```bash
+npm ci --ignore-scripts
+cp .example.env .env
+npm run migrate
+npm run dev       # development with auto-reload (or: npm start for production)
+npm test          # run test suite
 ```
 
 ---
