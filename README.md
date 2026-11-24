@@ -118,7 +118,7 @@ All settings are configured via environment variables (or `.env`). Any variable 
 | `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_SSL` | PostgreSQL / MySQL connection settings | `localhost` / `5432` / `dyslinks` / `postgres` |
 | `REDIS_ENABLED` / `REDIS_HOST` / `REDIS_PORT` / `REDIS_PASSWORD` / `REDIS_DB` | Redis cache & rate-limit store | `false` / `127.0.0.1` / `6379` |
 | `MAIL_ENABLED` / `MAIL_HOST` / `MAIL_PORT` / `MAIL_SECURE` / `MAIL_USER` / `MAIL_PASSWORD` / `MAIL_FROM` | SMTP settings for verification, password resets, and abuse reports | `false` |
-| `OIDC_ENABLED` / `OIDC_ISSUER` / `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` / `OIDC_SCOPE` / `OIDC_EMAIL_CLAIM` / `OIDC_BUTTON_TEXT` | OpenID Connect SSO login | `false` |
+| `OIDC_ENABLED` / `OIDC_ISSUER` / `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` / `OIDC_SCOPE` / `OIDC_EMAIL_CLAIM` / `OIDC_BUTTON_TEXT` / `OIDC_ALLOW_REGISTRATION` | OpenID Connect SSO login (set `OIDC_ALLOW_REGISTRATION=true` to auto-register new OIDC users while `DISALLOW_REGISTRATION=true`) | `false` |
 | `SERVER_IP_ADDRESS` / `SERVER_CNAME_ADDRESS` / `CUSTOM_DOMAIN_USE_HTTPS` | Custom domain instructions & HTTPS toggle | `""` / `""` / `false` |
 | `REPORT_EMAIL` / `CONTACT_EMAIL` | Abuse report recipient and support email shown in footer | `""` |
 
