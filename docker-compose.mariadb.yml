@@ -37,7 +37,7 @@ services:
       mariadb:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
 
   mariadb:
     image: mariadb:10
@@ -64,6 +64,11 @@ services:
     restart: unless-stopped
     expose:
       - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data_mariadb:

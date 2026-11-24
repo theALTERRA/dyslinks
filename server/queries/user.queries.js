@@ -10,8 +10,8 @@ const env = require("../env");
 async function find(match) {
   if ((match.id || match.apikey) && env.REDIS_ENABLED) {
     const key = redis.key.user(match.id || match.apikey);
-    const cachedUser = await redis.client.get(key);
-    if (cachedUser) return JSON.parse(cachedUser);
+    const cachedUser = await redis.safeGetJSON(key);
+    if (cachedUser) return cachedUser;
   }
 
   const query = knex("users");
@@ -24,12 +24,12 @@ async function find(match) {
   if (user && env.REDIS_ENABLED) {
     if (match.id) {
       const idKey = redis.key.user(user.id);
-      redis.client.set(idKey, JSON.stringify(user), "EX", 60 * 15);
+      redis.safeSet(idKey, user, 60 * 15);
     }
   
     if (match.apikey) {
       const apikeyKey = redis.key.user(user.apikey);
-      redis.client.set(apikeyKey, JSON.stringify(user), "EX", 60 * 15);
+      redis.safeSet(apikeyKey, user, 60 * 15);
     }
   }
   
@@ -257,14 +257,14 @@ async function create(params) {
 // check if there exists a user
 async function findAny() {
   if (env.REDIS_ENABLED) {
-    const anyuser = await redis.client.get("any-user");
+    const anyuser = await redis.safeGetJSON("any-user");
     if (anyuser) return true;
   }
 
   const anyuser = await knex("users").select("id").first();
 
   if (env.REDIS_ENABLED && anyuser) {
-    redis.client.set("any-user", JSON.stringify(anyuser), "EX", 60 * 5);
+    redis.safeSet("any-user", anyuser, 60 * 5);
   }
 
   return !!anyuser;

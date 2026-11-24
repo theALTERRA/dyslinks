@@ -31,7 +31,7 @@ services:
       - custom:/dyslinks/custom
     depends_on:
       redis:
-        condition: service_started
+        condition: service_healthy
 
   redis:
     image: redis:alpine
@@ -39,6 +39,11 @@ services:
     restart: unless-stopped
     expose:
       - 6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   db_data_sqlite:

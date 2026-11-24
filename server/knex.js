@@ -26,9 +26,21 @@ const db = knex({
         try {
           if (typeof conn.pragma === "function") {
             conn.pragma("foreign_keys = ON");
+            conn.pragma("journal_mode = WAL");
+            conn.pragma("busy_timeout = 5000");
+            conn.pragma("synchronous = NORMAL");
             done(null, conn);
           } else if (typeof conn.run === "function") {
-            conn.run("PRAGMA foreign_keys = ON", err => done(err, conn));
+            conn.run("PRAGMA foreign_keys = ON", err => {
+              if (err) return done(err, conn);
+              conn.run("PRAGMA journal_mode = WAL", err2 => {
+                if (err2) return done(err2, conn);
+                conn.run("PRAGMA busy_timeout = 5000", err3 => {
+                  if (err3) return done(err3, conn);
+                  conn.run("PRAGMA synchronous = NORMAL", err4 => done(err4, conn));
+                });
+              });
+            });
           } else {
             done(null, conn);
           }

@@ -1,7 +1,9 @@
 // this configuration is for migrations only
-// and since jwt secret is not required, it's set to a placehodler string to bypass env validation
-if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = "securekey";
+// and since jwt secret is not required, generate a temporary random secret to satisfy env validation
+const crypto = require("node:crypto");
+
+if (!process.env.JWT_SECRET && !process.env.JWT_SECRET_FILE) {
+  process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
 }
 
 const env = require("./server/env");

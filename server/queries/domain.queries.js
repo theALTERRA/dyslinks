@@ -5,13 +5,12 @@ const env = require("../env");
 
 async function find(match) {
   if (match.address && env.REDIS_ENABLED) {
-    const cachedDomain = await redis.client.get(redis.key.domain(match.address));
+    const cachedDomain = await redis.safeGetJSON(redis.key.domain(match.address));
     if (cachedDomain) {
-      const parsed = JSON.parse(cachedDomain);
       const matchesAll = Object.entries(match).every(([k, v]) =>
-        typeof v === "boolean" ? Boolean(parsed[k]) === v : parsed[k] === v
+        typeof v === "boolean" ? Boolean(cachedDomain[k]) === v : cachedDomain[k] === v
       );
-      return matchesAll ? parsed : null;
+      return matchesAll ? cachedDomain : null;
     }
   }
 
@@ -19,7 +18,7 @@ async function find(match) {
 
   if (domain && env.REDIS_ENABLED) {
     const key = redis.key.domain(domain.address);
-    redis.client.set(key, JSON.stringify(domain), "EX", 60 * 15);
+    redis.safeSet(key, domain, 60 * 15);
   }
 
   return domain;

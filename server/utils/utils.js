@@ -57,6 +57,20 @@ function isUnsafeObjectKey(key) {
   return typeof key !== "string" || UNSAFE_OBJECT_KEYS.has(key);
 }
 
+function isUniqueConstraintError(err) {
+  if (!err) return false;
+  // PostgreSQL unique_violation
+  if (err.code === "23505") return true;
+  // MySQL / MariaDB duplicate entry
+  if (err.code === "ER_DUP_ENTRY" || err.errno === 1062) return true;
+  // SQLite (better-sqlite3 / sqlite3)
+  if (err.code === "SQLITE_CONSTRAINT_UNIQUE") return true;
+  if (err.code === "SQLITE_CONSTRAINT" && /unique constraint failed/i.test(err.message || "")) {
+    return true;
+  }
+  return false;
+}
+
 function escapeHtml(str) {
   return String(str)
     .replace(/&/g, "&amp;")
@@ -591,6 +605,7 @@ module.exports = {
   getUseragentOS,
   isAdmin,
   isSafeUrl,
+  isUniqueConstraintError,
   isUnsafeObjectKey,
   parseBooleanQuery,
   parseDatetime,

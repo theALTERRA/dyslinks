@@ -187,7 +187,7 @@ async function createAdminUser(req, res) {
   });
 
   if (env.REDIS_ENABLED) {
-    redis.client.del("any-user").catch(() => {});
+    redis.safeDel("any-user");
   }
 
   const token = utils.signToken(user);

@@ -179,8 +179,8 @@ async function getAdmin(match, params) {
 async function find(match) {
   if (match.address && match.domain_id !== undefined && env.REDIS_ENABLED) {
     const key = redis.key.link(match.address, match.domain_id);
-    const cachedLink = await redis.client.get(key);
-    if (cachedLink) return JSON.parse(cachedLink);
+    const cachedLink = await redis.safeGetJSON(key);
+    if (cachedLink) return cachedLink;
   }
   
   const link = await knex("links")
@@ -191,7 +191,7 @@ async function find(match) {
   
   if (link && env.REDIS_ENABLED) {
     const key = redis.key.link(link.address, link.domain_id);
-    redis.client.set(key, JSON.stringify(link), "EX", 60 * 15);
+    redis.safeSet(key, link, 60 * 15);
   }
   
   return link;

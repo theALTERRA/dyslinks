@@ -14,15 +14,11 @@ const asyncHandler = require("./utils/asyncHandler");
 const locals = require("./handlers/locals.handler");
 const links = require("./handlers/links.handler");
 const routes = require("./routes");
+const queues = require("./queues");
+const redis = require("./redis");
+const knex = require("./knex");
 const utils = require("./utils");
 
-
-// run the cron jobs
-// the app might be running in cluster mode (multiple instances) so run the cron job only on one cluster (the first one)
-// NODE_APP_INSTANCE variable is added by pm2 automatically, if you're using something else to cluster your app, then make sure to set this variable
-if (env.NODE_APP_INSTANCE === 0) {
-  require("./cron");
-}
 
 // intialize passport authentication library
 require("./passport");
@@ -125,7 +121,76 @@ app.get("*", renders.notFound);
 
 // handle errors coming from above routes
 app.use(helpers.error);
-  
-app.listen(env.PORT, () => {
-  console.log(`> Ready on http://localhost:${env.PORT}`);
-});
+
+let server = null;
+let cron = null;
+let isShuttingDown = false;
+
+async function shutdown(signal) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`> Received ${signal}, shutting down gracefully...`);
+
+  const forceTimer = setTimeout(() => {
+    console.error("> Graceful shutdown timed out, forcing exit.");
+    process.exit(1);
+  }, 10_000);
+  if (typeof forceTimer.unref === "function") {
+    forceTimer.unref();
+  }
+
+  let exitCode = 0;
+  try {
+    if (cron && typeof cron.stop === "function") {
+      cron.stop();
+    }
+
+    if (server) {
+      await new Promise((resolve) => {
+        server.close(() => resolve());
+        if (typeof server.closeIdleConnections === "function") {
+          server.closeIdleConnections();
+        }
+      });
+    }
+
+    await Promise.allSettled([
+      queues.visit.close(),
+      redis.close(),
+      knex.destroy(),
+    ]);
+  } catch (err) {
+    console.error("> Error during shutdown:", err);
+    exitCode = 1;
+  } finally {
+    clearTimeout(forceTimer);
+    process.exit(exitCode);
+  }
+}
+
+function start(port = env.PORT) {
+  // run the cron jobs only on the primary instance in cluster mode
+  // NODE_APP_INSTANCE is added by pm2 automatically
+  if (env.NODE_APP_INSTANCE === 0 && !cron) {
+    cron = require("./cron");
+  }
+
+  server = app.listen(port, () => {
+    console.log(`> Ready on http://localhost:${port}`);
+  });
+
+  process.once("SIGTERM", () => shutdown("SIGTERM"));
+  process.once("SIGINT", () => shutdown("SIGINT"));
+
+  return server;
+}
+
+if (require.main === module) {
+  start();
+}
+
+module.exports = {
+  app,
+  start,
+  shutdown,
+};

@@ -148,7 +148,7 @@ function rateLimit(params) {
     windowMs: params.window * 1000,
     skipSuccessfulRequests: !!params.skipSuccess,
     skipFailedRequests: !!params.skipFailed,
-    ...(store && { store }),
+    ...(store && { store, passOnStoreError: true }),
     limit: function (req, res) {
       if (params.user && req.user) {
         return params.user;

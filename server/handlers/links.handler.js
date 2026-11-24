@@ -138,20 +138,39 @@ async function create(req, res) {
   if (tasks[1]) {
     const error = "Custom URL is already in use.";
     res.locals.errors = { customurl: error };
-    throw new CustomError(error);
+    throw new CustomError(error, 400);
   }
 
-  // Create new link
-  const address = customurl || tasks[2];
-  const link = await query.link.create({
-    password,
-    address,
-    domain_id,
-    description,
-    target,
-    expire_in,
-    user_id: req.user && req.user.id
-  });
+  // Create new link (retry on rare concurrent auto-generated slug collision)
+  let address = customurl || tasks[2];
+  let link;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    try {
+      link = await query.link.create({
+        password,
+        address,
+        domain_id,
+        description,
+        target,
+        expire_in,
+        user_id: req.user && req.user.id
+      });
+      break;
+    } catch (err) {
+      if (!utils.isUniqueConstraintError(err)) {
+        throw err;
+      }
+      if (customurl) {
+        const error = "Custom URL is already in use.";
+        res.locals.errors = { customurl: error };
+        throw new CustomError(error, 400);
+      }
+      if (attempt === 2) {
+        throw new CustomError("Could not generate a unique short link. Please try again.", 500);
+      }
+      address = await utils.generateId(query, domain_id);
+    }
+  }
 
   link.domain = fetched_domain?.address;
   
@@ -253,22 +272,32 @@ async function edit(req, res) {
   if (tasks[0]) {
     const error = "Custom URL is already in use.";
     res.locals.errors = { address: error };
-    throw new CustomError("Custom URL is already in use.");
+    throw new CustomError("Custom URL is already in use.", 400);
   }
 
   // Update link
-  const [updatedLink] = await query.link.update(
-    {
-      id: link.id
-    },
-    {
-      ...(address && { address }),
-      ...((description || description === null) && { description }),
-      ...(target && { target }),
-      ...((expire_in || expire_in === null) && { expire_in }),
-      ...((password || password === null) && { password })
+  let updatedLink;
+  try {
+    [updatedLink] = await query.link.update(
+      {
+        id: link.id
+      },
+      {
+        ...(address && { address }),
+        ...((description || description === null) && { description }),
+        ...(target && { target }),
+        ...((expire_in || expire_in === null) && { expire_in }),
+        ...((password || password === null) && { password })
+      }
+    );
+  } catch (err) {
+    if (utils.isUniqueConstraintError(err)) {
+      const error = "Custom URL is already in use.";
+      res.locals.errors = { address: error };
+      throw new CustomError(error, 400);
     }
-  );
+    throw err;
+  }
 
   if (req.isHTML) {
     res.render("partials/links/edit", {
@@ -365,22 +394,32 @@ async function editAdmin(req, res) {
   if (tasks[0]) {
     const error = "Custom URL is already in use.";
     res.locals.errors = { address: error };
-    throw new CustomError("Custom URL is already in use.");
+    throw new CustomError("Custom URL is already in use.", 400);
   }
 
   // Update link
-  const [updatedLink] = await query.link.update(
-    {
-      id: link.id
-    },
-    {
-      ...(address && { address }),
-      ...((description || description === null) && { description }),
-      ...(target && { target }),
-      ...((expire_in || expire_in === null) && { expire_in }),
-      ...((password || password === null) && { password })
+  let updatedLink;
+  try {
+    [updatedLink] = await query.link.update(
+      {
+        id: link.id
+      },
+      {
+        ...(address && { address }),
+        ...((description || description === null) && { description }),
+        ...(target && { target }),
+        ...((expire_in || expire_in === null) && { expire_in }),
+        ...((password || password === null) && { password })
+      }
+    );
+  } catch (err) {
+    if (utils.isUniqueConstraintError(err)) {
+      const error = "Custom URL is already in use.";
+      res.locals.errors = { address: error };
+      throw new CustomError(error, 400);
     }
-  );
+    throw err;
+  }
 
   if (req.isHTML) {
     res.render("partials/admin/links/edit", {

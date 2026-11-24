@@ -73,8 +73,8 @@ async function add(params) {
 async function find(match, total) {
   if (match.link_id && env.REDIS_ENABLED) {
     const key = redis.key.stats(match.link_id);
-    const cached = await redis.client.get(key);
-    if (cached) return JSON.parse(cached);
+    const cached = await redis.safeGetJSON(key);
+    if (cached) return cached;
   }
 
   const stats = {
@@ -185,7 +185,7 @@ async function find(match, total) {
 
   if (match.link_id && env.REDIS_ENABLED) {
     const key = redis.key.stats(match.link_id);
-    redis.client.set(key, JSON.stringify(response), "EX", 60);
+    redis.safeSet(key, response, 60);
   }
 
   return response;
