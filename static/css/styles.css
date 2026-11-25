@@ -2030,6 +2030,8 @@
   .shortener #shorturl:has(.clipboard) h1 {
     display: flex;
     align-items: center;
+    font-size: inherit;
+    line-height: 1;
   }
 
   .shortener #shorturl h1 span {
