@@ -2447,6 +2447,7 @@
 
   /* Scroll container with keyboard focus + Container Query context */
   .table-scroll {
+    inline-size: 100%;
     overflow-x: auto;
     max-inline-size: 100%;
     container-type: inline-size;
@@ -2458,6 +2459,7 @@
     border: 1px solid var(--border-color);
     border-radius: var(--radius-lg);
     background-color: var(--surface-color);
+    container-name: data-table-compact;
   }
 
   /* Native semantic HTML <table> */
@@ -2550,8 +2552,8 @@
   table.data-table--admin-domains .domains-links-count { inline-size: 7.25rem; text-align: end; }
   table.data-table--admin-domains .domains-actions { inline-size: 8.5rem; }
 
-  table.data-table--domains .domain { inline-size: 42%; font-weight: 500; }
-  table.data-table--domains .homepage { inline-size: 42%; color: var(--text-secondary); }
+  table.data-table--domains .domain { inline-size: 44%; font-weight: 500; }
+  table.data-table--domains .homepage { color: var(--text-secondary); }
   table.data-table--domains .actions { inline-size: 5rem; }
 
   table.data-table td.users-id,
@@ -2776,11 +2778,12 @@
       border-bottom: 1px solid var(--table-head-tr-border-color);
     }
 
-    table.data-table tbody tr:not(.edit) > td {
+    table.data-table tbody tr:not(.edit):not(.no-data):not(.loading-placeholder) > td {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       gap: 0.75rem;
+      inline-size: 100%;
       padding: 0.35rem 0;
       border-bottom: none;
       text-align: end;
@@ -2788,7 +2791,7 @@
       overflow: visible;
     }
 
-    table.data-table tbody tr:not(.edit) > td::before {
+    table.data-table tbody tr:not(.edit):not(.no-data):not(.loading-placeholder) > td::before {
       content: attr(data-label);
       font-size: 0.71875rem;
       font-weight: 600;
@@ -2829,6 +2832,58 @@
 
     table.data-table tr.edit .field {
       inline-size: 100%;
+    }
+  }
+
+  /* Compact table (e.g. Settings custom domains): keep tabular on desktop (inside 45rem card), stack only < 32rem */
+  @container data-table-compact (width < 32rem) {
+    table.data-table,
+    table.data-table tbody,
+    table.data-table tr,
+    table.data-table td {
+      display: block;
+      inline-size: 100%;
+    }
+
+    table.data-table thead {
+      display: none;
+    }
+
+    table.data-table tbody tr:not(.no-data):not(.loading-placeholder) {
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid var(--table-head-tr-border-color);
+    }
+
+    table.data-table tbody tr:not(.no-data):not(.loading-placeholder):last-child {
+      border-bottom: none;
+    }
+
+    table.data-table tbody tr:not(.no-data):not(.loading-placeholder) > td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 0.75rem;
+      inline-size: 100%;
+      padding: 0.35rem 0;
+      border-bottom: none;
+      text-align: end;
+      white-space: normal;
+      overflow: visible;
+    }
+
+    table.data-table tbody tr:not(.no-data):not(.loading-placeholder) > td::before {
+      content: attr(data-label);
+      font-size: 0.71875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--secondary-text-color);
+      flex-shrink: 0;
+      text-align: start;
+    }
+
+    table.data-table tbody td.right-fade::after {
+      display: none;
     }
   }
 
