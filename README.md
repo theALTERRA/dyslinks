@@ -35,7 +35,7 @@
 
 ## Quick Start (Docker Compose)
 
-Multi-arch images (`linux/amd64`, `linux/arm64`) are published to `ghcr.io/thealterra/dyslinks:latest` (and semver tags such as `:1.4.1`).
+Multi-arch images (`linux/amd64`, `linux/arm64`) are published to `ghcr.io/thealterra/dyslinks:latest` (and semver tags such as `:1.4.2`).
 
 ### 1. Download `docker-compose.yml` & create `.env`
 

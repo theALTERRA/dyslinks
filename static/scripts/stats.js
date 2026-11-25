@@ -618,7 +618,16 @@ window.addEventListener("dyslinks:themechange", function () {
 document.addEventListener("htmx:configRequest", function (evt) {
   if (evt.target && evt.target.id === "stats-section") {
     const params = typeof getQueryParams === "function" ? getQueryParams() : {};
-    const id = params.id || "";
+    const id = typeof params.id === "string" ? params.id.trim() : "";
+    if (!id) {
+      evt.preventDefault();
+      evt.target.innerHTML =
+        '<div class="stats-error">' +
+          '<p role="alert">ID is invalid.</p>' +
+          '<div class="stats-back-to-home"><a class="back-to-home" href="/">← Back to homepage</a></div>' +
+        "</div>";
+      return;
+    }
     evt.detail.path = "/api/links/" + encodeURIComponent(id) + "/stats";
   }
 });

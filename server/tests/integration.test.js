@@ -311,3 +311,146 @@ test("Express 5 HTML views, 404 wildcard, express-validator v7 field errors, and
   assert.equal(expiring.status, 201);
   assert.ok(expiring.json.expire_in);
 });
+
+test("localhost short links use http://, /stats without id renders error immediately, and fonts send immutable cache", async () => {
+  // 1. Short link on localhost:3000 uses http:// even when NODE_ENV=production
+  const created = await jsonRequest("/api/links", {
+    method: "POST",
+    headers: { "x-api-key": apiKey },
+    body: {
+      target: "https://example.com/local-proto",
+      customurl: "local-proto",
+    },
+  });
+  assert.equal(created.status, 201);
+  assert.equal(created.json.link, "http://localhost:3000/local-proto");
+
+  // 2. /stats without id (or empty/invalid id) renders error immediately without hanging HTMX spinner
+  for (const statsPath of ["/stats", "/stats?id=", "/stats?id=not-a-uuid"]) {
+    const statsPage = await rawGet(statsPath, {
+      Host: "localhost:3000",
+      Accept: "text/html",
+      Cookie: `token=${adminToken}`,
+    });
+    assert.equal(statsPage.status, 200);
+    assert.match(statsPage.body, /ID is invalid\./);
+    assert.doesNotMatch(statsPage.body, /hx-get="\/api\/links\/\{id\}\/stats"/);
+  }
+
+  // 3. Fonts are served with immutable long-term Cache-Control so link preload is reused without warnings
+  const fontRes = await rawGet("/fonts/inter-latin-variable.woff2", { Host: "localhost:3000" });
+  assert.equal(fontRes.status, 200);
+  assert.match(String(fontRes.headers["cache-control"] || ""), /immutable/i);
+  assert.match(String(fontRes.headers["cache-control"] || ""), /max-age=31536000/i);
+});
+
+test("logged-in header is preserved on /<slug>+, protected link pages, and 404 pages", async () => {
+  const pubRes = await rawGet("/local-proto+", {
+    Host: "localhost:3000",
+    Accept: "text/html",
+    Cookie: `token=${adminToken}`,
+  });
+  assert.equal(pubRes.status, 200);
+  assert.match(pubRes.body, /aria-label="Admin"/);
+  assert.match(pubRes.body, /aria-label="Settings"/);
+  assert.match(pubRes.body, /\/api\/auth\/logout/);
+
+  const protRes = await rawGet("/secret", {
+    Host: "localhost:3000",
+    Accept: "text/html",
+    Cookie: `token=${adminToken}`,
+  });
+  assert.equal(protRes.status, 200);
+  assert.match(protRes.body, /aria-label="Admin"/);
+  assert.match(protRes.body, /aria-label="Settings"/);
+  assert.match(protRes.body, /\/api\/auth\/logout/);
+
+  const notFoundRes = await rawGet("/nonexistent/nested/logged-in", {
+    Host: "localhost:3000",
+    Accept: "text/html",
+    Cookie: `token=${adminToken}`,
+  });
+  assert.equal(notFoundRes.status, 404);
+  assert.match(notFoundRes.body, /aria-label="Settings"/);
+});
+
+test("inline edit keeps aria-expanded=true, skips unchanged rounded expire_in, and admin/user tables render clean markup", async () => {
+  const created = await jsonRequest("/api/links", {
+    method: "POST",
+    headers: { "x-api-key": apiKey },
+    body: {
+      target: "https://example.com/exp-edit",
+      customurl: "exp-edit",
+      description: "Initial desc",
+      expire_in: "2 days",
+    },
+  });
+  assert.equal(created.status, 201);
+  const linkId = created.json.id;
+
+  // Backdate stored expire_in by 10 minutes so ms() still rounds to "2 days" (> 60s drift)
+  const backdated = new Date(Date.now() + 48 * 60 * 60 * 1000 - 10 * 60 * 1000);
+  const backdatedStr = backdated.toISOString().substring(0, 10) + " " + backdated.toISOString().substring(11, 19);
+  await knex("links").where({ uuid: linkId }).update({ expire_in: backdatedStr });
+
+  // Submitting unchanged form with initial_expire_in="2 days" and expire_in="2 days" must NOT update
+  const unchangedRes = await fetch(`${baseUrl}/api/links/${linkId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/html",
+      "hx-request": "true",
+      Cookie: `token=${adminToken}`,
+      Origin: baseUrl,
+    },
+    body: JSON.stringify({
+      target: "https://example.com/exp-edit",
+      address: "exp-edit",
+      description: "Initial desc",
+      initial_expire_in: "2 days",
+      expire_in: "2 days",
+    }),
+  });
+  const unchangedHtml = await unchangedRes.text();
+  assert.match(unchangedHtml, /Should at least update one field\./);
+  assert.match(unchangedHtml, /name="initial_expire_in"\s+value="2 days"/);
+  const afterUnchanged = await knex("links").where({ uuid: linkId }).first();
+  assert.equal(afterUnchanged.expire_in, backdatedStr);
+
+  // Updating description while keeping rounded expire_in unchanged preserves original expire_in and sets aria-expanded="true"
+  const editDescRes = await fetch(`${baseUrl}/api/links/${linkId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Accept: "text/html",
+      "hx-request": "true",
+      Cookie: `token=${adminToken}`,
+      Origin: baseUrl,
+    },
+    body: JSON.stringify({
+      target: "https://example.com/exp-edit",
+      address: "exp-edit",
+      description: "Updated desc",
+      initial_expire_in: "2 days",
+      expire_in: "2 days",
+    }),
+  });
+  const editDescHtml = await editDescRes.text();
+  assert.match(editDescHtml, /Link has been updated\./);
+  assert.match(editDescHtml, /aria-expanded="true"/);
+  assert.match(editDescHtml, /title="localhost:3000\/exp-edit"/);
+  const afterDesc = await knex("links").where({ uuid: linkId }).first();
+  assert.equal(afterDesc.expire_in, backdatedStr);
+  assert.equal(afterDesc.description, "Updated desc");
+
+  // Admin links table wraps "(view links)" in .description-group without orphaned closing paren
+  const adminTableRes = await rawGet("/api/links/admin", {
+    Host: "localhost:3000",
+    Accept: "text/html",
+    "hx-request": "true",
+    Cookie: `token=${adminToken}`,
+  });
+  assert.equal(adminTableRes.status, 200);
+  assert.match(adminTableRes.body, /<span class="description-group">\(<button[\s\S]*?>view links<\/button>\)<\/span>/);
+  assert.match(adminTableRes.body, /title="localhost:3000\/exp-edit"/);
+});

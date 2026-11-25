@@ -41,6 +41,7 @@ function createClassList(initial = []) {
 function createElement({
   tagName,
   id = "",
+  type = "",
   textContent = "",
   dataset = {},
   classes = [],
@@ -53,10 +54,12 @@ function createElement({
   children = [],
 }) {
   const attributes = new Map(Object.entries(attrs));
+  let popoverOpen = false;
   const el = {
     nodeType: 1,
     tagName: tagName.toUpperCase(),
     id,
+    type,
     textContent,
     dataset,
     classList: createClassList(classes),
@@ -67,6 +70,21 @@ function createElement({
     open: false,
     parentNode,
     children,
+    previousElementSibling: null,
+    popoverShowCount: 0,
+    popoverHideCount: 0,
+    focused: false,
+    focus() {
+      this.focused = true;
+    },
+    contains(node) {
+      let cur = node;
+      while (cur) {
+        if (cur === this) return true;
+        cur = cur.parentNode;
+      }
+      return false;
+    },
     setAttribute(name, val) {
       attributes.set(name, String(val));
     },
@@ -89,15 +107,47 @@ function createElement({
     close() {
       this.open = false;
     },
+    showPopover() {
+      popoverOpen = true;
+      this.popoverShowCount += 1;
+    },
+    hidePopover() {
+      popoverOpen = false;
+      this.popoverHideCount += 1;
+    },
     matches(selector) {
+      if (selector === ":popover-open") return popoverOpen;
       if (selector === "[data-action]") return Boolean(this.dataset && this.dataset.action);
+      if (selector === "[data-action='toggle-edit-row']") return Boolean(this.dataset && this.dataset.action === "toggle-edit-row");
       if (selector === "button") return this.tagName === "BUTTON";
       if (selector === "a") return this.tagName === "A";
       if (selector === "nav") return this.tagName === "NAV";
       if (selector === "tr") return this.tagName === "TR";
+      if (selector === "tr.edit") return this.tagName === "TR" && this.classList.contains("edit");
       if (selector === "th") return this.tagName === "TH";
       if (selector === "thead") return this.tagName === "THEAD";
       if (selector === "th[aria-sort]") return this.tagName === "TH" && this.hasAttribute("aria-sort");
+      if (selector === "input") return this.tagName === "INPUT";
+      if (selector === "input, select, textarea") {
+        return this.tagName === "INPUT" || this.tagName === "SELECT" || this.tagName === "TEXTAREA";
+      }
+      if (selector === ".password-input-wrapper") return this.classList.contains("password-input-wrapper");
+      if (selector === ".password-toggle") return this.classList.contains("password-toggle");
+      if (selector === ".password-input-wrapper input") {
+        return this.tagName === "INPUT" && Boolean(this.parentNode && this.parentNode.classList.contains("password-input-wrapper"));
+      }
+      if (selector === ".field, .target-wrapper") {
+        return this.classList.contains("field") || this.classList.contains("target-wrapper");
+      }
+      if (selector === "p.error[id]") {
+        return this.tagName === "P" && this.classList.contains("error") && Boolean(this.id);
+      }
+      if (selector === '[aria-invalid="true"]') return this.getAttribute("aria-invalid") === "true";
+      if (selector === "#apikey") return this.id === "apikey";
+      if (selector === "#shorturl, #apikey, .short-link-wrapper, .short-link") {
+        return this.id === "shorturl" || this.id === "apikey" || this.classList.contains("short-link-wrapper") || this.classList.contains("short-link");
+      }
+      if (selector === ".clipboard") return this.classList.contains("clipboard");
       if (selector === "[role='tab'], a, button") {
         return this.getAttribute("role") === "tab" || this.tagName === "A" || this.tagName === "BUTTON";
       }
@@ -188,6 +238,13 @@ function loadMainScript(options = {}) {
   const bannerAction = createElement({ tagName: "button", id: "bulk-select-banner-action", dataset: { action: "select-all-matching" } });
   const banner = createElement({ tagName: "div", id: "bulk-select-banner", classes: ["hidden"], children: [bannerText, bannerAction] });
   const linkDialog = createElement({ tagName: "dialog", id: "link-dialog", classes: ["dialog"], attrs: { closedby: "any" } });
+  const appToastMessage = createElement({ tagName: "span", id: "app-toast-message" });
+  const appToast = createElement({ tagName: "div", id: "app-toast", classes: ["app-toast"], attrs: { popover: "manual" }, children: [appToastMessage] });
+  const liveAnnouncer = createElement({ tagName: "div", id: "live-announcer" });
+  const copiedTexts = [];
+  const ariaNotified = [];
+  const extraById = options.extraById || {};
+  const extraQueryAll = options.extraQueryAll || {};
 
   let linkCheckboxes = [];
   function setVisibleLinkIds(ids) {
@@ -217,21 +274,31 @@ function loadMainScript(options = {}) {
     "bulk-select-banner-text": bannerText,
     "bulk-select-banner-action": bannerAction,
     "link-dialog": linkDialog,
+    "app-toast": appToast,
+    "app-toast-message": appToastMessage,
+    "live-announcer": liveAnnouncer,
     "links-total-badge": totalBadge,
     "pagination-info": paginationInfo,
     "tab-links": tabLinks,
     "tab-users": tabUsers,
     "tab-domains": tabDomains,
+    ...extraById,
   };
 
   const doc = {
     nodeType: 9,
     textContent: null,
+    activeElement: null,
     body: {
       addEventListener(type, fn) {
         (listeners.body[type] ||= []).push(fn);
       },
     },
+    ...(options.supportsAriaNotify ? {
+      ariaNotify(msg) {
+        ariaNotified.push(msg);
+      },
+    } : {}),
     addEventListener(type, fn) {
       (listeners.document[type] ||= []).push(fn);
     },
@@ -246,6 +313,7 @@ function loadMainScript(options = {}) {
       return null;
     },
     querySelectorAll(selector) {
+      if (extraQueryAll[selector]) return extraQueryAll[selector];
       if (selector === ".table-card .nav .limit button" || selector === "table .nav .limit button") return limitButtons;
       if (selector === ".pagination .prev") return prevButtons;
       if (selector === ".pagination .next") return nextButtons;
@@ -262,9 +330,22 @@ function loadMainScript(options = {}) {
     location: { search: options.search || "", replace() {} },
   };
 
+  function FakeHTMLElement() {}
+  if (options.supportsPopover) {
+    Object.defineProperty(FakeHTMLElement.prototype, "popover", { value: null, configurable: true });
+  }
+
   const context = vm.createContext({
     document: doc,
     window: win,
+    ...(options.supportsPopover ? { HTMLElement: FakeHTMLElement } : {}),
+    navigator: {
+      clipboard: {
+        async writeText(text) {
+          copiedTexts.push(text);
+        },
+      },
+    },
     URLSearchParams,
     htmx: {
       defineExtension() {},
@@ -288,6 +369,11 @@ function loadMainScript(options = {}) {
     listeners,
     htmxTriggers,
     htmxAjaxCalls,
+    copiedTexts,
+    ariaNotified,
+    appToast,
+    appToastMessage,
+    liveAnnouncer,
     totalInput,
     limitInput,
     skipInput,
@@ -532,4 +618,122 @@ test("bulk link selection via header checkbox, contextual action bar, domain fil
   assert.equal(env.bulkActionBar.classList.contains("hidden"), true);
   assert.equal(env.bulkDeleteBtn.classList.contains("hidden"), true);
   assert.equal(d2.checked, false);
+});
+
+test("copying API key never leaks raw secret in toast and top-layer popover re-promotes above modals", async () => {
+  const env = loadMainScript({ supportsPopover: true, supportsAriaNotify: true });
+  const rawSecret = "34Rezh9MQEiIyE9iUHLc9McNOmqzRLmEta29JxKy";
+  const copyBtn = createElement({
+    tagName: "button",
+    dataset: {
+      action: "copy-link",
+      url: rawSecret,
+      sensitive: "true",
+      toastMessage: "Copied API key",
+    },
+  });
+  createElement({ tagName: "div", id: "apikey", children: [copyBtn] });
+
+  await env.context.handleShortURLCopyLink(copyBtn);
+  assert.deepEqual(env.copiedTexts, [rawSecret]);
+  assert.equal(env.appToastMessage.textContent, "Copied API key");
+  assert.doesNotMatch(env.appToastMessage.textContent, /34Rezh9/);
+  assert.deepEqual(env.ariaNotified, ["Copied API key"]);
+  assert.equal(env.appToast.popoverShowCount, 1);
+
+  // Calling showToast again while open hides & re-shows to re-promote above any newly opened <dialog>
+  const linkBtn = createElement({
+    tagName: "button",
+    dataset: { action: "copy-link", url: "http://localhost:3000/demo" },
+  });
+  await env.context.handleShortURLCopyLink(linkBtn);
+  assert.equal(env.appToastMessage.textContent, "Copied localhost:3000/demo");
+  assert.equal(env.appToast.popoverHideCount, 1);
+  assert.equal(env.appToast.popoverShowCount, 2);
+});
+
+test("htmx:afterSwap resyncs preserved password toggles, validation ARIA attributes, edit row aria-expanded, and resetShortenerForm", () => {
+  const pwInput = createElement({
+    tagName: "input",
+    id: "password",
+    type: "text",
+    value: "short",
+    attrs: { "hx-preserve": "true" },
+  });
+  const pwToggle = createElement({
+    tagName: "button",
+    classes: ["password-toggle"],
+    attrs: { "aria-pressed": "false", "aria-label": "Show password" },
+  });
+  const pwWrapper = createElement({
+    tagName: "div",
+    classes: ["password-input-wrapper"],
+    children: [pwInput, pwToggle],
+  });
+  const pwError = createElement({
+    tagName: "p",
+    id: "password-error",
+    classes: ["error"],
+    textContent: "Password length must be between 6 and 64.",
+  });
+  const field = createElement({
+    tagName: "div",
+    classes: ["field", "error"],
+    children: [pwWrapper, pwError],
+  });
+  const form = createElement({
+    tagName: "form",
+    id: "shortener-form",
+    children: [field],
+  });
+
+  // Simulate an open edit row whose preceding link row was OOB-swapped with aria-expanded="false"
+  const editBtn = createElement({
+    tagName: "button",
+    dataset: { action: "toggle-edit-row" },
+    attrs: { "aria-expanded": "false" },
+  });
+  const linkRow = createElement({ tagName: "tr", id: "tr-1", children: [editBtn] });
+  const editRow = createElement({ tagName: "tr", classes: ["edit", "show"] });
+  editRow.previousElementSibling = linkRow;
+
+  const env = loadMainScript({
+    extraById: {
+      password: pwInput,
+      "password-error": pwError,
+      "shortener-form": form,
+    },
+    extraQueryAll: {
+      "tr.edit": [editRow],
+    },
+  });
+
+  // Dispatch htmx:afterSwap on form -> toggle resyncs to Hide password, input gets aria-invalid + aria-describedby, editBtn gets aria-expanded=true
+  for (const fn of env.listeners.body["htmx:afterSwap"] || []) {
+    fn({ target: form });
+  }
+  assert.equal(pwToggle.getAttribute("aria-pressed"), "true");
+  assert.equal(pwToggle.getAttribute("aria-label"), "Hide password");
+  assert.equal(pwInput.getAttribute("aria-invalid"), "true");
+  assert.equal(pwInput.getAttribute("aria-describedby"), "password-error");
+  assert.equal(pwInput.focused, true);
+  assert.equal(editBtn.getAttribute("aria-expanded"), "true");
+
+  // Error cleared on subsequent swap -> aria-invalid becomes false and aria-describedby is removed
+  field.classList.remove("error");
+  field.children = [pwWrapper];
+  for (const fn of env.listeners.body["htmx:afterSwap"] || []) {
+    fn({ target: form });
+  }
+  assert.equal(pwInput.getAttribute("aria-invalid"), "false");
+  assert.equal(pwInput.getAttribute("aria-describedby"), null);
+
+  // resetShortenerForm resets password type back to "password" and toggle back to Show password
+  for (const fn of env.listeners.body.resetShortenerForm || []) {
+    fn({});
+  }
+  assert.equal(pwInput.value, "");
+  assert.equal(pwInput.type, "password");
+  assert.equal(pwToggle.getAttribute("aria-pressed"), "false");
+  assert.equal(pwToggle.getAttribute("aria-label"), "Show password");
 });

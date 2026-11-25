@@ -219,14 +219,20 @@ function addProtocol(url) {
   return hasProtocol ? url : "http://" + url;
 }
 
+function isLocalDomain(domain) {
+  const clean = String(domain || "").replace(/^https?:\/\//i, "").replace(/\/+$/, "");
+  return /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(clean);
+}
+
 function getSiteURL() {
-  const protocol = !env.isDev ? "https://" : "http://";
+  const protocol = !env.isDev && !isLocalDomain(env.DEFAULT_DOMAIN) ? "https://" : "http://";
   return `${protocol}${env.DEFAULT_DOMAIN}`;
 }
 
 function getShortURL(address, domain) {
-  const protocol = (env.CUSTOM_DOMAIN_USE_HTTPS || !domain) && !env.isDev ? "https://" : "http://";
-  const link = `${domain || env.DEFAULT_DOMAIN}/${address}`;
+  const host = domain || env.DEFAULT_DOMAIN;
+  const protocol = (env.CUSTOM_DOMAIN_USE_HTTPS || !domain) && !env.isDev && !isLocalDomain(host) ? "https://" : "http://";
+  const link = `${host}/${address}`;
   const url = `${protocol}${link}`;
   return { address, link, url };
 }
@@ -625,6 +631,7 @@ module.exports = {
   isAdmin,
   isHashedApiKey,
   isHttpUrl,
+  isLocalDomain,
   isPrivateHostname,
   isSafeUrl,
   isUniqueConstraintError,

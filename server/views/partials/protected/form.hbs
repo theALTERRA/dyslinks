@@ -21,6 +21,7 @@
             autofocus
             autocomplete="current-password"
             hx-preserve="true"
+            data-error="protected-error"
             required
             {{#if error}}aria-invalid="true" aria-describedby="protected-error"{{/if}}
           />

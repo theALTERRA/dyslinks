@@ -30,8 +30,7 @@ function config(req, res, next) {
   const defaultDomain = env.DEFAULT_DOMAIN.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
   const reqHost = utils.removeWww(req.headers.host)?.toLowerCase();
   const isCustomDomain = !!reqHost && reqHost !== utils.removeWww(defaultDomain).toLowerCase();
-  const isLocalDefault = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(defaultDomain);
-  const siteOrigin = `${env.isDev || isLocalDefault ? "http://" : "https://"}${defaultDomain}`;
+  const siteOrigin = `${env.isDev || utils.isLocalDomain(defaultDomain) ? "http://" : "https://"}${defaultDomain}`;
 
   res.locals.default_domain = env.DEFAULT_DOMAIN;
   res.locals.site_url = isCustomDomain ? siteOrigin : "";
@@ -111,6 +110,9 @@ function createLink(req, res, next) {
 function editLink(req, res, next) {
   res.locals.id = req.params.id;
   res.locals.class = "no-animation";
+  if (typeof req.body?.initial_expire_in === "string") {
+    res.locals.initial_expire_in = req.body.initial_expire_in;
+  }
   next();
 }
 

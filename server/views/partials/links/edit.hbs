@@ -74,6 +74,11 @@
         <div class="field {{#if errors.expire_in}}error{{/if}}">
           <label for="edit-expire_in-{{id}}">Expire in:</label>
           <input
+            type="hidden"
+            name="initial_expire_in"
+            value="{{#if initial_expire_in}}{{initial_expire_in}}{{else}}{{edit_expire_in}}{{/if}}"
+          />
+          <input
             id="edit-expire_in-{{id}}"
             name="expire_in"
             type="text"

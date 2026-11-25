@@ -5,6 +5,7 @@ const { isbot } = require("isbot");
 const dns = require("node:dns");
 
 const validators = require("./validators.handler");
+const auth = require("./auth.handler");
 const map = require("../utils/map.json");
 const transporter = require("../mail");
 const query = require("../queries");
@@ -241,7 +242,16 @@ async function editLink(req, res, { template, sanitizeHtml }) {
       return;
     }
     if (name === "expire_in" && link.expire_in) {
-      if (Math.abs(differenceInSeconds(utils.parseDatetime(value), utils.parseDatetime(link.expire_in))) < 60) {
+      const initialExpireIn = typeof req.body.initial_expire_in === "string"
+        ? req.body.initial_expire_in.trim().toLowerCase()
+        : "";
+      const rawExpireIn = typeof req.rawExpireIn === "string"
+        ? req.rawExpireIn.trim().toLowerCase()
+        : "";
+      if (
+        (initialExpireIn && rawExpireIn && initialExpireIn === rawExpireIn) ||
+        Math.abs(differenceInSeconds(utils.parseDatetime(value), utils.parseDatetime(link.expire_in))) < 60
+      ) {
         delete req.body.expire_in;
         return;
       }
@@ -306,10 +316,16 @@ async function editLink(req, res, { template, sanitizeHtml }) {
   }
 
   if (req.isHTML) {
+    const sanitized = sanitizeHtml({ ...updatedLink });
+    const initial_expire_in = expire_in === null
+      ? ""
+      : (typeof req.rawExpireIn === "string" ? req.rawExpireIn : sanitized.edit_expire_in);
     res.render(template, {
       swap_oob: true,
+      edit_expanded: true,
+      initial_expire_in,
       success: "Link has been updated.",
-      ...sanitizeHtml({ ...updatedLink }),
+      ...sanitized,
     });
     return;
   }
@@ -544,6 +560,7 @@ async function redirect(req, res, next) {
   const isRequestingInfo = /.*\+$/gi.test(req.params.id);
   if (isRequestingInfo && !link.password) {
     if (req.isHTML) {
+      await auth.attachHeaderUser(req, res);
       res.render("url_info", { 
         title: "Short link information",
         target: link.target,
@@ -589,6 +606,7 @@ async function redirect(req, res, next) {
         }
       }
     }
+    await auth.attachHeaderUser(req, res);
     res.render("protected", {
       title: "Protected short link",
       id: link.uuid

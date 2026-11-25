@@ -120,3 +120,47 @@ test("knexfile loads cleanly in production without JWT_SECRET set", () => {
     delete require.cache[knexfilePath];
   }
 });
+
+test("isLocalDomain, getSiteURL, and getShortURL use http:// for loopback domains regardless of NODE_ENV", () => {
+  assert.equal(utils.isLocalDomain("localhost:3000"), true);
+  assert.equal(utils.isLocalDomain("localhost"), true);
+  assert.equal(utils.isLocalDomain("127.0.0.1:8080"), true);
+  assert.equal(utils.isLocalDomain("[::1]:3000"), true);
+  assert.equal(utils.isLocalDomain("links.example.com"), false);
+
+  const prevEnv = process.env.NODE_ENV;
+  const prevDomain = process.env.DEFAULT_DOMAIN;
+  const prevSecret = process.env.JWT_SECRET;
+  const envPath = require.resolve("../env");
+  const utilsPath = require.resolve("../utils/utils");
+
+  try {
+    // Unset NODE_ENV (like `npm run dev`) with localhost:3000 -> http://
+    delete process.env.NODE_ENV;
+    process.env.DEFAULT_DOMAIN = "localhost:3000";
+    process.env.JWT_SECRET = crypto.randomBytes(32).toString("hex");
+    delete require.cache[envPath];
+    delete require.cache[utilsPath];
+    let freshUtils = require("../utils/utils");
+    assert.equal(freshUtils.getSiteURL(), "http://localhost:3000");
+    assert.equal(freshUtils.getShortURL("abc").url, "http://localhost:3000/abc");
+
+    // Production with non-local domain -> https://
+    process.env.NODE_ENV = "production";
+    process.env.DEFAULT_DOMAIN = "links.example.com";
+    delete require.cache[envPath];
+    delete require.cache[utilsPath];
+    freshUtils = require("../utils/utils");
+    assert.equal(freshUtils.getSiteURL(), "https://links.example.com");
+    assert.equal(freshUtils.getShortURL("abc").url, "https://links.example.com/abc");
+  } finally {
+    if (prevEnv !== undefined) process.env.NODE_ENV = prevEnv;
+    else delete process.env.NODE_ENV;
+    if (prevDomain !== undefined) process.env.DEFAULT_DOMAIN = prevDomain;
+    else delete process.env.DEFAULT_DOMAIN;
+    if (prevSecret !== undefined) process.env.JWT_SECRET = prevSecret;
+    else delete process.env.JWT_SECRET;
+    delete require.cache[envPath];
+    delete require.cache[utilsPath];
+  }
+});

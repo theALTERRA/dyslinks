@@ -16,6 +16,8 @@
           aria-label="Copy API key"
           data-action="copy-link"
           data-url="{{new_apikey}}"
+          data-sensitive="true"
+          data-toast-message="Copied API key"
         >
           {{> icons/copy}}
         </button>
@@ -26,6 +28,8 @@
         class="apikey-copy-btn"
         data-action="copy-link"
         data-url="{{new_apikey}}"
+        data-sensitive="true"
+        data-toast-message="Copied API key"
         aria-label="Copy API key"
       >
         <code>{{new_apikey}}</code>

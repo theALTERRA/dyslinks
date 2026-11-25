@@ -31,14 +31,14 @@
         {{#if user}}
           {{#if isAdmin}}
             <li>
-              <a class="nav-ghost" href="{{site_url}}/admin">
+              <a class="nav-ghost" href="{{site_url}}/admin" aria-label="Admin">
                 {{> icons/shield}}
                 <span>Admin</span>
               </a>
             </li>
           {{/if}}
           <li>
-            <a class="nav-ghost" href="{{site_url}}/settings">
+            <a class="nav-ghost" href="{{site_url}}/settings" aria-label="Settings">
               {{> icons/cog}}
               <span>Settings</span>
             </a>

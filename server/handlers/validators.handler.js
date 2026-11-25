@@ -72,7 +72,8 @@ const createLink = [
     .optional({ values: "falsy" })
     .isString()
     .trim()
-    .custom(value => {
+    .custom((value, { req }) => {
+      req.rawExpireIn = value;
       try {
         return !!ms(value);
       } catch {
@@ -137,7 +138,8 @@ const editLink = [
     .optional({ values: "falsy" })
     .isString()
     .trim()
-    .custom(value => {
+    .custom((value, { req }) => {
+      req.rawExpireIn = value;
       try {
         return !!ms(value);
       } catch {

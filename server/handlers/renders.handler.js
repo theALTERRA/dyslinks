@@ -97,8 +97,10 @@ function admin(req, res) {
 }
 
 function stats(req, res) {
+  const uuid = getQueryUUID(req);
   res.render("stats", {
-    title: "Stats"
+    title: "Stats",
+    ...(!uuid && { error: "ID is invalid." }),
   });
 }
 

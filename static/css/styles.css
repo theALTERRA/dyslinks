@@ -1855,18 +1855,20 @@
   }
 
   /* ------------------------------------------------------------------------
-     TOAST NOTIFICATION
+     TOAST NOTIFICATION (TOP-LAYER [popover="manual"])
      ------------------------------------------------------------------------ */
 
   .app-toast {
     position: fixed;
+    inset: auto;
     inset-block-end: 1.25rem;
     inset-inline-end: 1.25rem;
+    margin: 0;
     z-index: 1600;
     pointer-events: none;
-    display: inline-flex;
     align-items: center;
     gap: 0.625rem;
+    max-inline-size: min(26rem, calc(100vw - 2.5rem));
     padding: 0.625rem 1rem;
     border-radius: var(--radius-lg);
     background: var(--toast-bg);
@@ -1876,13 +1878,45 @@
     font-size: 0.78125rem;
     font-weight: 500;
     opacity: 0;
-    transform: translateY(0.5rem);
-    transition: opacity 0.2s var(--ease-out-expo), transform 0.2s var(--ease-out-expo);
+    transition-property: opacity, transform, display, overlay;
+    transition-duration: 0.2s;
+    transition-timing-function: var(--ease-out-expo);
+    transition-behavior: allow-discrete;
   }
 
-  .app-toast.visible {
+  @media (prefers-reduced-motion: no-preference) {
+    .app-toast {
+      transform: translateY(0.5rem);
+    }
+  }
+
+  .app-toast:is(:popover-open, .visible):where(:not([data-closing])) {
+    display: inline-flex;
     opacity: 1;
-    transform: translateY(0);
+
+    @starting-style {
+      opacity: 0;
+    }
+
+    @media (prefers-reduced-motion: no-preference) {
+      transform: translateY(0);
+
+      @starting-style {
+        transform: translateY(0.5rem);
+      }
+    }
+  }
+
+  @supports not selector(:popover-open) {
+    .app-toast:not(.visible) {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .app-toast {
+      transition-duration: 0.1s;
+    }
   }
 
   .app-toast-dot {
@@ -2944,7 +2978,7 @@
     white-space: nowrap;
   }
 
-  table.data-table th:first-child {
+  table.data-table th:first-child:not(.select-col) {
     padding-inline-start: 1.25rem;
   }
 
@@ -3046,7 +3080,7 @@
     white-space: nowrap;
   }
 
-  table.data-table td:first-child {
+  table.data-table td:first-child:not(.select-col) {
     padding-inline-start: 1.25rem;
   }
 
@@ -3079,7 +3113,7 @@
   }
 
   /* Column widths (keep th font sizes uniform — style td cells only!) */
-  table.data-table .select-col { inline-size: 2.75rem; text-align: center; padding-inline: 0.75rem; }
+  table.data-table .select-col { inline-size: 3rem; text-align: center; padding-inline: 0.75rem; overflow: visible; text-overflow: clip; }
   table.data-table .original-url { inline-size: auto; }
   table.data-table .short-link { inline-size: 21%; }
   table.data-table .views { inline-size: 6.75rem; font-variant-numeric: tabular-nums; }
@@ -3096,6 +3130,10 @@
     font-size: 0.8125rem;
     font-weight: 500;
     color: var(--color-primary);
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   table.data-table td.short-link a:hover {
@@ -3212,11 +3250,13 @@
   .short-link-wrapper {
     display: flex;
     align-items: center;
+    min-inline-size: 0;
+    inline-size: 100%;
     max-inline-size: 100%;
     overflow: hidden;
   }
 
-  .short-link-wrapper .clipboard { margin-inline-end: 0.45rem; }
+  .short-link-wrapper .clipboard { margin-inline-end: 0.45rem; flex-shrink: 0; }
   .short-link-wrapper .clipboard svg.check { inline-size: 1.75rem; }
 
   .actions-group {
@@ -3233,6 +3273,12 @@
     margin: 0.15rem 0 0;
     font-size: 0.75rem;
     color: var(--secondary-text-color);
+  }
+
+  table.data-table td .description .description-group {
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
   }
 
   table.data-table td .description button.link {
@@ -4289,7 +4335,21 @@
   }
 
   @media (max-width: 30em) {
-    header nav ul li a.nav-ghost span { display: none; }
+    header nav ul li a.nav-ghost {
+      gap: 0;
+    }
+
+    header nav ul li a.nav-ghost span {
+      position: absolute;
+      clip-path: inset(50%);
+      overflow: hidden;
+      inline-size: 1px;
+      block-size: 1px;
+      margin: -1px;
+      padding: 0;
+      border: 0;
+      white-space: nowrap;
+    }
   }
 
   /* Coarse pointer (touch) comfortable targets */

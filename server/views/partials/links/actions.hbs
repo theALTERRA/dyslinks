@@ -33,7 +33,7 @@
       class="action edit"
       aria-label="Edit {{link.link}}"
       data-tooltip="Edit"
-      aria-expanded="false"
+      aria-expanded="{{#if edit_expanded}}true{{else}}false{{/if}}"
       hx-trigger="click queue:none"
       hx-ext="path-params"
       hx-get="/link/edit/{id}"

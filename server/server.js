@@ -13,6 +13,7 @@ const renders = require("./handlers/renders.handler");
 const asyncHandler = require("./utils/asyncHandler");
 const locals = require("./handlers/locals.handler");
 const links = require("./handlers/links.handler");
+const auth = require("./handlers/auth.handler");
 const routes = require("./routes");
 const queues = require("./queues");
 const redis = require("./redis");
@@ -40,8 +41,7 @@ if (["true", "t", "yes", "y", "on", "1"].includes(trustProxy)) {
   app.set("trust proxy", env.TRUST_PROXY);
 }
 
-const defaultHostClean = env.DEFAULT_DOMAIN.replace(/^https?:\/\//i, "").replace(/\/+$/, "");
-const isLocalDefaultDomain = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(defaultHostClean);
+const isLocalDefaultDomain = utils.isLocalDomain(env.DEFAULT_DOMAIN);
 
 app.use(helmet({
   contentSecurityPolicy: {
@@ -85,6 +85,7 @@ if (env.OIDC_ENABLED) {
 // serve static
 app.use("/images", express.static("custom/images"));
 app.use("/css", express.static("custom/css", { extensions: ["css"] }));
+app.use("/fonts", express.static("static/fonts", { maxAge: "1y", immutable: true }));
 app.use(express.static("static"));
 
 app.use(passport.initialize());
@@ -125,7 +126,7 @@ function rateLimitBasicAuthRedirect(req, res, next) {
 app.get("/:id", rateLimitBasicAuthRedirect, asyncHandler(links.redirect));
 
 // 404 pages that don't exist
-app.get("/{*splat}", renders.notFound);
+app.get("/{*splat}", asyncHandler(auth.jwtLooseHeader), renders.notFound);
 
 // handle errors coming from above routes
 app.use(helpers.error);

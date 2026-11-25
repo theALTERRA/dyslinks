@@ -103,6 +103,30 @@ const jwtLoosePage = authenticate("jwt", "Unauthorized.", false, "page");
 const apikey = authenticate("localapikey", "API key is not correct.", false, null);
 const oidc = authenticate("oidc", "Unauthorized", true, "page");
 
+async function attachHeaderUser(req, res) {
+  if (req.user) {
+    res.locals.user = req.user;
+    res.locals.isAdmin = utils.isAdmin(req.user);
+    return;
+  }
+  if (!req.cookies?.token) return;
+  await new Promise((resolve) => {
+    passport.authenticate("jwt", (err, user) => {
+      if (!err && user && !user.banned) {
+        req.user = { ...user, admin: utils.isAdmin(user) };
+        res.locals.user = req.user;
+        res.locals.isAdmin = req.user.admin;
+      }
+      resolve();
+    })(req, res, () => resolve());
+  });
+}
+
+async function jwtLooseHeader(req, res, next) {
+  await attachHeaderUser(req, res);
+  next();
+}
+
 function admin(req, res, next) {
   if (req.user.admin) return next();
   throw new CustomError("Unauthorized", 401);
@@ -532,6 +556,7 @@ function featureAccessPage(features) {
 module.exports = {
   admin,
   apikey,
+  attachHeaderUser,
   changeEmail,
   changeEmailRequest,
   changePassword,
@@ -542,6 +567,7 @@ module.exports = {
   generateApiKey,
   jwt,
   jwtLoose,
+  jwtLooseHeader,
   jwtLoosePage,
   jwtPage,
   local,

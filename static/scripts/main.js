@@ -6,23 +6,112 @@ document.body.addEventListener("htmx:configRequest", function (evt) {
   evt.detail.headers["Accept"] = "text/html,*/*";
 });
 
-// screen-reader polite live announcer & subtle toast notification
+// screen-reader polite live announcer & top-layer popover toast notification
+const supportsPopoverApi = typeof HTMLElement !== "undefined" && Object.hasOwn(HTMLElement.prototype, "popover");
+let supportsDisplayTransition;
+function canTransitionDisplay() {
+  if (supportsDisplayTransition !== undefined) return supportsDisplayTransition;
+  if (
+    typeof window === "undefined" ||
+    !window.CSS ||
+    typeof window.CSS.supports !== "function" ||
+    !window.CSS.supports("transition-behavior", "allow-discrete") ||
+    !document.body ||
+    typeof document.createElement !== "function" ||
+    typeof getComputedStyle !== "function"
+  ) {
+    return false;
+  }
+  const probe = document.createElement("div");
+  probe.style.cssText = "transition: display 1s allow-discrete !important; display: block;";
+  document.body.appendChild(probe);
+  getComputedStyle(probe).display;
+  probe.style.display = "none";
+  supportsDisplayTransition = getComputedStyle(probe).display === "block";
+  probe.remove();
+  return supportsDisplayTransition;
+}
+
+function supportsTopLayerExit() {
+  return Boolean(
+    typeof window !== "undefined" &&
+    window.CSS &&
+    typeof window.CSS.supports === "function" &&
+    window.CSS.supports("overlay", "auto") &&
+    canTransitionDisplay()
+  );
+}
+
 let toastTimer = null;
+async function hideToast(toast) {
+  if (!toast) return;
+  if (supportsPopoverApi && typeof toast.hidePopover === "function") {
+    try {
+      if (toast.matches && !toast.matches(":popover-open")) {
+        toast.classList.remove("visible");
+        return;
+      }
+      if (!supportsTopLayerExit() && typeof toast.getAnimations === "function") {
+        toast.setAttribute("data-closing", "");
+        const animations = toast.getAnimations({ subtree: true });
+        if (animations.length > 0) {
+          await Promise.race([
+            Promise.allSettled(animations.map(function (a) { return a.finished; })),
+            new Promise(function (r) { setTimeout(r, 400); })
+          ]);
+        }
+        if (!toast.hasAttribute("data-closing")) return;
+        toast.removeAttribute("data-closing");
+      }
+      if (!toast.matches || toast.matches(":popover-open")) {
+        toast.hidePopover();
+      }
+    } catch (_) {
+      // fall through
+    }
+  }
+  toast.classList.remove("visible");
+}
+
 function showToast(message) {
   const toast = document.getElementById("app-toast");
   const msgEl = document.getElementById("app-toast-message");
   if (!toast || !msgEl || !message) return;
   msgEl.textContent = message;
-  toast.classList.add("visible");
   clearTimeout(toastTimer);
+  if (toast.removeAttribute) {
+    toast.removeAttribute("data-closing");
+  }
+  if (supportsPopoverApi && typeof toast.showPopover === "function") {
+    try {
+      // Re-promote popover so it stays above any open <dialog> in the top layer
+      if (toast.matches && toast.matches(":popover-open") && typeof toast.hidePopover === "function") {
+        toast.hidePopover();
+      }
+      toast.showPopover();
+    } catch (_) {
+      toast.classList.add("visible");
+    }
+  } else {
+    toast.classList.add("visible");
+  }
   toastTimer = setTimeout(function () {
-    toast.classList.remove("visible");
+    hideToast(toast);
   }, 2400);
 }
 
 function announce(message) {
+  if (!message) return;
+  if (typeof document.ariaNotify === "function") {
+    try {
+      document.ariaNotify(message);
+      return;
+    } catch (_) {
+      // fall through to live region fallback
+    }
+  }
   const region = document.getElementById("live-announcer");
-  if (!region || !message) return;
+  if (!region) return;
   region.textContent = "";
   setTimeout(function () {
     region.textContent = message;
@@ -64,12 +153,100 @@ function scheduleRedirects(root) {
   });
 }
 
+// sync password visibility toggle buttons with preserved input types & reset helpers
+function syncPasswordToggles(root) {
+  const scope = root && root.querySelectorAll ? root : document;
+  if (!scope.querySelectorAll) return;
+  scope.querySelectorAll(".password-input-wrapper").forEach(function (wrapper) {
+    const input = wrapper.querySelector ? wrapper.querySelector("input") : null;
+    const toggle = wrapper.querySelector ? wrapper.querySelector(".password-toggle") : null;
+    if (!input || !toggle || !toggle.setAttribute) return;
+    const showing = input.type === "text";
+    toggle.setAttribute("aria-pressed", showing ? "true" : "false");
+    toggle.setAttribute("aria-label", showing ? "Hide password" : "Show password");
+  });
+}
+
+function resetPasswordVisibility(root) {
+  const scope = root && root.querySelectorAll ? root : document;
+  if (!scope.querySelectorAll) return;
+  scope.querySelectorAll(".password-input-wrapper input").forEach(function (input) {
+    if (input.type === "text") {
+      input.type = "password";
+    }
+  });
+  syncPasswordToggles(scope);
+}
+
+function linkFieldErrorId(input, errorId, shown) {
+  if (!input || !input.getAttribute || !input.setAttribute) return;
+  const ids = (input.getAttribute("aria-describedby") || "")
+    .split(/\s+/)
+    .filter(function (id) {
+      if (!id) return false;
+      if (errorId && id === errorId) return false;
+      if (!shown && /-error(?:-[\w-]+)?$/.test(id) && typeof document.getElementById === "function" && !document.getElementById(id)) {
+        return false;
+      }
+      return true;
+    });
+  if (shown && errorId) ids.push(errorId);
+  if (ids.length) input.setAttribute("aria-describedby", ids.join(" "));
+  else if (input.removeAttribute) input.removeAttribute("aria-describedby");
+}
+
+function syncPreservedFieldAria(root) {
+  const scope = root && root.querySelectorAll ? root : document;
+  if (!scope.querySelectorAll) return;
+  const containers = Array.from(scope.querySelectorAll(".field, .target-wrapper"));
+  if (scope.matches && scope.matches(".field, .target-wrapper")) {
+    containers.unshift(scope);
+  }
+  containers.forEach(function (container) {
+    const hasError = Boolean(container.classList && container.classList.contains("error"));
+    const inlineErrorEl = container.querySelector ? container.querySelector("p.error[id]") : null;
+    const controls = container.querySelectorAll ? container.querySelectorAll("input, select, textarea") : [];
+    controls.forEach(function (control) {
+      if (control.type === "hidden" || !control.setAttribute) return;
+      const dataErrorId = control.dataset ? control.dataset.error : "";
+      const linkedErrorEl = inlineErrorEl || (dataErrorId && document.getElementById ? document.getElementById(dataErrorId) : null);
+      const errorId = (linkedErrorEl && linkedErrorEl.id) || dataErrorId || (control.dataset ? control.dataset.syncedErrorId : "") || "";
+      if (hasError) {
+        control.setAttribute("aria-invalid", "true");
+        if (errorId) {
+          if (control.dataset) control.dataset.syncedErrorId = errorId;
+          linkFieldErrorId(control, errorId, true);
+        }
+      } else {
+        if (control.getAttribute && control.getAttribute("aria-invalid") === "true") {
+          control.setAttribute("aria-invalid", "false");
+        }
+        linkFieldErrorId(control, errorId, false);
+      }
+    });
+  });
+}
+
+function syncEditRowExpanded(root) {
+  const scope = root && root.querySelectorAll ? root : document;
+  if (!scope.querySelectorAll) return;
+  scope.querySelectorAll("tr.edit").forEach(function (editRow) {
+    const prevRow = editRow.previousElementSibling;
+    const editBtn = prevRow && prevRow.querySelector ? prevRow.querySelector("[data-action='toggle-edit-row']") : null;
+    if (editBtn && editBtn.setAttribute) {
+      editBtn.setAttribute("aria-expanded", editRow.classList && editRow.classList.contains("show") ? "true" : "false");
+    }
+  });
+}
+
 // reset form if event is sent from the backend
 function resetForm(id) {
   return function () {
     const form = document.getElementById(id);
     if (!form) return;
     form.reset();
+    resetPasswordVisibility(form);
+    syncPreservedFieldAria(form);
   };
 }
 document.body.addEventListener("resetChangePasswordForm", resetForm("change-password"));
@@ -77,8 +254,17 @@ document.body.addEventListener("resetChangeEmailForm", resetForm("change-email")
 document.body.addEventListener("resetShortenerForm", function () {
   ["target", "customurl", "password", "expire_in", "description"].forEach(function (id) {
     const el = document.getElementById(id);
-    if (el) el.value = "";
+    if (el) {
+      el.value = "";
+      if (id === "password" && el.type === "text") {
+        el.type = "password";
+      }
+      if (el.setAttribute) el.setAttribute("aria-invalid", "false");
+      if (el.removeAttribute) el.removeAttribute("aria-describedby");
+    }
   });
+  const form = document.getElementById("shortener-form");
+  syncPasswordToggles(form || document);
   const domainEl = document.getElementById("domain");
   const labelVal = document.getElementById("customurl-label-value");
   if (domainEl && labelVal) {
@@ -268,10 +454,16 @@ async function handleCopyLink(element) {
 async function handleShortURLCopyLink(element) {
   const copied = await handleCopyLink(element);
   if (!copied) return;
+  const customToast = element && element.dataset ? element.dataset.toastMessage : "";
+  const isSensitive = Boolean(
+    (element && element.dataset && element.dataset.sensitive === "true") ||
+    (element && element.closest && element.closest("#apikey"))
+  );
   const url = element && element.dataset ? element.dataset.url : "";
-  const shortLabel = url ? url.replace(/^https?:\/\//i, "") : "";
-  announce("Copied to clipboard");
-  showToast(shortLabel && shortLabel.length <= 48 ? "Copied " + shortLabel : "Copied to clipboard");
+  const shortLabel = !isSensitive && url ? url.replace(/^https?:\/\//i, "") : "";
+  const toastMessage = customToast || (shortLabel && shortLabel.length <= 48 ? "Copied " + shortLabel : "Copied to clipboard");
+  announce(customToast || "Copied to clipboard");
+  showToast(toastMessage);
   const parent = element.parentNode;
   const container = element.closest ? (element.closest("#shorturl, #apikey, .short-link-wrapper, .short-link") || parent) : parent;
   const clipboard = (container && container.querySelector ? container.querySelector(".clipboard") : null)
@@ -949,16 +1141,31 @@ document.body.addEventListener("htmx:load", function (evt) {
 });
 
 document.body.addEventListener("htmx:afterSwap", function (evt) {
+  const swapped = evt && evt.target ? evt.target : document;
   syncLinkSelectionUI();
+  syncPasswordToggles(swapped);
+  syncPreservedFieldAria(swapped);
+  syncEditRowExpanded(document);
   scheduleRedirects(document);
   if (evt && evt.target) {
     syncDialogContent(evt.target);
+    if (evt.target.querySelector) {
+      const firstInvalid = evt.target.querySelector('[aria-invalid="true"]');
+      const active = document.activeElement;
+      if (firstInvalid && typeof firstInvalid.focus === "function" && (!active || active === document.body || (evt.target.contains && !evt.target.contains(active)))) {
+        firstInvalid.focus();
+      }
+    }
   }
 });
 
-document.body.addEventListener("htmx:afterSettle", function () {
+document.body.addEventListener("htmx:afterSettle", function (evt) {
+  const settled = evt && evt.target ? evt.target : document;
   updateLinksNav();
   syncLinkSelectionUI();
+  syncPasswordToggles(settled);
+  syncPreservedFieldAria(settled);
+  syncEditRowExpanded(document);
   scheduleRedirects(document);
 });
 

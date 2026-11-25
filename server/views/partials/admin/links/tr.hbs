@@ -30,8 +30,7 @@
             </button>
             {{#ifEquals @root.query.user email}}
             {{else}}
-              &nbsp;(
-              <button
+              &nbsp;<span class="description-group">(<button
                 type="button"
                 class="link"
                 aria-label="View links by {{email}}"
@@ -42,9 +41,7 @@
                 hx-sync="this:replace"
                 hx-indicator="closest .table-card"
                 hx-vals='{"user":"{{email}}"}'
-              >
-                view links
-              </button>)
+              >view links</button>)</span>
             {{/ifEquals}}
           {{~else~}}
             <button
@@ -82,7 +79,7 @@
           </button>
           {{> icons/check}}
         </div>
-        <a href="{{link.url}}" target="_blank" rel="noopener noreferrer">/{{link.address}}</a>
+        <a href="{{link.url}}" target="_blank" rel="noopener noreferrer" title="{{link.link}}">/{{link.address}}</a>
       </div>
       <p class="description">
         <button
