@@ -737,3 +737,14 @@ test("htmx:afterSwap resyncs preserved password toggles, validation ARIA attribu
   assert.equal(pwToggle.getAttribute("aria-pressed"), "false");
   assert.equal(pwToggle.getAttribute("aria-label"), "Show password");
 });
+
+test("selected table row highlight uses opaque tokens without column-seam right-fade overlays", () => {
+  const css = fs.readFileSync(path.resolve(__dirname, "../../static/css/styles.css"), "utf8");
+  const selectedTokenMatches = css.match(/--table-tr-selected(?:-hover)?-bg-color:\s*[^;]+;/g) || [];
+  assert.ok(selectedTokenMatches.length >= 6, "expected light, dark, and light-dark selected row tokens");
+  for (const decl of selectedTokenMatches) {
+    assert.doesNotMatch(decl, /rgba\(/i, `selected row background token should be opaque: ${decl}`);
+  }
+  assert.doesNotMatch(css, /td\.right-fade::after/, "should not overlay pseudo-element fades across table columns");
+  assert.match(css, /table\.data-table tbody tr\.selected:hover\s*\{[^}]*--table-tr-selected-hover-bg-color/);
+});

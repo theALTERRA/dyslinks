@@ -173,7 +173,8 @@
     --table-bg-color: rgba(250, 250, 250, 0.75);
     --table-tr-border-color: rgba(228, 228, 231, 0.7);
     --table-tr-hover-bg-color: #fafafa;
-    --table-tr-selected-bg-color: rgba(124, 107, 246, 0.06);
+    --table-tr-selected-bg-color: #f7f6fe;
+    --table-tr-selected-hover-bg-color: #f1effe;
     --table-head-tr-border-color: #e4e4e7;
     --table-status-gray-bg-color: #f4f4f5;
     --table-status-gray-fg-color: #52525b;
@@ -318,7 +319,8 @@
       --table-bg-color: rgba(20, 20, 25, 0.6);
       --table-tr-border-color: rgba(34, 34, 41, 0.8);
       --table-tr-hover-bg-color: #16161c;
-      --table-tr-selected-bg-color: rgba(124, 107, 246, 0.06);
+      --table-tr-selected-bg-color: #171623;
+      --table-tr-selected-hover-bg-color: #1c1a2a;
       --table-head-tr-border-color: #222229;
       --table-status-gray-bg-color: #191921;
       --table-status-gray-fg-color: #d4d4d8;
@@ -458,7 +460,8 @@
       --table-bg-color: light-dark(rgba(250, 250, 250, 0.75), rgba(20, 20, 25, 0.6));
       --table-tr-border-color: light-dark(rgba(228, 228, 231, 0.7), rgba(34, 34, 41, 0.8));
       --table-tr-hover-bg-color: light-dark(#fafafa, #16161c);
-      --table-tr-selected-bg-color: light-dark(rgba(124, 107, 246, 0.06), rgba(124, 107, 246, 0.06));
+      --table-tr-selected-bg-color: light-dark(#f7f6fe, #171623);
+      --table-tr-selected-hover-bg-color: light-dark(#f1effe, #1c1a2a);
       --table-head-tr-border-color: light-dark(#e4e4e7, #222229);
       --table-status-gray-bg-color: light-dark(#f4f4f5, #191921);
       --table-status-gray-fg-color: light-dark(#52525b, #d4d4d8);
@@ -3104,12 +3107,16 @@
     transition: background-color 0.14s ease;
   }
 
-  table.data-table tbody tr:not(.edit):not(.no-data):not(.loading-placeholder):hover {
+  table.data-table tbody tr:not(.edit, .no-data, .loading-placeholder, .selected):hover {
     background-color: var(--table-tr-hover-bg-color);
   }
 
   table.data-table tbody tr.selected {
     background-color: var(--table-tr-selected-bg-color);
+  }
+
+  table.data-table tbody tr.selected:hover {
+    background-color: var(--table-tr-selected-hover-bg-color);
   }
 
   /* Column widths (keep th font sizes uniform — style td cells only!) */
@@ -3231,9 +3238,12 @@
     flex-direction: column;
     align-items: flex-start;
     min-inline-size: 0;
+    max-inline-size: 100%;
+    flex: 1 1 auto;
   }
 
-  table.data-table td.original-url .cell-stack > a {
+  table.data-table td.original-url .cell-stack > a,
+  table.data-table td.original-url .cell-stack > .non-http-target {
     color: var(--text-secondary);
     font-size: 0.8125rem;
     font-weight: 400;
@@ -3419,24 +3429,6 @@
     stroke: var(--color-primary);
   }
 
-  /* Right-edge fade cue on clipped cells */
-  table.data-table tbody td.right-fade::after {
-    content: "";
-    position: absolute;
-    inset-inline-end: 0;
-    inset-block-start: 0;
-    block-size: 100%;
-    inline-size: 1.75rem;
-    pointer-events: none;
-    background-color: var(--surface-color);
-    transition: background-color 0.12s ease;
-    -webkit-mask-image: linear-gradient(to left, #000, transparent);
-    mask-image: linear-gradient(to left, #000, transparent);
-  }
-
-  table.data-table tbody tr:hover td.right-fade::after { background-color: var(--table-tr-hover-bg-color); }
-  table.data-table tbody tr.selected td.right-fade::after { background-color: var(--table-tr-selected-bg-color); }
-
   /* Inline Edit Row */
   table.data-table tr.edit {
     display: none;
@@ -3535,10 +3527,6 @@
       padding-block-start: 0.15rem;
     }
 
-    table.data-table tbody td.right-fade::after {
-      display: none;
-    }
-
     table.data-table td .cell-stack {
       align-items: flex-end;
       text-align: end;
@@ -3617,10 +3605,6 @@
       color: var(--secondary-text-color);
       flex-shrink: 0;
       text-align: start;
-    }
-
-    table.data-table tbody td.right-fade::after {
-      display: none;
     }
   }
 

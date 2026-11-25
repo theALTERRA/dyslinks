@@ -11,7 +11,7 @@
     {{#if domains}}
       {{#each domains}}
         <tr>
-          <td class="domain right-fade" data-label="Domain">
+          <td class="domain" data-label="Domain">
             <span class="domain-address-line">
               {{address}}
               {{#ifEquals address ../user_default_domain}}
@@ -19,7 +19,7 @@
               {{/ifEquals}}
             </span>
           </td>
-          <td class="homepage right-fade" data-label="Homepage">
+          <td class="homepage" data-label="Homepage">
             {{homepage}}
           </td>
           <td class="actions" data-label="Actions">
