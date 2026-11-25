@@ -2027,6 +2027,11 @@
     color: var(--text-color);
   }
 
+  .shortener #shorturl:has(.clipboard) h1 {
+    display: flex;
+    align-items: center;
+  }
+
   .shortener #shorturl h1 span {
     background: var(--hero-gradient);
     -webkit-background-clip: text;
@@ -2035,16 +2040,19 @@
   }
 
   .shortener #shorturl .link-copy-btn {
+    display: block;
     min-block-size: auto;
     padding: 0.125rem 0.25rem;
     border: none;
     background: transparent;
     box-shadow: none;
+    overflow: visible;
     font-family: var(--font-mono);
     font-size: clamp(1.0625rem, 0.9rem + 0.9vw, 1.45rem);
     font-weight: 600;
     letter-spacing: -0.02em;
     color: var(--color-primary);
+    text-box: trim-both cap alphabetic;
     overflow-wrap: anywhere;
     white-space: normal;
   }
