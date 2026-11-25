@@ -19,6 +19,8 @@ async function get(req, res) {
   const { limit, skip } = req.context;
   const search = req.query.search;
   const domain = req.query.domain;
+  const sort = typeof req.query.sort === "string" ? req.query.sort : "created_at";
+  const order = req.query.order === "asc" ? "asc" : "desc";
   const userId = req.user.id;
 
   const match = {
@@ -26,7 +28,7 @@ async function get(req, res) {
   };
 
   const [data, total] = await Promise.all([
-    query.link.get(match, { limit, search, domain, skip }),
+    query.link.get(match, { limit, search, domain, skip, sort, order }),
     query.link.total(match, { search, domain })
   ]);
 
@@ -35,6 +37,9 @@ async function get(req, res) {
       total,
       limit,
       skip,
+      sort,
+      order,
+      has_filters: !!(search || domain),
       links: data.map(utils.sanitize.link_html),
     })
     return;

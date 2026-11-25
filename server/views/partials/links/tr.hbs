@@ -9,20 +9,48 @@
     />
   </td>
   <td class="original-url right-fade" data-label="Original URL">
-    <div class="cell-stack">
-      {{#if is_http_target}}
-        <a href="{{target}}" target="_blank" rel="noopener noreferrer">
-          {{target}}
-        </a>
-      {{else}}
-        <span class="non-http-target">{{target}}</span>
-      {{/if}}
-      {{#if description}}
-        <p class="description">
-          {{description}}
-        </p>
-      {{/if}}
+    <div class="url-cell">
+      <span class="url-icon-badge" aria-hidden="true">{{> icons/globe}}</span>
+      <div class="cell-stack">
+        {{#if is_http_target}}
+          <a href="{{target}}" target="_blank" rel="noopener noreferrer" title="{{target}}">
+            {{target}}
+          </a>
+        {{else}}
+          <span class="non-http-target" title="{{target}}">{{target}}</span>
+        {{/if}}
+        {{#if description}}
+          <p class="description">
+            {{description}}
+          </p>
+        {{/if}}
+      </div>
     </div>
+  </td>
+  <td class="short-link right-fade" data-label="Short link">
+    <div class="short-link-wrapper">
+      <div class="clipboard small">
+        <button
+          type="button"
+          aria-label="Copy {{link.link}}"
+          data-tooltip="Copy link"
+          data-action="copy-link"
+          data-url="{{link.url}}"
+        >
+          {{> icons/copy}}
+        </button>
+        {{> icons/check}}
+      </div>
+      <a href="{{link.url}}" target="_blank" rel="noopener noreferrer">
+        {{link.link}}
+      </a>
+    </div>
+  </td>
+  <td class="views" data-label="Views">
+    <span class="views-badge">
+      {{> icons/activity}}
+      <span>{{visit_count}}</span>
+    </span>
   </td>
   <td class="created-at" data-label="Created at">
     <div class="cell-stack">
@@ -37,27 +65,6 @@
         </p>
       {{/if}}
     </div>
-  </td>
-  <td class="short-link right-fade" data-label="Short link">
-    <div class="short-link-wrapper">
-      <div class="clipboard small">
-        <button
-          type="button"
-          aria-label="Copy {{link.link}}"
-          data-action="copy-link"
-          data-url="{{link.url}}"
-        >
-          {{> icons/copy}}
-        </button>
-        {{> icons/check}}
-      </div>
-      <a href="{{link.url}}" target="_blank" rel="noopener noreferrer">
-        {{link.link}}
-      </a>
-    </div>
-  </td>
-  <td class="views" data-label="Views">
-    {{visit_count}}
   </td>
   {{> links/actions}}
 </tr>

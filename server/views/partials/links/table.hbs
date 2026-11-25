@@ -1,5 +1,8 @@
 <section id="main-table-wrapper">
-  <h2 id="links-table-heading">Recent shortened links</h2>
+  <div class="table-section-header">
+    <h2 id="links-table-heading">Recent shortened links</h2>
+    <span id="links-total-badge" class="count-badge hidden" aria-live="polite">0</span>
+  </div>
   <div
     class="table-card"
     hx-get="/api/links"
@@ -21,6 +24,7 @@
     <div class="table-toolbar controls links-controls">
       <search class="search" aria-label="Filter links">
         <div class="search-input-wrapper">
+          <span class="search-icon" aria-hidden="true">{{> icons/search}}</span>
           <input
             class="table-input search"
             id="search"
@@ -52,30 +56,26 @@
             <option value="{{this}}">{{this}}</option>
           {{/each}}
         </select>
-        <button
-          type="button"
-          id="select-all-links-btn"
-          class="table select-all-btn"
-          data-action="toggle-select-all-links-btn"
-          disabled
-        >
-          Select all
-        </button>
-        <button
-          type="button"
-          id="bulk-delete-links-btn"
-          class="table danger bulk-delete-btn hidden"
-          data-action="open-bulk-delete"
-          hx-indicator="#link-dialog"
-        >
-          <span>{{> icons/trash}}</span>
-          <span class="bulk-delete-label">Delete selected</span>
-        </button>
         <input id="total" name="total" type="hidden" value="{{total}}" />
         <input id="limit" name="limit" type="hidden" value="10" />
         <input id="skip" name="skip" type="hidden" value="0" />
+        <input id="sort" name="sort" type="hidden" value="created_at" />
+        <input id="order" name="order" type="hidden" value="desc" />
       </search>
-      {{> links/nav}}
+      <div id="bulk-action-bar" class="bulk-action-bar hidden">
+        <span id="bulk-selected-count" class="bulk-selected-count">0 selected</span>
+        <span class="bulk-action-divider" aria-hidden="true"></span>
+        <button
+          type="button"
+          id="bulk-delete-links-btn"
+          class="bulk-delete-btn hidden"
+          data-action="open-bulk-delete"
+          hx-indicator="#link-dialog"
+        >
+          {{> icons/trash}}
+          <span class="bulk-delete-label">Delete selected</span>
+        </button>
+      </div>
     </div>
     <div id="bulk-select-banner" class="bulk-select-banner hidden" role="status" aria-live="polite">
       <span id="bulk-select-banner-text"></span>
@@ -87,13 +87,14 @@
       ></button>
     </div>
     <div class="table-scroll" tabindex="0" role="region" aria-labelledby="links-table-heading">
-      <table class="data-table data-table--links">
+      <table id="links-data-table" class="data-table data-table--links">
         <caption class="visually-hidden">Recent shortened links</caption>
         {{> links/thead}}
         {{> links/tbody}}
       </table>
     </div>
-    <div class="table-footer controls links-controls">
+    <div class="table-footer controls links-controls hidden">
+      <span id="pagination-info" class="pagination-info"></span>
       {{> links/nav}}
     </div>
   </div>

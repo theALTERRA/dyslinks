@@ -2,14 +2,16 @@
   <div class="header-inner">
     <div class="logo-wrapper">
       <a class="logo nav" href="{{site_url}}/">
-        <svg class="logo-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="24" height="24" shape-rendering="crispEdges" aria-hidden="true">
-          <rect class="logo-d" x="3" y="3" width="2" height="10"/>
-          <rect class="logo-d" x="5" y="3" width="4" height="2"/>
-          <rect class="logo-d" x="5" y="11" width="4" height="2"/>
-          <rect class="logo-d" x="9" y="5" width="2" height="6"/>
-          <rect class="logo-dot" x="11" y="11" width="2" height="2"/>
-        </svg>
-        {{site_name}}
+        <span class="logo-badge" aria-hidden="true">
+          <svg class="logo-mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16" shape-rendering="crispEdges">
+            <rect class="logo-d" x="3" y="3" width="2" height="10"/>
+            <rect class="logo-d" x="5" y="3" width="4" height="2"/>
+            <rect class="logo-d" x="5" y="11" width="4" height="2"/>
+            <rect class="logo-d" x="9" y="5" width="2" height="6"/>
+            <rect class="logo-dot" x="11" y="11" width="2" height="2"/>
+          </svg>
+        </span>
+        <span class="logo-name">{{site_name}}</span>
       </a>
       <ul class="logo-links">
         <li>
@@ -29,32 +31,33 @@
     <nav aria-label="Primary">
       <ul>
         {{#if user}}
-          <li>
-            <form method="post" action="{{site_url}}/api/auth/logout" class="logout-form">
-              <button type="submit" class="nav">
-                Log out
-              </button>
-            </form>
-          </li>
           {{#if isAdmin}}
             <li>
-              <a class="button secondary" href="{{site_url}}/admin">
-                <span>{{> icons/shield}}</span>
-                Admin
+              <a class="nav-ghost" href="{{site_url}}/admin">
+                {{> icons/shield}}
+                <span>Admin</span>
               </a>
             </li>
           {{/if}}
           <li>
-            <a class="button primary" href="{{site_url}}/settings">
-              <span>{{> icons/cog}}</span>
-              Settings
+            <a class="nav-ghost" href="{{site_url}}/settings">
+              {{> icons/cog}}
+              <span>Settings</span>
             </a>
+          </li>
+          <li class="nav-separator" aria-hidden="true"></li>
+          <li>
+            <form method="post" action="{{site_url}}/api/auth/logout" class="logout-form">
+              <button type="submit" class="nav-text">
+                Log out
+              </button>
+            </form>
           </li>
         {{/if}}
         {{#unless user}}
           {{#unless login_disabled}}
             <li>
-              <a class="button primary" href="{{site_url}}/login">
+              <a class="nav-ghost nav-ghost--bordered" href="{{site_url}}/login">
                 {{#if disallow_registration}}Log in{{else}}Log in / Sign up{{/if}}
               </a>
             </li>

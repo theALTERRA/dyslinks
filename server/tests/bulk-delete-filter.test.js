@@ -193,7 +193,7 @@ test("GET /api/links filters accurately by default domain, custom domain (exact 
   assert.ok(subDystoLink.id);
 });
 
-test("homepage renders domain filter dropdown, select all button, bulk delete button, and CSP-clean markup", async () => {
+test("homepage renders domain filter dropdown, header select-all checkbox, contextual bulk delete bar, and CSP-clean markup", async () => {
   const res = await fetch(`${baseUrl}/`, {
     headers: {
       Accept: "text/html",
@@ -207,8 +207,9 @@ test("homepage renders domain filter dropdown, select all button, bulk delete bu
   assert.match(html, /<option value="">All domains<\/option>/);
   assert.match(html, /<option value="localhost:3000">localhost:3000<\/option>/);
   assert.match(html, /<option value="dysto\.cc">dysto\.cc<\/option>/);
-  assert.match(html, /id="select-all-links-btn"/);
+  assert.doesNotMatch(html, /id="select-all-links-btn"/);
   assert.match(html, /id="select-all-links-checkbox"/);
+  assert.match(html, /id="bulk-action-bar"/);
   assert.match(html, /id="bulk-delete-links-btn"/);
   assert.doesNotMatch(html, /\son(click|change|input)=/i);
 

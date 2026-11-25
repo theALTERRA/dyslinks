@@ -4,7 +4,7 @@
     <tr>
       <th scope="col" class="domain">Domain</th>
       <th scope="col" class="homepage">Homepage</th>
-      <th scope="col" class="actions"><span class="visually-hidden">Actions</span></th>
+      <th scope="col" class="actions">Actions</th>
     </tr>
   </thead>
   <tbody>
@@ -42,7 +42,13 @@
     {{else}}
       <tr class="no-data">
         <td class="no-entry" colspan="3">
-          No domains yet.
+          <div class="empty-state empty-state--compact">
+            <div class="empty-state-icon" aria-hidden="true">
+              {{> icons/globe}}
+            </div>
+            <p class="empty-state-title">No custom domains yet</p>
+            <p class="empty-state-subtitle">Add a custom domain below to brand your short links.</p>
+          </div>
         </td>
       </tr>
     {{/if}}

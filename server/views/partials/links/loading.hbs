@@ -2,7 +2,21 @@
   {{#ifEquals links.length 0}}
     <tr class="no-data">
       <td colspan="6">
-        No links.
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            {{> icons/link}}
+          </div>
+          {{#if has_filters}}
+            <p class="empty-state-title">No matching links</p>
+            <p class="empty-state-subtitle">Try adjusting your search query or domain filter.</p>
+            <button type="button" class="empty-state-action" data-action="clear-all-filters">
+              Clear search &amp; filters
+            </button>
+          {{else}}
+            <p class="empty-state-title">No links yet</p>
+            <p class="empty-state-subtitle">Paste a long URL above to create your first shortened link.</p>
+          {{/if}}
+        </div>
       </td>
     </tr>
   {{else}}

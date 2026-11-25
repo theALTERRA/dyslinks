@@ -158,13 +158,33 @@ async function totalAdmin(match, params) {
   return typeof count === "number" ? count : parseInt(count);
 }
 
+const SORT_COLUMNS = {
+  target: "links.target",
+  short_link: "links.address",
+  views: "links.visit_count",
+  created_at: "links.id",
+};
+
+function applyLinkSort(query, params) {
+  const sortKey = typeof params?.sort === "string" && Object.hasOwn(SORT_COLUMNS, params.sort)
+    ? params.sort
+    : "created_at";
+  const order = params?.order === "asc" ? "asc" : "desc";
+  const column = SORT_COLUMNS[sortKey];
+
+  query.orderBy(column, order);
+  if (column !== "links.id") {
+    query.orderBy("links.id", "desc");
+  }
+}
+
 async function get(match, params) {
   const query = knex("links")
     .select(...selectable)
     .offset(params.skip)
-    .limit(params.limit)
-    .orderBy("links.id", "desc");
+    .limit(params.limit);
 
+  applyLinkSort(query, params);
   applyUserLinkFilters(query, match, params);
 
   return query;

@@ -2,7 +2,13 @@
   {{#ifEquals links.length 0}}
     <tr class="no-data">
       <td colspan="5">
-        No links.
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            {{> icons/link}}
+          </div>
+          <p class="empty-state-title">No links found</p>
+          <p class="empty-state-subtitle">No shortened links match the current filters.</p>
+        </div>
       </td>
     </tr>
   {{else}}

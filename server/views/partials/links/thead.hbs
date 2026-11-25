@@ -4,15 +4,35 @@
       <input
         type="checkbox"
         id="select-all-links-checkbox"
-        aria-label="Select all links"
+        aria-label="Select all visible links"
         data-action="toggle-select-all-links-checkbox"
         disabled
       />
     </th>
-    <th scope="col" class="original-url">Original URL</th>
-    <th scope="col" class="created-at">Created at</th>
-    <th scope="col" class="short-link">Short link</th>
-    <th scope="col" class="views">Views</th>
-    <th scope="col" class="actions"><span class="visually-hidden">Actions</span></th>
+    <th scope="col" class="original-url">
+      <button type="button" class="sort-header" data-action="sort-links" data-sort="target">
+        <span>Original URL</span>
+        <span class="sort-indicator" aria-hidden="true"></span>
+      </button>
+    </th>
+    <th scope="col" class="short-link">
+      <button type="button" class="sort-header" data-action="sort-links" data-sort="short_link">
+        <span>Short link</span>
+        <span class="sort-indicator" aria-hidden="true"></span>
+      </button>
+    </th>
+    <th scope="col" class="views">
+      <button type="button" class="sort-header" data-action="sort-links" data-sort="views">
+        <span>Views</span>
+        <span class="sort-indicator" aria-hidden="true"></span>
+      </button>
+    </th>
+    <th scope="col" class="created-at" aria-sort="descending">
+      <button type="button" class="sort-header" data-action="sort-links" data-sort="created_at">
+        <span>Created at</span>
+        <span class="sort-indicator" aria-hidden="true"></span>
+      </button>
+    </th>
+    <th scope="col" class="actions">Actions</th>
   </tr>
 </thead>

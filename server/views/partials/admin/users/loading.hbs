@@ -2,7 +2,13 @@
   {{#ifEquals users.length 0}}
     <tr class="no-data">
       <td colspan="7">
-        No users.
+        <div class="empty-state">
+          <div class="empty-state-icon" aria-hidden="true">
+            {{> icons/new_user}}
+          </div>
+          <p class="empty-state-title">No users found</p>
+          <p class="empty-state-subtitle">No user accounts match the current filters.</p>
+        </div>
       </td>
     </tr>
   {{else}}

@@ -38,22 +38,26 @@
   >
     <div class="target-wrapper {{#if errors.target}}error{{/if}}">
       <label for="target" class="visually-hidden">Long URL to shorten</label>
-      <input
-        id="target"
-        name="target"
-        type="url"
-        inputmode="url"
-        placeholder="Paste your long URL"
-        autofocus
-        required
-        data-lpignore="true"
-        hx-preserve="true"
-        {{#if errors.target}}aria-invalid="true" aria-describedby="target-error"{{/if}}
-      />
-      <button type="submit" class="submit" aria-label="Shorten URL" data-tooltip="Shorten URL">
-        {{> icons/send}}
-        {{> icons/spinner}}
-      </button>
+      <div class="target-bar">
+        <span class="target-bar-icon" aria-hidden="true">{{> icons/link}}</span>
+        <input
+          id="target"
+          name="target"
+          type="url"
+          inputmode="url"
+          placeholder="Paste your long URL"
+          autofocus
+          required
+          data-lpignore="true"
+          hx-preserve="true"
+          {{#if errors.target}}aria-invalid="true" aria-describedby="target-error"{{/if}}
+        />
+        <button type="submit" class="submit">
+          <span class="submit-icon">{{> icons/link}}</span>
+          {{> icons/spinner}}
+          <span>Shorten</span>
+        </button>
+      </div>
       {{#if errors.target}}<p id="target-error" class="error" role="alert">{{errors.target}}</p>{{/if}}
       {{#unless errors}}
         {{#if error}}
@@ -68,11 +72,14 @@
       value="{{#if show_advanced}}1{{/if}}"
     />
     <details id="advanced-options-details" class="advanced-details" {{#if show_advanced}}open{{/if}}>
-      <summary id="advanced">Show advanced options</summary>
+      <summary id="advanced">
+        <span class="advanced-chevron" aria-hidden="true">{{> icons/chevron_right}}</span>
+        <span>Show advanced options</span>
+      </summary>
       <div id="advanced-options">
         <div class="advanced-input-wrapper">
           <div class="field {{#if errors.domain}}error{{/if}}">
-            <label for="domain">Domain:</label>
+            <label for="domain">Domain</label>
             <select
               id="domain"
               name="domain"
@@ -88,28 +95,29 @@
             {{#if errors.domain}}<p id="domain-error" class="error" role="alert">{{errors.domain}}</p>{{/if}}
           </div>
           <div id="customurl-label" class="field {{#if errors.customurl}}error{{/if}}">
-            <label for="customurl">
+            <label for="customurl">Custom slug</label>
+            <div class="slug-input-wrapper">
               <span id="customurl-label-value" hx-preserve="true">{{#if user_default_domain}}{{user_default_domain}}{{else}}{{default_domain}}{{/if}}/</span>
-            </label>
-            <input
-              type="text"
-              id="customurl"
-              name="customurl"
-              placeholder="Custom address..."
-              hx-preserve="true"
-              autocomplete="off"
-              {{#if errors.customurl}}aria-invalid="true" aria-describedby="customurl-error"{{/if}}
-            />
+              <input
+                type="text"
+                id="customurl"
+                name="customurl"
+                placeholder="my-link"
+                hx-preserve="true"
+                autocomplete="off"
+                {{#if errors.customurl}}aria-invalid="true" aria-describedby="customurl-error"{{/if}}
+              />
+            </div>
             {{#if errors.customurl}}<p id="customurl-error" class="error" role="alert">{{errors.customurl}}</p>{{/if}}
           </div>
           <div class="field {{#if errors.password}}error{{/if}}">
-            <label for="password">Password:</label>
+            <label for="password">Password</label>
             <div class="password-input-wrapper">
               <input
                 type="password"
                 id="password"
                 name="password"
-                placeholder="Password..."
+                placeholder="Optional password..."
                 hx-preserve="true"
                 autocomplete="new-password"
                 {{#if errors.password}}aria-invalid="true" aria-describedby="password-error"{{/if}}
@@ -130,7 +138,7 @@
         </div>
         <div class="advanced-input-wrapper">
           <div class="field expire-in {{#if errors.expire_in}}error{{/if}}">
-            <label for="expire_in">Expire in:</label>
+            <label for="expire_in">Expire in</label>
             <input
               type="text"
               id="expire_in"
@@ -142,12 +150,12 @@
             {{#if errors.expire_in}}<p id="expire-in-error" class="error" role="alert">{{errors.expire_in}}</p>{{/if}}
           </div>
           <div class="field description {{#if errors.description}}error{{/if}}">
-            <label for="description">Description:</label>
+            <label for="description">Description</label>
             <input
               type="text"
               id="description"
               name="description"
-              placeholder="Description..."
+              placeholder="Optional description..."
               hx-preserve="true"
               {{#if errors.description}}aria-invalid="true" aria-describedby="description-error"{{/if}}
             />

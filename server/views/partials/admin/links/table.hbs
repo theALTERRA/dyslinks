@@ -26,6 +26,7 @@
     <search class="filters" aria-label="Filter admin links">
       <div>
         <div class="search-input-wrapper">
+          <span class="search-icon" aria-hidden="true">{{> icons/search}}</span>
           <input
             id="search"
             name="search"
@@ -46,6 +47,7 @@
           </button>
         </div>
         <div class="search-input-wrapper">
+          <span class="search-icon" aria-hidden="true">{{> icons/search}}</span>
           <input
             id="search_domain"
             name="domain"
@@ -66,6 +68,7 @@
           </button>
         </div>
         <div class="search-input-wrapper">
+          <span class="search-icon" aria-hidden="true">{{> icons/search}}</span>
           <input
             id="search_user"
             name="user"
@@ -125,7 +128,6 @@
         <input id="skip" name="skip" type="hidden" value="0" />
       </div>
     </search>
-    {{> admin/table_nav}}
   </div>
   <div class="table-scroll" tabindex="0" role="region" aria-labelledby="admin-table-title">
     <table class="data-table data-table--admin-links">
@@ -134,7 +136,8 @@
       {{> admin/links/tbody}}
     </table>
   </div>
-  <div class="table-footer controls links-controls">
+  <div class="table-footer controls links-controls hidden">
+    <span id="pagination-info" class="pagination-info"></span>
     {{> admin/table_nav}}
   </div>
 </div>

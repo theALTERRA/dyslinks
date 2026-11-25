@@ -6,7 +6,20 @@ document.body.addEventListener("htmx:configRequest", function (evt) {
   evt.detail.headers["Accept"] = "text/html,*/*";
 });
 
-// screen-reader polite live announcer
+// screen-reader polite live announcer & subtle toast notification
+let toastTimer = null;
+function showToast(message) {
+  const toast = document.getElementById("app-toast");
+  const msgEl = document.getElementById("app-toast-message");
+  if (!toast || !msgEl || !message) return;
+  msgEl.textContent = message;
+  toast.classList.add("visible");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () {
+    toast.classList.remove("visible");
+  }, 2400);
+}
+
 function announce(message) {
   const region = document.getElementById("live-announcer");
   if (!region || !message) return;
@@ -138,7 +151,7 @@ function loadQRCodeLib() {
   return qrLibPromise;
 }
 
-// show QR code in native modal dialog with visible close button
+// show QR code in native modal dialog with header, link label, copy & close buttons
 async function handleQRCode(element, id) {
   const dialog = document.getElementById(id);
   if (!dialog) return;
@@ -159,35 +172,60 @@ async function handleQRCode(element, id) {
     return;
   }
 
+  const targetUrl = element && element.dataset ? element.dataset.url || "" : "";
+  const displayUrl = targetUrl.replace(/^https?:\/\//i, "");
+
   const content = document.createElement("div");
   content.className = "content";
 
+  const header = document.createElement("div");
+  header.className = "qr-header";
+
   const title = document.createElement("h1");
   title.id = "dialog-title";
-  title.className = "visually-hidden";
   title.textContent = "QR Code";
+
+  const headerCloseBtn = document.createElement("button");
+  headerCloseBtn.type = "button";
+  headerCloseBtn.className = "qr-close-icon";
+  headerCloseBtn.dataset.action = "close-dialog";
+  headerCloseBtn.setAttribute("aria-label", "Close QR code dialog");
+  headerCloseBtn.innerHTML = '<svg aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+  header.append(title, headerCloseBtn);
 
   const qrFrame = document.createElement("div");
   qrFrame.className = "qr-frame";
 
+  const linkLabel = document.createElement("p");
+  linkLabel.className = "qr-link-label";
+  linkLabel.textContent = displayUrl || targetUrl;
+
   const buttons = document.createElement("div");
   buttons.className = "buttons";
+
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.dataset.action = "copy-link";
+  copyBtn.dataset.url = targetUrl;
+  copyBtn.textContent = "Copy Link";
+
   const closeBtn = document.createElement("button");
   closeBtn.type = "button";
+  closeBtn.className = "primary";
   closeBtn.dataset.action = "close-dialog";
-  closeBtn.textContent = "Close";
-  buttons.appendChild(closeBtn);
+  closeBtn.textContent = "Done";
+  buttons.append(copyBtn, closeBtn);
 
-  content.append(title, qrFrame, buttons);
+  content.append(header, qrFrame, linkLabel, buttons);
   dialogContent.replaceChildren(content);
   dialog.setAttribute("aria-labelledby", "dialog-title");
   dialog.removeAttribute("aria-label");
 
   new QRCode(qrFrame, {
-    text: element.dataset.url,
-    width: 200,
-    height: 200,
-    colorDark: "#0f172a",
+    text: targetUrl,
+    width: 192,
+    height: 192,
+    colorDark: "#09090b",
     colorLight: "#ffffff",
     correctLevel: QRCode.CorrectLevel.H
   });
@@ -226,11 +264,14 @@ async function handleCopyLink(element) {
   }
 }
 
-// copy the link and toggle copy button style
+// copy the link and toggle copy button style + sleek toast notification
 async function handleShortURLCopyLink(element) {
   const copied = await handleCopyLink(element);
   if (!copied) return;
+  const url = element && element.dataset ? element.dataset.url : "";
+  const shortLabel = url ? url.replace(/^https?:\/\//i, "") : "";
   announce("Copied to clipboard");
+  showToast(shortLabel && shortLabel.length <= 48 ? "Copied " + shortLabel : "Copied to clipboard");
   const parent = element.parentNode;
   const container = element.closest ? (element.closest("#shorturl, #apikey, .short-link-wrapper, .short-link") || parent) : parent;
   const clipboard = (container && container.querySelector ? container.querySelector(".clipboard") : null)
@@ -239,7 +280,7 @@ async function handleShortURLCopyLink(element) {
   clipboard.classList.add("copied");
   setTimeout(function () {
     clipboard.classList.remove("copied");
-  }, 1000);
+  }, 1400);
 }
 
 // native <dialog> management
@@ -529,12 +570,44 @@ function setLinksSkip(event, action) {
   });
 }
 
+function syncPaginationFooter(total, skip, limit, hasTotalValue) {
+  const badge = document.getElementById("links-total-badge");
+  if (badge) {
+    if (hasTotalValue) {
+      badge.textContent = total.toLocaleString();
+      if (badge.classList) badge.classList.remove("hidden");
+    } else if (badge.classList) {
+      badge.classList.add("hidden");
+    }
+  }
+
+  const shouldShowFooter = hasTotalValue && total > 0 && (total > 10 || skip > 0 || total > limit);
+  document.querySelectorAll(".table-footer").forEach(function (footer) {
+    if (footer && footer.classList) {
+      footer.classList.toggle("hidden", !shouldShowFooter);
+    }
+  });
+
+  const infoEl = document.getElementById("pagination-info");
+  if (infoEl) {
+    if (total > 0) {
+      const start = Math.min(skip + 1, total);
+      const end = Math.min(skip + limit, total);
+      infoEl.textContent = "Showing " + start + "\u2013" + end + " of " + total.toLocaleString();
+    } else {
+      infoEl.textContent = "";
+    }
+  }
+}
+
 function updateLinksNav() {
   const totalElm = document.querySelector("#total");
   const skipElm = document.querySelector("#skip");
   const limitElm = document.querySelector("#limit");
   if (!totalElm || !skipElm || !limitElm) return;
-  const parsedTotal = parseInt(totalElm.value, 10);
+  const rawTotal = typeof totalElm.value === "string" ? totalElm.value.trim() : String(totalElm.value ?? "");
+  const hasTotalValue = rawTotal !== "" && !Number.isNaN(parseInt(rawTotal, 10));
+  const parsedTotal = parseInt(rawTotal, 10);
   const parsedSkip = parseInt(skipElm.value, 10);
   const parsedLimit = parseInt(limitElm.value, 10);
   const total = Number.isNaN(parsedTotal) ? 0 : parsedTotal;
@@ -555,6 +628,7 @@ function updateLinksNav() {
     limitButtons.forEach(function (b) {
       setLimitButtonState(b, b.textContent.trim() === String(limit));
     });
+    syncPaginationFooter(total, skip, limit, hasTotalValue);
     htmx.trigger("body", "reloadMainTable");
     return;
   }
@@ -573,6 +647,7 @@ function updateLinksNav() {
   limitButtons.forEach(function (b) {
     setLimitButtonState(b, b.textContent.trim() === String(limit));
   });
+  syncPaginationFooter(total, skip, limit, hasTotalValue);
 }
 
 function resetTableNav() {
@@ -581,7 +656,9 @@ function resetTableNav() {
   const limitElm = document.querySelector("#limit");
   if (!totalElm || !skipElm || !limitElm) return;
   skipElm.value = 0;
-  const parsedTotal = parseInt(totalElm.value, 10);
+  const rawTotal = typeof totalElm.value === "string" ? totalElm.value.trim() : String(totalElm.value ?? "");
+  const hasTotalValue = rawTotal !== "" && !Number.isNaN(parseInt(rawTotal, 10));
+  const parsedTotal = parseInt(rawTotal, 10);
   const parsedLimit = parseInt(limitElm.value, 10);
   const total = Number.isNaN(parsedTotal) ? 0 : parsedTotal;
   const limit = Number.isNaN(parsedLimit) || parsedLimit <= 0 ? 10 : parsedLimit;
@@ -591,6 +668,7 @@ function resetTableNav() {
   document.querySelectorAll(".pagination .prev").forEach(function (elm) {
     elm.disabled = true;
   });
+  syncPaginationFooter(total, 0, limit, hasTotalValue);
 }
 
 // tab click
@@ -656,8 +734,10 @@ function getLinksTotal() {
 function syncLinkSelectionUI() {
   const selectAllBtn = document.getElementById("select-all-links-btn");
   const selectAllCheckbox = document.getElementById("select-all-links-checkbox");
+  const bulkActionBar = document.getElementById("bulk-action-bar");
+  const bulkSelectedCount = document.getElementById("bulk-selected-count");
   const bulkDeleteBtn = document.getElementById("bulk-delete-links-btn");
-  if (!selectAllBtn && !selectAllCheckbox && !bulkDeleteBtn) return;
+  if (!selectAllBtn && !selectAllCheckbox && !bulkDeleteBtn && !bulkActionBar) return;
 
   const checkboxes = getVisibleLinkCheckboxes();
   const total = getLinksTotal();
@@ -697,6 +777,14 @@ function syncLinkSelectionUI() {
     }
   }
 
+  if (bulkActionBar && bulkActionBar.classList) {
+    bulkActionBar.classList.toggle("hidden", selectedCount === 0);
+  }
+
+  if (bulkSelectedCount) {
+    bulkSelectedCount.textContent = selectedCount + " selected";
+  }
+
   if (bulkDeleteBtn) {
     if (bulkDeleteBtn.classList) {
       bulkDeleteBtn.classList.toggle("hidden", selectedCount === 0);
@@ -704,7 +792,9 @@ function syncLinkSelectionUI() {
     bulkDeleteBtn.disabled = selectedCount === 0;
     const label = bulkDeleteBtn.querySelector ? bulkDeleteBtn.querySelector(".bulk-delete-label") : null;
     if (label) {
-      label.textContent = selectedCount > 0 ? "Delete (" + selectedCount + ")" : "Delete selected";
+      label.textContent = bulkSelectedCount
+        ? "Delete selected"
+        : (selectedCount > 0 ? "Delete (" + selectedCount + ")" : "Delete selected");
     }
   }
 
@@ -911,6 +1001,49 @@ document.body.addEventListener("htmx:afterRequest", function (evt) {
 });
 
 // Delegated event handlers (strict CSP — no inline onclick/onchange/hx-on)
+function handleSortLinks(button) {
+  const sortKey = button && button.dataset ? button.dataset.sort : null;
+  const sortInput = document.getElementById("sort");
+  const orderInput = document.getElementById("order");
+  if (!sortKey || !sortInput || !orderInput) return;
+
+  const currentSort = sortInput.value || "created_at";
+  const currentOrder = orderInput.value === "asc" ? "asc" : "desc";
+  const nextOrder = currentSort === sortKey
+    ? (currentOrder === "desc" ? "asc" : "desc")
+    : (sortKey === "created_at" || sortKey === "views" ? "desc" : "asc");
+
+  sortInput.value = sortKey;
+  orderInput.value = nextOrder;
+
+  const th = button.closest ? button.closest("th") : null;
+  const thead = button.closest ? button.closest("thead") : null;
+  if (thead && thead.querySelectorAll) {
+    thead.querySelectorAll("th[aria-sort]").forEach(function (header) {
+      header.removeAttribute("aria-sort");
+    });
+  }
+  const ariaSortValue = nextOrder === "asc" ? "ascending" : "descending";
+  if (th && th.setAttribute) {
+    th.setAttribute("aria-sort", ariaSortValue);
+  }
+
+  resetTableNav();
+  clearLinkSelection();
+  announce("Sorted by " + (button.textContent || sortKey).trim() + ", " + ariaSortValue);
+  htmx.trigger("body", "reloadMainTable");
+}
+
+function clearAllLinkFilters() {
+  const searchEl = document.getElementById("search");
+  const domainEl = document.getElementById("filter-domain");
+  if (searchEl) searchEl.value = "";
+  if (domainEl) domainEl.value = "";
+  resetTableNav();
+  clearLinkSelection();
+  htmx.trigger("body", "reloadMainTable");
+}
+
 document.addEventListener("click", function (event) {
   const el = event.target && event.target.closest ? event.target.closest("[data-action]") : null;
   if (!el) return;
@@ -949,8 +1082,12 @@ document.addEventListener("click", function (event) {
     setLinksLimit({ currentTarget: el, target: event.target });
   } else if (action === "set-skip") {
     setLinksSkip({ currentTarget: el, target: event.target }, el.dataset.direction);
+  } else if (action === "sort-links") {
+    handleSortLinks(el);
   } else if (action === "clear-search") {
     clearSearchInput(event);
+  } else if (action === "clear-all-filters") {
+    clearAllLinkFilters();
   } else if (action === "toggle-select-all-links-btn") {
     toggleSelectAllLinks();
   } else if (action === "select-all-matching") {

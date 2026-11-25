@@ -8,14 +8,14 @@ function getChartTheme() {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   return {
     isDark,
-    accent: isDark ? "rgb(129, 140, 248)" : "rgb(79, 70, 229)",
-    accentRgb: isDark ? "129, 140, 248" : "79, 70, 229",
-    tooltipBg: isDark ? "rgba(24, 24, 27, 0.96)" : "rgba(255, 255, 255, 0.96)",
-    tooltipTitle: isDark ? "#fafafa" : "#09090b",
-    tooltipBody: isDark ? "#a5b4fc" : "#4f46e5",
-    tooltipBorder: isDark ? "rgba(255, 255, 255, 0.14)" : "rgba(9, 9, 11, 0.12)",
-    tickColor: isDark ? "#a1a1aa" : "#52525b",
-    gridColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(9, 9, 11, 0.07)",
+    accent: isDark ? "rgb(139, 124, 248)" : "rgb(124, 107, 246)",
+    accentRgb: isDark ? "139, 124, 248" : "124, 107, 246",
+    tooltipBg: isDark ? "rgba(25, 25, 34, 0.96)" : "rgba(255, 255, 255, 0.96)",
+    tooltipTitle: isDark ? "#f4f4f5" : "#18181b",
+    tooltipBody: isDark ? "#a69bff" : "#7c6bf6",
+    tooltipBorder: isDark ? "#2c2c38" : "#e4e4e7",
+    tickColor: isDark ? "#8e8e9a" : "#71717a",
+    gridColor: isDark ? "rgba(34, 34, 41, 0.85)" : "rgba(228, 228, 231, 0.75)",
     legendColor: isDark ? "#d4d4d8" : "#3f3f46",
   };
 }

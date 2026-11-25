@@ -34,6 +34,10 @@
     {{{body}}}
   </div>
   <div id="app-tooltip" class="app-tooltip" popover="hint" role="tooltip"></div>
+  <div id="app-toast" class="app-toast" role="status" aria-live="polite" aria-atomic="true">
+    <span class="app-toast-dot" aria-hidden="true"></span>
+    <span id="app-toast-message"></span>
+  </div>
   <div id="live-announcer" class="visually-hidden" aria-live="polite" aria-atomic="true"></div>
 
   <script defer src="/libs/htmx.min.js"></script>
