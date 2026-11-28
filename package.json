@@ -1,6 +1,6 @@
 {
   "name": "dyslinks",
-  "version": "1.4.3",
+  "version": "1.4.4",
   "description": "Modern URL shortener.",
   "main": "./server/server.js",
   "scripts": {
